@@ -1,0 +1,324 @@
+/**
+ * ECCD CARE — CSWDO Dashboard API Service Layer
+ *
+ * Implements Dashboard API Contract (api-and-interface-design skill):
+ *   GET /api/dashboard/summary         → High-level KPIs and core operational answers
+ *   GET /api/dashboard/enrollment      → Detailed enrollment status breakdown
+ *   GET /api/dashboard/monitoring      → Health and development assessment monitoring
+ *   GET /api/dashboard/barangays       → Children by barangay ranked by priority
+ *   GET /api/dashboard/attention       → Prominent operational table for critical cases
+ *   GET /api/dashboard/recent-activity → Real-time multi-stream activity audit log
+ *
+ * Live-synchronized with centralDataStore (Clean empty slate on launch).
+ */
+
+import { centralDataStore } from './centralDataStore';
+
+// In-memory attention items store for interactive updates
+let attentionItemsState = [];
+
+// Helper to simulate short asynchronous fetch
+async function fetchEndpoint(url, fallbackData) {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      return json.data || json;
+    }
+  } catch (err) {
+    // Backend offline or running standalone frontend, gracefully use robust fallback
+  }
+  return fallbackData;
+}
+
+export const dashboardService = {
+  /**
+   * GET /api/dashboard/summary
+   */
+  async getSummary() {
+    const children = centralDataStore.getChildren() || [];
+    const enrollments = centralDataStore.getEnrollments() || [];
+    const healthLogs = centralDataStore.getHealthMonitorings() || [];
+    const followUps = centralDataStore.getFollowUps() || [];
+    const barangays = centralDataStore.getBarangays() || [];
+
+    const total = children.length;
+    const enrolled = enrollments.length;
+    const notEnrolled = Math.max(0, total - enrolled);
+    const healthDue = healthLogs.filter((h) => h.status === 'Due' || h.status === 'Overdue').length;
+    const devFollowup = followUps.length;
+
+    const summaryFallback = {
+      totalChildren: total,
+      mappedChildren: total,
+      mappedPercentage: total > 0 ? 100 : 0,
+      enrolledChildren: enrolled,
+      enrolledPercentage: total > 0 ? Math.round((enrolled / total) * 100) : 0,
+      notEnrolledChildren: notEnrolled,
+      notEnrolledPercentage: total > 0 ? Math.round((notEnrolled / total) * 100) : 0,
+      pendingChildren: 0,
+      pendingPercentage: 0,
+      healthMonitoringDue: healthDue,
+      developmentFollowups: devFollowup,
+      totalBarangays: barangays.length || 10,
+      barangaysNeedingAttention: 0,
+      reportingSchoolYear: 'SY 2026–2027',
+      cityMunicipality: 'City of San Fernando, Pampanga',
+      lastUpdated: new Date().toISOString(),
+      coreAnswers: {
+        identifiedChildren: `${total} children aged 0–4 documented in system`,
+        enrolledChildren: `${enrolled} enrolled in CDCs and SNP programs (${total > 0 ? Math.round((enrolled / total) * 100) : 0}%)`,
+        notEnrolledChildren: `${notEnrolled} not enrolled`,
+        needsHealthMonitoring: `${healthDue} children due/overdue for growth monitoring`,
+        needsDevFollowup: `${devFollowup} children flagged for developmental domain delays`,
+        barangaysNeedingAttention: 'All barangays up to date',
+      },
+    };
+
+    return fetchEndpoint('/api/dashboard/summary', summaryFallback);
+  },
+
+  /**
+   * GET /api/dashboard/enrollment
+   */
+  async getEnrollment() {
+    const children = centralDataStore.getChildren() || [];
+    const enrollments = centralDataStore.getEnrollments() || [];
+    const total = children.length;
+    const enrolled = enrollments.length;
+    const notEnrolled = Math.max(0, total - enrolled);
+
+    const enrollmentFallback = {
+      total,
+      breakdown: [
+        {
+          key: 'enrolled',
+          label: 'Enrolled in CDC / SNP',
+          count: enrolled,
+          percentage: total > 0 ? Math.round((enrolled / total) * 100) : 0,
+          statusColor: 'var(--color-success-primary)',
+          badgeVariant: 'success',
+          subcategories: [
+            { label: 'Child Development Center (CDC)', count: enrolled, percentage: total > 0 ? Math.round((enrolled / total) * 100) : 0 },
+            { label: 'Supervised Neighborhood Play (SNP)', count: 0, percentage: 0 },
+          ],
+        },
+        {
+          key: 'not_enrolled',
+          label: 'Not Enrolled',
+          count: notEnrolled,
+          percentage: total > 0 ? Math.round((notEnrolled / total) * 100) : 0,
+          statusColor: 'var(--color-danger-primary)',
+          badgeVariant: 'danger',
+          subcategories: [
+            { label: 'Age 3–4 Priority Target for CDC', count: 0, percentage: 0 },
+            { label: 'Age 0–2 Home Care / Unserved', count: 0, percentage: 0 },
+          ],
+        },
+        {
+          key: 'pending',
+          label: 'Pending / Unknown',
+          count: 0,
+          percentage: 0,
+          statusColor: 'var(--color-warning-primary)',
+          badgeVariant: 'warning',
+          subcategories: [
+            { label: 'Recently Relocated / Transient', count: 0, percentage: 0 },
+            { label: 'Pending Barangay Worker Verification', count: 0, percentage: 0 },
+          ],
+        },
+      ],
+      targetCohortComparison: {
+        targetAnnualEnrollment: 2800,
+        targetMetPercentage: 0,
+        availableCenterSlots: 2650,
+        occupancyRate: 0,
+      },
+    };
+
+    return fetchEndpoint('/api/dashboard/enrollment', enrollmentFallback);
+  },
+
+  /**
+   * GET /api/dashboard/monitoring
+   */
+  async getMonitoring() {
+    const children = centralDataStore.getChildren() || [];
+    const healthLogs = centralDataStore.getHealthMonitorings() || [];
+    const devAssessments = centralDataStore.getDevelopmentAssessments() || [];
+    const followUps = centralDataStore.getFollowUps() || [];
+    const total = children.length;
+    const completedAssessments = devAssessments.filter((a) => a.status === 'Completed').length;
+    const normalHealth = healthLogs.filter((h) => h.nutritionalStatus?.includes('Normal')).length;
+
+    const monitoringFallback = {
+      health: {
+        total,
+        upToDate: {
+          label: 'Up to date',
+          count: normalHealth,
+          percentage: total > 0 ? Math.round((normalHealth / total) * 100) : 0,
+          variant: 'success',
+          description: 'Normal growth & complete records',
+        },
+        due: {
+          label: 'Due this month',
+          count: 0,
+          percentage: 0,
+          variant: 'warning',
+          description: 'Scheduled for routine weigh-in',
+        },
+        overdue: {
+          label: 'Overdue (>30 days)',
+          count: 0,
+          percentage: 0,
+          variant: 'danger',
+          description: 'Pending nutritional check',
+        },
+      },
+      development: {
+        total,
+        completed: {
+          label: 'Completed',
+          count: completedAssessments,
+          percentage: total > 0 ? Math.round((completedAssessments / total) * 100) : 0,
+          variant: 'success',
+          description: 'Standard checklist administered',
+        },
+        pending: {
+          label: 'Pending Evaluation',
+          count: Math.max(0, total - completedAssessments),
+          percentage: total > 0 ? Math.round(((total - completedAssessments) / total) * 100) : 0,
+          variant: 'neutral',
+          description: 'Scheduled for baseline checklist',
+        },
+        followUp: {
+          label: 'Follow-up Needed',
+          count: followUps.length,
+          percentage: total > 0 ? Math.round((followUps.length / total) * 100) : 0,
+          variant: 'danger',
+          description: 'Flagged for developmental action',
+        },
+      },
+      criticalAlerts: [],
+    };
+
+    return fetchEndpoint('/api/dashboard/monitoring', monitoringFallback);
+  },
+
+  /**
+   * GET /api/dashboard/barangays
+   */
+  async getBarangays() {
+    const barangays = centralDataStore.getBarangays() || [];
+    const children = centralDataStore.getChildren() || [];
+
+    const items = barangays.map((b, idx) => {
+      const bChildren = children.filter((c) => c.barangay === b.name || c.barangayId === b.id);
+      const enrolled = bChildren.filter((c) => c.enrollmentStatus === 'Enrolled').length;
+      return {
+        rank: idx + 1,
+        name: b.name,
+        totalChildren: bChildren.length,
+        enrolled,
+        enrolledPercent: bChildren.length > 0 ? Math.round((enrolled / bChildren.length) * 100) : 0,
+        notEnrolled: bChildren.length - enrolled,
+        healthDue: 0,
+        devFollowup: 0,
+        riskLevel: bChildren.length > 0 ? 'Active Monitoring' : 'Ready for Survey',
+        priorityVariant: bChildren.length > 0 ? 'success' : 'neutral',
+        assignedWorker: 'CDW Assigned',
+        daycareCenters: b.dayCareCentersCount || 1,
+        primaryIssue: bChildren.length > 0 ? 'Ongoing child monitoring' : 'Awaiting household mapping',
+      };
+    });
+
+    return fetchEndpoint('/api/dashboard/barangays', {
+      total: barangays.length,
+      reportingYear: 'SY 2026–2027',
+      barangays: items,
+    });
+  },
+
+  /**
+   * GET /api/dashboard/attention
+   */
+  async getAttention() {
+    const followUps = centralDataStore.getFollowUps() || [];
+    const urgentCount = followUps.filter((f) => f.priority === 'High' || f.priority === 'Urgent').length;
+
+    const items = followUps.map((f) => ({
+      id: f.id,
+      childName: f.childName || 'Child Record',
+      age: '—',
+      sex: '—',
+      barangay: f.barangay || 'San Isidro',
+      purok: f.purok || '',
+      issue: f.reason,
+      issueCategory: f.sourceModule?.toLowerCase() || 'development',
+      assignedWorker: f.assignedWorkerName || 'CDW',
+      workerContact: '',
+      dueDate: f.scheduledDate || 'Pending',
+      status: f.status,
+      priority: f.priority,
+      guardianName: '',
+      center: '',
+      actionRequired: f.actionPlan || '',
+    }));
+
+    return fetchEndpoint('/api/dashboard/attention', {
+      totalNeedingAttention: items.length,
+      highPriorityCount: urgentCount,
+      items,
+    });
+  },
+
+  /**
+   * GET /api/dashboard/recent-activity
+   */
+  async getRecentActivity() {
+    return fetchEndpoint('/api/dashboard/recent-activity', {
+      activities: [],
+    });
+  },
+
+  /**
+   * Interactive update for attention items status
+   */
+  async updateAttentionItemStatus(id, newStatus) {
+    const itemIndex = attentionItemsState.findIndex((item) => item.id === id);
+    if (itemIndex >= 0) {
+      attentionItemsState[itemIndex] = {
+        ...attentionItemsState[itemIndex],
+        status: newStatus,
+      };
+      return { ok: true, item: attentionItemsState[itemIndex] };
+    }
+    return { ok: false, error: 'Item not found' };
+  },
+
+  /**
+   * Append new quick action to activities
+   */
+  async recordQuickAction(actionName, details) {
+    const newAct = {
+      id: `ACT-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      type: details.type || 'mapping',
+      title: actionName,
+      description: details.notes || 'Action logged to dashboard feed.',
+      worker: details.worker || 'System User',
+      barangay: details.barangay || 'San Isidro',
+      timestamp: 'Just now',
+      childId: details.childId || details.id || 'ECCD-RECORD',
+      tag: details.type === 'enrollment' ? 'Enrollment' : details.type === 'health' ? 'Health' : 'Mapping',
+      tagVariant: details.type === 'enrollment' ? 'success' : details.type === 'health' ? 'info' : 'primary',
+    };
+    return { ok: true, activity: newAct };
+  },
+};
+
+export default dashboardService;

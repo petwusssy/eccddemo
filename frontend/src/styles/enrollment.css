@@ -1,0 +1,85 @@
+/* ==========================================================================
+   ECCD CARE — Enrollment Module Styles
+   Lifecycle: Mapped → Not Enrolled → Enrolled (ONE CHILD = ONE RECORD)
+   ========================================================================== */
+
+/* Lifecycle Progression Visualizer Bar */
+.enrollment-lifecycle-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
+  box-shadow: var(--shadow-xs);
+  flex-wrap: wrap;
+}
+
+.lifecycle-stage {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+}
+
+.lifecycle-stage.active {
+  color: var(--color-primary-950);
+}
+
+.lifecycle-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.lifecycle-arrow {
+  color: var(--color-neutral-300);
+}
+
+/* Operational View: Mapped But Not Enrolled */
+.not-enrolled-banner {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fdba74;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* Child Confirmation Before Enrollment Card */
+.enrollment-confirmation-box {
+  background-color: var(--bg-canvas);
+  border: 1.5px solid var(--color-primary-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.enrollment-confirmation-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.enrollment-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+  margin-bottom: var(--space-2);
+}

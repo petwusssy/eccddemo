@@ -1,0 +1,286 @@
+/* ==========================================================================
+   ECCD CARE — Child 360° Profile & Child Management Styles
+   Hero Feature of ECCD CARE (design-taste-frontend skill)
+   ========================================================================== */
+
+/* Child 360° Hero Header Container */
+.child-360-hero-banner {
+  background: linear-gradient(135deg, var(--color-primary-950) 0%, var(--color-primary-900) 60%, #0d2347 100%);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  color: var(--color-white);
+  box-shadow: 0 10px 25px -5px rgba(10, 25, 60, 0.25);
+  margin-bottom: var(--space-6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.child-360-hero-banner::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.child-360-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.child-avatar-badge {
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, var(--color-accent-600) 0%, var(--color-primary-700) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-extrabold);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.child-id-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  background-color: rgba(255, 255, 255, 0.15);
+  color: var(--color-accent-200);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.child-demographics-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-primary-100);
+  margin-top: var(--space-2);
+}
+
+.child-demo-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* 5 Core Status Indicator Pillars */
+.status-pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 1024px) {
+  .status-pillars-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .status-pillars-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pillar-card {
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  backdrop-filter: blur(8px);
+  transition: background-color var(--transition-fast);
+}
+
+.pillar-card:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.pillar-label {
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-primary-200);
+  margin-bottom: 2px;
+}
+
+.pillar-val {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.pillar-sub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Profile Tab Bar */
+.child-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-bottom: 2px solid var(--border-subtle);
+  margin-bottom: var(--space-6);
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.child-tab-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.625rem 1rem;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.child-tab-item:hover {
+  color: var(--text-primary);
+  background-color: var(--color-neutral-50);
+}
+
+.child-tab-item.active {
+  color: var(--color-primary-900);
+  font-weight: var(--font-weight-bold);
+  border-bottom-color: var(--color-primary-900);
+  background-color: var(--bg-surface);
+}
+
+/* Quick Action Bar */
+.child-quick-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Chronological Life Timeline */
+.child-timeline-feed {
+  position: relative;
+  padding-left: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.child-timeline-feed::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 11px;
+  width: 2px;
+  background-color: var(--color-neutral-200);
+}
+
+.timeline-event-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.timeline-event-dot {
+  position: absolute;
+  left: -24px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface);
+  border: 3px solid var(--color-primary-700);
+}
+
+.timeline-event-card {
+  flex: 1;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-xs);
+}
+
+.timeline-event-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-1);
+}
+
+/* 7 ECCD Domains Evaluation Grid */
+.domains-matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.domain-tile {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background-color: var(--bg-surface);
+}
+
+.domain-tile.alert {
+  border-color: var(--color-danger-border);
+  background-color: var(--color-danger-bg);
+}
+
+.domain-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-1);
+}
+
+.domain-score {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-950);
+}

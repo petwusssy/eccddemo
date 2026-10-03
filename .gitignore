@@ -7,9 +7,19 @@
 ehthumbs.db
 Thumbs.db
 
+# Environment and secrets (AWS CodeCommit protection)
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+vendor/
+
 # IDE and editors
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
+

@@ -1,0 +1,585 @@
+/* ==========================================================================
+   ECCD CARE — HEALTH MONITORING MODULE
+   CSWDO Monthly Height & Weight Monitoring
+   Strict Guideline: Quantitative measurement tracking only. No medical diagnoses.
+   ========================================================================== */
+
+.health-module-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* --- Top KPI Cards --- */
+.health-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .health-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .health-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.health-kpi-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-lg, 10px);
+  padding: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.health-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+}
+
+.health-kpi-card.is-active {
+  border-color: var(--color-primary, #0f2744);
+  background: #f8fafc;
+}
+
+.health-kpi-card.is-active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--color-primary, #0f2744);
+}
+
+.health-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.health-kpi-icon.due {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fef3c7;
+}
+
+.health-kpi-icon.completed {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #d1fae5;
+}
+
+.health-kpi-icon.overdue {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fee2e2;
+}
+
+.health-kpi-icon.uptodate {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+}
+
+.health-kpi-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.health-kpi-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.25rem;
+}
+
+.health-kpi-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.health-kpi-subtext {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 0.25rem;
+}
+
+/* --- Standard Guideline Alert --- */
+.health-guideline-banner {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-left: 4px solid #16a34a;
+  border-radius: var(--radius-md, 8px);
+  padding: 0.875rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  font-size: 0.875rem;
+  color: #166534;
+}
+
+.health-guideline-banner strong {
+  color: #14532d;
+}
+
+/* --- Sub-Tab Navigation --- */
+.health-tabs-nav {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+}
+
+.health-tab-btn {
+  padding: 0.5rem 1.125rem;
+  border-radius: var(--radius-md, 6px);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.15s ease;
+}
+
+.health-tab-btn:hover {
+  color: #0f2744;
+  background: #f1f5f9;
+}
+
+.health-tab-btn.is-active {
+  color: #0f2744;
+  background: #e2e8f0;
+}
+
+/* --- Filter & Action Bar --- */
+.health-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  padding: 1rem;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid #e2e8f0;
+}
+
+.health-toolbar-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  flex: 1;
+}
+
+.health-search-box {
+  position: relative;
+  min-width: 260px;
+}
+
+.health-search-box input {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+  font-size: 0.875rem;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md, 6px);
+  outline: none;
+}
+
+.health-search-box input:focus {
+  border-color: #0f2744;
+  box-shadow: 0 0 0 2px rgba(15, 39, 68, 0.15);
+}
+
+.health-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.health-select {
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md, 6px);
+  background-color: #ffffff;
+  outline: none;
+  cursor: pointer;
+}
+
+.health-select:focus {
+  border-color: #0f2744;
+}
+
+/* --- Table & Badges --- */
+.health-table-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-lg, 10px);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+.health-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.health-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.health-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.health-table tr:hover td {
+  background: #f8fafc;
+}
+
+.health-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.health-status-badge.uptodate {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.health-status-badge.due {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.health-status-badge.overdue {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.health-delta-chip {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.health-delta-chip.positive {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+/* --- Record Health Intake Form --- */
+.health-record-form-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-lg, 10px);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+.health-child-confirm-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid var(--color-primary, #0f2744);
+  border-radius: var(--radius-md, 8px);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.health-child-profile-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.health-child-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #0f2744;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.health-child-details h4 {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.25rem 0;
+}
+
+.health-child-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.health-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .health-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.health-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.health-form-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.health-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md, 6px);
+  background: #ffffff;
+  outline: none;
+}
+
+.health-input:focus {
+  border-color: #0f2744;
+  box-shadow: 0 0 0 2px rgba(15, 39, 68, 0.15);
+}
+
+.health-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md, 6px);
+  background: #ffffff;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.health-textarea:focus {
+  border-color: #0f2744;
+  box-shadow: 0 0 0 2px rgba(15, 39, 68, 0.15);
+}
+
+/* --- Clean Trend Visualization Chart --- */
+.health-trend-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-lg, 10px);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.health-trend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.health-trend-title-group h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.health-trend-title-group p {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0.25rem 0 0 0;
+}
+
+.health-chart-toggles {
+  display: flex;
+  gap: 0.25rem;
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: 6px;
+}
+
+.health-chart-toggle-btn {
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  cursor: pointer;
+}
+
+.health-chart-toggle-btn.active {
+  background: #ffffff;
+  color: #0f2744;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.health-svg-chart-wrapper {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.health-chart-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  font-size: 0.8125rem;
+  color: #475569;
+}
+
+.health-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.health-legend-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.health-legend-indicator.height {
+  background: #0284c7;
+}
+
+.health-legend-indicator.weight {
+  background: #0d9488;
+}
+
+/* --- Health History Cards / List --- */
+.health-history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.health-history-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md, 8px);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: border-color 0.15s ease;
+}
+
+.health-history-item:hover {
+  border-color: #cbd5e1;
+}
+
+.health-history-date {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 0.9375rem;
+  min-width: 110px;
+}
+
+.health-history-stats {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.health-stat-pill {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.health-stat-pill strong {
+  font-size: 1rem;
+  color: #0f172a;
+}

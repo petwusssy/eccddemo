@@ -1,0 +1,557 @@
+/* ==========================================================================
+   ECCD CARE — REPORTS & CONSOLIDATED SUBMISSIONS MODULE
+   City Social Welfare and Development Office (CSWDO)
+   Core Concept: DATA SHOULD ONLY BE ENCODED ONCE.
+   Dynamic compilation from central child database.
+   Official Form 4 & Form 5 Integration Placeholders.
+   ========================================================================== */
+
+.reports-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* --- Category Selector Bar --- */
+.reports-category-panel {
+  background: #ffffff;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-lg, 10px);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reports-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.reports-category-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reports-category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.report-cat-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.report-cat-btn:hover {
+  background: #e2e8f0;
+  color: #0f2744;
+}
+
+.report-cat-btn.is-active {
+  background: #0f2744;
+  color: #ffffff;
+  border-color: #0f2744;
+  box-shadow: 0 1px 3px rgba(15, 39, 68, 0.2);
+}
+
+.report-cat-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.report-cat-btn.is-active .report-cat-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* --- Filter & Action Bar --- */
+.reports-toolbar {
+  background: #ffffff;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-lg, 10px);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.reports-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 1200px) {
+  .reports-filter-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .reports-filter-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .reports-filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.report-filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.report-filter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.report-filter-select,
+.report-filter-input {
+  width: 100%;
+  padding: 0.45rem 0.625rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  color: #1e293b;
+  outline: none;
+  background: #ffffff;
+}
+
+.report-filter-select:focus,
+.report-filter-input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
+.reports-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 0.875rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.reports-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+/* --- Professional Government Report Document --- */
+.report-doc-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.report-document {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 2.5rem 3rem;
+  max-width: 1080px;
+  width: 100%;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+}
+
+/* Document Header: Republic of the Philippines Seal & Header */
+.report-gov-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #0f2744;
+  padding-bottom: 1.25rem;
+  text-align: center;
+}
+
+.report-gov-seal-left,
+.report-gov-seal-right {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f2744;
+  font-weight: 800;
+  font-size: 0.75rem;
+}
+
+.report-gov-titles {
+  flex: 1;
+  padding: 0 1rem;
+}
+
+.report-gov-republic {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+}
+
+.report-gov-province {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.report-gov-city {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: #0f2744;
+  letter-spacing: 0.05em;
+  margin: 0.15rem 0;
+}
+
+.report-gov-office {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0284c7;
+}
+
+.report-gov-system {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
+
+/* Title & Form Control Number */
+.report-title-section {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #f8fafc;
+  padding: 1rem 1.25rem;
+  border-radius: 6px;
+  border-left: 4px solid #0f2744;
+}
+
+.report-doc-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f2744;
+  line-height: 1.3;
+}
+
+.report-doc-sub {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.report-form-code-badge {
+  background: #0f2744;
+  color: #ffffff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Generation & Core Concept Banner */
+.report-concept-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  color: #1e40af;
+}
+
+.report-concept-tag {
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Applied Filters Strip */
+.report-meta-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+.report-filter-pill {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.report-filter-pill strong {
+  color: #0f2744;
+}
+
+/* Summary Statistics Strip */
+.report-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.report-summary-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.report-summary-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.report-summary-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f2744;
+  margin-top: 0.2rem;
+}
+
+/* Structured Data Table */
+.report-table-container {
+  overflow-x: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.report-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  text-align: left;
+}
+
+.report-data-table th {
+  background: #0f2744;
+  color: #ffffff;
+  padding: 0.65rem 0.875rem;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.report-data-table th:last-child {
+  border-right: none;
+}
+
+.report-data-table td {
+  padding: 0.65rem 0.875rem;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.report-data-table td:last-child {
+  border-right: none;
+}
+
+.report-data-table tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.report-data-table tr:hover td {
+  background: #f1f5f9;
+}
+
+/* Official Integration Placeholders Box */
+.report-official-box {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px dashed #94a3b8;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.report-official-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: #0f2744;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.report-official-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.report-official-pill {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #0284c7;
+  background: #e0f2fe;
+  padding: 0.5rem 0.875rem;
+  border-radius: 4px;
+  border: 1px solid #bae6fd;
+}
+
+.report-official-note {
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* Sign-off & Prepared By Blocks */
+.report-signatures {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #cbd5e1;
+}
+
+.report-sig-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.report-sig-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.report-sig-line {
+  margin-top: 2rem;
+  border-top: 1px solid #475569;
+  padding-top: 0.35rem;
+}
+
+.report-sig-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f2744;
+}
+
+.report-sig-title {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* System-generated notice footer */
+.report-doc-footer {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.75rem;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* --- Print Media Query --- */
+@media print {
+  /* Hide all outside application elements */
+  .app-sidebar,
+  .app-header,
+  .reports-category-panel,
+  .reports-toolbar,
+  .reports-actions-bar,
+  .btn,
+  button {
+    display: none !important;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .reports-layout {
+    gap: 0 !important;
+  }
+
+  .report-doc-wrapper {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .report-document {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .report-gov-header {
+    border-bottom: 2px solid #000000 !important;
+  }
+
+  .report-data-table th {
+    background: #e2e8f0 !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+  }
+
+  .report-data-table td {
+    border: 1px solid #cccccc !important;
+  }
+}

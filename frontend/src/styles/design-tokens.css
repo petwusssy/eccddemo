@@ -1,0 +1,152 @@
+/* ==========================================================================
+   ECCD CARE — Philippine CSWDO Design System Tokens
+   Child Assessment, Registration & Early-support System
+   ========================================================================== */
+
+:root {
+  /* --- Primary: Deep Navy / Blue (Philippine Government Authority) --- */
+  --color-primary-950: #0a1628;
+  --color-primary-900: #0f2240;
+  --color-primary-850: #122b52;
+  --color-primary-800: #15325b;
+  --color-primary-700: #1a4277;
+  --color-primary-600: #20579e;
+  --color-primary-500: #2870c9;
+  --color-primary-400: #4a8ee0;
+  --color-primary-200: #bfdbfe;
+  --color-primary-100: #dbeafe;
+  --color-primary-50:  #eff6ff;
+
+  /* --- Secondary: Deep Teal / Cyan Accent (Care, Health & Early Development) --- */
+  --color-accent-800: #115e59;
+  --color-accent-700: #0f766e;
+  --color-accent-600: #0d9488;
+  --color-accent-500: #0891b2;
+  --color-accent-400: #06b6d4;
+  --color-accent-200: #a5f3fc;
+  --color-accent-100: #cffafe;
+  --color-accent-50:  #f0fdfa;
+
+  /* --- Neutral & Surfaces --- */
+  --bg-canvas: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --bg-muted: #e2e8f0;
+  --bg-dark: #0f172a;
+
+  /* --- Borders (Clean, Subtle, Crisp) --- */
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-strong: #94a3b8;
+  --border-focus: #1a4277;
+
+  /* --- Text & Content (Dark Charcoal) --- */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+  --text-inverse: #ffffff;
+  --text-link: #1a4277;
+  --text-link-hover: #0f2240;
+
+  /* --- Functional Status: Green (Completed / Normal / On Track) --- */
+  --color-success-bg: #f0fdf4;
+  --color-success-border: #bbf7d0;
+  --color-success-text: #166534;
+  --color-success-primary: #15803d;
+  --color-success-hover: #166534;
+
+  /* --- Functional Status: Amber (Pending / Due / At Risk / Review) --- */
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-warning-text: #92400e;
+  --color-warning-primary: #b45309;
+  --color-warning-hover: #92400e;
+
+  /* --- Functional Status: Red (Urgent / Error / Severe / Delayed) --- */
+  --color-danger-bg: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-danger-text: #991b1b;
+  --color-danger-primary: #b91c1c;
+  --color-danger-hover: #991b1b;
+
+  /* --- Functional Status: Info (Enrolled / Scheduled / Informational) --- */
+  --color-info-bg: #eff6ff;
+  --color-info-border: #bfdbfe;
+  --color-info-text: #1e40af;
+  --color-info-primary: #1d4ed8;
+
+  /* --- Typography Scale --- */
+  --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-family-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.8125rem;  /* 13px */
+  --font-size-base: 0.875rem; /* 14px */
+  --font-size-md: 1rem;       /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+
+  /* --- Spacing Scale --- */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+
+  /* --- Radii (Clean, Conservative, Government-grade) --- */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 9999px;
+
+  /* --- Shadows (Subtle, Restrained) --- */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-modal: 0 20px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+
+  /* --- Focus Rings (WCAG AA Compliant) --- */
+  --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #1a4277;
+  --focus-ring-danger: 0 0 0 2px #ffffff, 0 0 0 4px #b91c1c;
+
+  /* --- Transitions --- */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* --- Layout & Z-Index Layers --- */
+  --sidebar-width: 270px;
+  --sidebar-collapsed-width: 72px;
+  --header-height: 64px;
+  --top-gov-banner-height: 28px;
+
+  --z-base: 1;
+  --z-sticky: 10;
+  --z-header: 30;
+  --z-sidebar: 40;
+  --z-backdrop: 50;
+  --z-drawer: 60;
+  --z-modal: 70;
+  --z-popover: 80;
+  --z-tooltip: 90;
+  --z-toast: 100;
+}

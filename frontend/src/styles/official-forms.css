@@ -1,0 +1,303 @@
+/* ==========================================================================
+   ECCD CARE — OFFICIAL FORMS STYLESHEET
+   Supports:
+     - Registration Form (ECCD Council Form 1)
+     - Form 1: Home Profile (1.A Father, 1.B Mother, 1.C Family)
+     - Form 2: Children's Profile (16 sections, Health, Siblings, Logistics)
+     - Form 3: Community Profile
+     - Form 4: Consolidated Family Profile
+   ========================================================================== */
+
+.official-form-modal {
+  max-width: 900px;
+  width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.official-doc-header {
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  text-align: center;
+  position: relative;
+}
+
+.official-doc-header .agency-title {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.official-doc-header .form-code-badge {
+  display: inline-block;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  background-color: var(--color-primary-50);
+  color: var(--color-primary-700);
+  border: 1px solid var(--color-primary-200);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+}
+
+.official-doc-header .form-main-title {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+}
+
+.official-instruction-banner {
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid var(--color-primary-600);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  color: #334155;
+  font-style: italic;
+  margin-bottom: var(--space-5);
+  line-height: 1.5;
+}
+
+/* Duplicate Check Banner */
+.dup-check-card {
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.dup-match-item {
+  background: white;
+  border: 1px solid #fed7aa;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-top: var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* Official Sections */
+.official-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: #f1f5f9;
+  border-left: 3px solid var(--color-primary-600);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: var(--space-5);
+  margin-bottom: var(--space-3);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.official-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+.official-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+.official-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+}
+
+.official-grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-3);
+}
+
+/* Official Checkbox / Radio Pill Group */
+.official-choice-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.official-choice-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.official-choice-item:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.official-choice-item.is-selected {
+  background-color: var(--color-primary-50);
+  border-color: var(--color-primary-500);
+  color: var(--color-primary-900);
+  font-weight: 600;
+}
+
+/* Form Tables (Siblings, Vaccines, Aggregations) */
+.official-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-4);
+  background: white;
+}
+
+.official-table th {
+  background-color: #f1f5f9;
+  color: #334155;
+  font-weight: 700;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+}
+
+.official-table td {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+
+.official-table tr:hover {
+  background-color: #f8fafc;
+}
+
+.official-table .text-center {
+  text-align: center;
+}
+
+.official-table .text-right {
+  text-align: right;
+}
+
+/* Signature Block */
+.official-signature-block {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid #e2e8f0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-6);
+}
+
+.official-sig-line {
+  border-top: 1px solid #475569;
+  margin-top: 40px;
+  padding-top: 4px;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* Stepper Bar */
+.official-stepper-bar {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
+  overflow-x: auto;
+}
+
+.official-step-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.official-step-btn.is-active {
+  background-color: var(--color-primary-600);
+  color: white;
+}
+
+.official-step-btn.is-completed {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
+/* Responsive & Mobile Form adjustments */
+@media (max-width: 768px) {
+  .official-grid-2,
+  .official-grid-3,
+  .official-grid-4,
+  .official-grid-5 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .official-signature-block {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .official-choice-item {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* Print Stylesheet for Official Reports */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .app-sidebar,
+  .app-header,
+  .btn,
+  .official-stepper-bar,
+  .no-print {
+    display: none !important;
+  }
+
+  .official-table {
+    border: 1px solid #000 !important;
+  }
+
+  .official-table th,
+  .official-table td {
+    border: 1px solid #000 !important;
+    color: black !important;
+  }
+}
