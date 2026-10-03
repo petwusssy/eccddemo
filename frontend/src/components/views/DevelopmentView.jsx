@@ -98,6 +98,15 @@ export function DevelopmentView({ onNavigate }) {
     loadData();
   }, [statusFilter, barangayFilter, centerFilter, searchQuery]);
 
+  useEffect(() => {
+    const handleStoreUpdate = () => {
+      loadData();
+      if (selectedChildId) loadChildDetails(selectedChildId);
+    };
+    window.addEventListener('eccd:datastore-updated', handleStoreUpdate);
+    return () => window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
+  }, [selectedChildId]);
+
   // Load child assessment details
   const loadChildDetails = async (id) => {
     if (!id) return;

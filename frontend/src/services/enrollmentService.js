@@ -1,7 +1,7 @@
 /**
  * ECCD CARE — Enrollment API Service Layer
  *
- * Implements Enrollment API Contract (api-and-interface-design skill):
+ * Implements Enrollment API Contract:
  *   GET  /api/enrollments               → Directory of enrolled children
  *   GET  /api/enrollments/not-enrolled  → Dedicated operational view: Mapped but Not Enrolled
  *   POST /api/enrollments               → Enroll existing child (reuses ECCD ID, no duplicates!)
@@ -9,60 +9,62 @@
  *   PUT  /api/enrollments/:id           → Update enrollment record
  *
  * Core Concept: ONE CHILD = ONE PERSISTENT RECORD (Mapped → Not Enrolled → Enrolled).
+ * Single Source of Truth: centralDataStore.js
  */
 
-const STORAGE_KEY_ENROLLMENTS = 'eccd_enrollments_data_v2';
-const STORAGE_KEY_NOT_ENROLLED = 'eccd_not_enrolled_data_v2';
-
-const DEFAULT_ENROLLMENTS = [];
-
-const DEFAULT_NOT_ENROLLED = [];
-
-function getStored(key, fallback) {
-  try {
-    if (key.endsWith('_v2')) { localStorage.removeItem(key.replace('_v2', '')); }
-    const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return fallback;
-}
-
-function setStored(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (e) {}
-}
-
-let enrollmentsState = getStored(STORAGE_KEY_ENROLLMENTS, DEFAULT_ENROLLMENTS);
-let notEnrolledState = getStored(STORAGE_KEY_NOT_ENROLLED, DEFAULT_NOT_ENROLLED);
+import { centralDataStore } from './centralDataStore.js';
 
 export const enrollmentService = {
   /**
    * GET /api/enrollments
    */
   async getEnrollments(filters = {}) {
-    try {
-      const params = new URLSearchParams();
-      if (filters.search) params.append('search', filters.search);
-      if (filters.barangay) params.append('barangay', filters.barangay);
-      if (filters.center) params.append('center', filters.center);
-      if (filters.schoolYear) params.append('schoolYear', filters.schoolYear);
+    const rawEnrollments = centralDataStore.getEnrollments() || [];
+    const children = centralDataStore.getChildren() || [];
 
-      const res = await fetch(`/api/enrollments?${params.toString()}`, { headers: { Accept: 'application/json' } });
-      if (res.ok) {
-        const json = await res.json();
-        return json.data || json;
+    // Map and enrich enrollments with child details
+    let list = rawEnrollments.map((enr) => {
+      const child = children.find((c) => c.id === enr.childId);
+      return {
+        ...enr,
+        childName: enr.childName || child?.fullName || 'Enrolled Child',
+        ageDisplay: enr.ageDisplay || child?.ageDisplay || '3 yrs',
+        sex: enr.sex || child?.sex || 'Female',
+        barangay: enr.barangay || child?.barangay || 'San Isidro',
+        center: enr.center || child?.dayCareCenterName || 'San Isidro Child Development Center I',
+        session: enr.session || 'Morning Session (8:00 AM – 11:00 AM)',
+        schoolYear: enr.schoolYear || 'SY 2026–2027',
+        enrollmentDate: enr.enrollmentDate || enr.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+        status: enr.status || 'Enrolled',
+      };
+    });
+
+    // Also include any children whose status is 'Enrolled' even if raw enrollment is not present
+    children.forEach((c) => {
+      if (c.enrollmentStatus === 'Enrolled' && !list.some((e) => e.childId === c.id)) {
+        list.push({
+          id: `ENR-${c.id}`,
+          childId: c.id,
+          childName: c.fullName || `${c.firstName} ${c.lastName}`,
+          ageDisplay: c.ageDisplay || `${c.ageYears || 3} yrs`,
+          sex: c.sex || 'Female',
+          barangay: c.barangay || 'San Isidro',
+          center: c.dayCareCenterName || 'San Isidro Child Development Center I',
+          session: 'Morning Session (8:00 AM – 11:00 AM)',
+          schoolYear: 'SY 2026–2027',
+          enrollmentDate: c.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+          status: 'Enrolled',
+        });
       }
-    } catch (e) {}
+    });
 
-    let list = [...enrollmentsState];
     if (filters.search) {
       const q = filters.search.toLowerCase().trim();
       list = list.filter((e) =>
-        e.childName.toLowerCase().includes(q) ||
-        e.childId.toLowerCase().includes(q) ||
-        e.barangay.toLowerCase().includes(q) ||
-        e.center.toLowerCase().includes(q)
+        (e.childName || '').toLowerCase().includes(q) ||
+        (e.childId || '').toLowerCase().includes(q) ||
+        (e.barangay || '').toLowerCase().includes(q) ||
+        (e.center || '').toLowerCase().includes(q)
       );
     }
     if (filters.barangay) list = list.filter((e) => e.barangay === filters.barangay);
@@ -73,24 +75,30 @@ export const enrollmentService = {
   },
 
   /**
+   * Helper: Get enrolled children cohort directly
+   */
+  getEnrolledChildren() {
+    return centralDataStore.getChildren().filter((c) => c.enrollmentStatus === 'Enrolled');
+  },
+
+  /**
    * GET /api/enrollments/not-enrolled
    */
   async getNotEnrolledChildren(filters = {}) {
-    try {
-      const params = new URLSearchParams();
-      if (filters.barangay) params.append('barangay', filters.barangay);
-      if (filters.age) params.append('age', filters.age);
-      if (filters.year) params.append('year', filters.year);
-      if (filters.status) params.append('status', filters.status);
+    const rawChildren = centralDataStore.getChildren() || [];
+    let list = rawChildren
+      .filter((c) => c.enrollmentStatus === 'Not Enrolled' || !c.enrollmentStatus)
+      .map((c) => ({
+        ...c,
+        childId: c.id,
+        childName: c.fullName || `${c.firstName || ''} ${c.lastName || ''}`.trim(),
+        ageDisplay: c.ageDisplay || `${c.ageYears || 3} yrs`,
+        mappingDate: c.createdAt ? c.createdAt.split('T')[0] : '2026-09-15',
+        mappingYear: 2026,
+        status: 'Mapped (Not Enrolled)',
+        nearestCenter: c.nearestCenter || (c.barangay ? `${c.barangay} Child Development Center` : 'San Isidro Child Development Center I'),
+      }));
 
-      const res = await fetch(`/api/enrollments/not-enrolled?${params.toString()}`, { headers: { Accept: 'application/json' } });
-      if (res.ok) {
-        const json = await res.json();
-        return json.data || json;
-      }
-    } catch (e) {}
-
-    let list = [...notEnrolledState];
     if (filters.barangay) list = list.filter((c) => c.barangay === filters.barangay);
     if (filters.age) list = list.filter((c) => c.ageYears === parseInt(filters.age, 10));
     if (filters.year) list = list.filter((c) => c.mappingYear === parseInt(filters.year, 10));
@@ -106,10 +114,11 @@ export const enrollmentService = {
     const q = (query || '').toLowerCase().trim();
     if (!q) return [];
 
-    return notEnrolledState.filter((c) =>
-      c.childName.toLowerCase().includes(q) ||
-      c.childId.toLowerCase().includes(q) ||
-      c.barangay.toLowerCase().includes(q)
+    const notEnrolled = await this.getNotEnrolledChildren();
+    return (notEnrolled.children || []).filter((c) =>
+      (c.childName || '').toLowerCase().includes(q) ||
+      (c.childId || '').toLowerCase().includes(q) ||
+      (c.barangay || '').toLowerCase().includes(q)
     );
   },
 
@@ -117,50 +126,35 @@ export const enrollmentService = {
    * POST /api/enrollments
    * Core rule: ENROLL EXISTING CHILD without creating a duplicate record!
    */
-  async enrollChild(data) {
-    const childId = data.childId;
-    const notEnrIndex = notEnrolledState.findIndex((c) => c.childId === childId);
-    const existingMapped = notEnrIndex >= 0 ? notEnrolledState[notEnrIndex] : null;
-
-    if (notEnrIndex >= 0) {
-      notEnrolledState.splice(notEnrIndex, 1);
-      setStored(STORAGE_KEY_NOT_ENROLLED, notEnrolledState);
+  async enrollChild(arg1, arg2, arg3) {
+    // Support both enrollChild(payload) and enrollChild(childId, cdcId, details)
+    let payload = {};
+    if (typeof arg1 === 'string') {
+      payload = {
+        childId: arg1,
+        dayCareCenterId: arg2,
+        center: arg3?.center || arg2,
+        ...(arg3 || {}),
+      };
+    } else {
+      payload = { ...arg1 };
     }
 
-    const id = `ENR-2026-${String(enrollmentsState.length + 42).padStart(4, '0')}`;
-
-    const newEnrollment = {
-      id,
-      childId,
-      childName: data.childName || (existingMapped ? existingMapped.childName : 'Enrolled Child'),
-      birthDate: data.birthDate || (existingMapped ? existingMapped.birthDate : '2023-01-01'),
-      ageDisplay: data.ageDisplay || (existingMapped ? existingMapped.ageDisplay : '3 yrs'),
-      sex: data.sex || (existingMapped ? existingMapped.sex : 'Female'),
-      barangay: data.barangay || (existingMapped ? existingMapped.barangay : 'San Isidro'),
-      center: data.center || 'San Isidro Child Development Center I',
-      program: data.program || 'Child Development Center (CDC)',
-      session: data.session || 'Morning Session (8:00 AM – 11:00 AM)',
-      schoolYear: data.schoolYear || 'SY 2026–2027',
-      enrollmentDate: data.enrollmentDate || new Date().toISOString().split('T')[0],
-      status: data.status || 'Enrolled',
-      teacher: data.teacher || 'Assigned Daycare Teacher',
-      previousRecords: [],
-    };
-
-    enrollmentsState.unshift(newEnrollment);
-    setStored(STORAGE_KEY_ENROLLMENTS, enrollmentsState);
-
-    try {
-      await fetch('/api/enrollments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-    } catch (e) {}
+    const enrollment = centralDataStore.enrollChild({
+      childId: payload.childId,
+      dayCareCenterId: payload.dayCareCenterId || payload.centerId,
+      center: payload.center || 'San Isidro Child Development Center I',
+      program: payload.program || 'Child Development Center (CDC)',
+      session: payload.session || 'Morning Session (8:00 AM – 11:00 AM)',
+      schoolYear: payload.schoolYear || 'SY 2026–2027',
+      enrollmentDate: payload.enrollmentDate || new Date().toISOString().split('T')[0],
+      teacher: payload.teacher || 'Maria Santos, CDW I',
+      status: payload.status || 'Enrolled',
+    });
 
     return {
-      enrollment: newEnrollment,
-      message: `Child ${newEnrollment.childName} (${childId}) officially enrolled. Lifecycle updated to ENROLLED. No duplicate created.`,
+      enrollment,
+      message: `Child (${payload.childId}) officially enrolled in ${enrollment.center}. Lifecycle updated to ENROLLED. No duplicate created.`,
       lifecycleTransition: 'Mapped → Not Enrolled → Enrolled (Success)',
     };
   },
@@ -169,13 +163,22 @@ export const enrollmentService = {
    * GET /api/children/:id/enrollment
    */
   async getChildEnrollment(childId) {
-    const list = enrollmentsState.filter((e) => e.childId === childId);
-    const current = list.find((e) => e.status === 'Enrolled') || list[0] || null;
+    const list = (centralDataStore.getEnrollments() || []).filter((e) => e.childId === childId);
+    const child = centralDataStore.getChildById(childId);
+    const isEnrolled = child?.enrollmentStatus === 'Enrolled' || list.length > 0;
+    const current = list[0] || (isEnrolled ? {
+      childId,
+      center: child?.dayCareCenterName || 'San Isidro Child Development Center I',
+      status: 'Enrolled',
+      schoolYear: 'SY 2026–2027',
+      enrollmentDate: child?.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+    } : null);
+
     return {
       childId,
-      isEnrolled: !!current,
+      isEnrolled,
       currentEnrollment: current,
-      history: list,
+      history: list.length > 0 ? list : (current ? [current] : []),
     };
   },
 
@@ -183,10 +186,11 @@ export const enrollmentService = {
    * PUT /api/enrollments/:id
    */
   async updateEnrollment(id, data) {
-    const item = enrollmentsState.find((e) => e.id === id);
+    const list = centralDataStore.getEnrollments() || [];
+    const item = list.find((e) => e.id === id);
     if (item) {
       Object.assign(item, data);
-      setStored(STORAGE_KEY_ENROLLMENTS, enrollmentsState);
+      centralDataStore.save();
       return { ok: true, enrollment: item };
     }
     return { ok: false, error: 'Not found' };

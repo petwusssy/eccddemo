@@ -238,6 +238,18 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
     }
   }, [viewMode, selectedChildId, search, filterBarangay, filterEnrollment, filterHealth, filterDevelopment, filterFollowUp, filterSex, filterAge]);
 
+  useEffect(() => {
+    const handleStoreUpdate = () => {
+      if (viewMode === 'directory') {
+        loadDirectory();
+      } else if (viewMode === 'profile' && selectedChildId) {
+        loadProfile(selectedChildId);
+      }
+    };
+    window.addEventListener('eccd:datastore-updated', handleStoreUpdate);
+    return () => window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
+  }, [viewMode, selectedChildId]);
+
   // 3. Golden Path Lifecycle Indicator Calculation based on actual records
   const goldenPath = useMemo(() => {
     if (!childProfile) return [];

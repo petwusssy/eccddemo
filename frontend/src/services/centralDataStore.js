@@ -188,6 +188,7 @@ class CentralDataStore {
   }
 
   loadInitial() {
+    let initialData = null;
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         // Automatically clear out legacy mock seeds so app opens clean
@@ -195,29 +196,74 @@ class CentralDataStore {
         window.localStorage.removeItem('eccd_care_central_datastore_v2');
         const stored = window.localStorage.getItem(STORAGE_KEY);
         if (stored) {
-          return JSON.parse(stored);
+          initialData = JSON.parse(stored);
         }
       }
     } catch (e) {
       console.warn('CentralDataStore: Failed to read from localStorage:', e);
     }
 
-    return {
-      roles: SEED_ROLES,
-      users: SEED_USERS,
-      workers: SEED_WORKERS,
-      barangays: SEED_BARANGAYS,
-      dayCareCenters: SEED_DAY_CARE_CENTERS,
-      mappingActivities: SEED_MAPPING_ACTIVITIES,
-      households: SEED_HOUSEHOLDS,
-      children: SEED_CHILDREN,
-      enrollments: SEED_ENROLLMENTS,
-      healthMonitorings: SEED_HEALTH_MONITORINGS,
-      developmentAssessments: SEED_DEVELOPMENT_ASSESSMENTS,
-      followUps: SEED_FOLLOW_UPS,
-      auditLogs: SEED_AUDIT_LOGS,
-      resources: SEED_RESOURCES,
-    };
+    if (!initialData) {
+      initialData = {
+        roles: SEED_ROLES,
+        users: SEED_USERS,
+        workers: SEED_WORKERS,
+        barangays: SEED_BARANGAYS,
+        dayCareCenters: SEED_DAY_CARE_CENTERS,
+        mappingActivities: SEED_MAPPING_ACTIVITIES,
+        households: SEED_HOUSEHOLDS,
+        children: SEED_CHILDREN,
+        enrollments: SEED_ENROLLMENTS,
+        healthMonitorings: SEED_HEALTH_MONITORINGS,
+        developmentAssessments: SEED_DEVELOPMENT_ASSESSMENTS,
+        followUps: SEED_FOLLOW_UPS,
+        auditLogs: SEED_AUDIT_LOGS,
+        resources: SEED_RESOURCES,
+      };
+    }
+
+    // Auto-migrate orphaned records from isolated storage keys
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const oldHhs = JSON.parse(window.localStorage.getItem('eccd_mapping_households_data_v2') || '[]');
+        if (Array.isArray(oldHhs)) {
+          oldHhs.forEach((hh) => {
+            if (!initialData.households.some((h) => h.id === hh.id)) {
+              initialData.households.unshift(hh);
+            }
+          });
+        }
+        const oldMapKids = JSON.parse(window.localStorage.getItem('eccd_mapping_children_data_v2') || '[]');
+        const old360Kids = JSON.parse(window.localStorage.getItem('eccd_children_360_data_v2') || '[]');
+        const combined = [...(Array.isArray(oldMapKids) ? oldMapKids : []), ...(Array.isArray(old360Kids) ? old360Kids : [])];
+        combined.forEach((k) => {
+          if (!initialData.children.some((c) => c.id === k.id)) {
+            const ageY = parseInt(k.ageYears || 3, 10);
+            const ageM = parseInt(k.ageMonths || 0, 10);
+            initialData.children.unshift({
+              ...k,
+              ageYears: ageY,
+              ageMonths: ageM,
+              ageDisplay: k.ageDisplay || `${ageY} yrs, ${ageM} mos`,
+              fullName: k.fullName || `${k.firstName || ''} ${k.lastName || ''}`.trim(),
+              enrollmentStatus: k.enrollmentStatus || 'Not Enrolled',
+              healthStatus: k.healthStatus || 'Due for Monitoring',
+              developmentStatus: k.developmentStatus || 'Pending Initial Assessment',
+            });
+          }
+        });
+      }
+    } catch (migErr) {
+      console.warn('CentralDataStore: Migration notice:', migErr);
+    }
+
+    return initialData;
+  }
+
+  notify() {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('eccd:datastore-updated'));
+    }
   }
 
   save() {
@@ -228,6 +274,7 @@ class CentralDataStore {
     } catch (e) {
       console.warn('CentralDataStore: Failed to write to localStorage:', e);
     }
+    this.notify();
   }
 
   reset() {
@@ -333,14 +380,94 @@ class CentralDataStore {
       ? this.data.dayCareCenters.find((c) => c.id === child.dayCareCenterId)
       : null;
 
+    const statusPillars = child.statusPillars || {
+      mapped: { status: 'Mapped', variant: 'success', date: child.createdAt?.slice(0, 10) || new Date().toISOString().split('T')[0] },
+      enrolled: {
+        status: child.enrollmentStatus || (enrollments.length > 0 ? 'Enrolled' : 'Not Enrolled'),
+        variant: (child.enrollmentStatus === 'Enrolled' || enrollments.length > 0) ? 'success' : 'neutral',
+        center: child.dayCareCenterName || dayCareCenter?.name || (enrollments[0]?.center || 'Pending CDC Slot'),
+      },
+      health: {
+        status: healthRecords.length > 0 ? 'Up to date' : (child.healthStatus || 'Due for Monitoring'),
+        variant: healthRecords.length > 0 ? 'success' : 'warning',
+        lastWeightKg: healthRecords[0]?.weightKg || 14.5,
+        lastHeightCm: healthRecords[0]?.heightCm || 96.5,
+        nutritionalStatus: healthRecords[0]?.nutritionalStatus || 'Normal Weight for Age',
+      },
+      development: {
+        status: assessments.length > 0 ? (assessments[0].status || 'Completed') : (child.developmentStatus || 'Pending Initial Assessment'),
+        variant: assessments.length > 0 ? 'success' : 'neutral',
+        scaledScore: assessments[0]?.standardScore || assessments[0]?.scaledScore || null,
+      },
+      followUp: {
+        status: followUps.length > 0 ? followUps[0].status : (child.hasOpenFollowUp ? 'Active' : 'None'),
+        variant: followUps.length > 0 ? 'warning' : 'success',
+      },
+    };
+
+    // Auto-synthesize chronological timeline if not explicitly provided
+    const timeline = child.timeline || [
+      ...(child.createdAt ? [{
+        id: `TL-MAP-${childId}`,
+        type: 'Community Mapping',
+        title: 'Child Profiled in Community Mapping',
+        description: `Registered in Barangay ${child.barangay || 'San Isidro'}`,
+        date: child.createdAt.slice(0, 10),
+        author: 'Field Worker',
+        badgeVariant: 'primary',
+      }] : []),
+      ...enrollments.map((enr) => ({
+        id: `TL-ENR-${enr.id}`,
+        type: 'Enrollment',
+        title: `Enrolled in ${enr.center || 'Day Care Center'}`,
+        description: `Program: ${enr.program || 'CDC'} • Session: ${enr.session || 'Morning'}`,
+        date: enr.enrollmentDate || enr.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+        author: enr.teacher || 'CSWDO CDW',
+        badgeVariant: 'success',
+      })),
+      ...healthRecords.map((h) => ({
+        id: `TL-HLT-${h.id}`,
+        type: 'Health Monitoring',
+        title: 'Growth Measurement Recorded',
+        description: `Weight: ${h.weightKg || h.weight || '—'} kg, Height: ${h.heightCm || h.height || '—'} cm`,
+        date: h.date || h.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+        author: h.examiner || h.recordedBy || 'Health Worker',
+        badgeVariant: 'info',
+      })),
+      ...assessments.map((a) => ({
+        id: `TL-DEV-${a.id}`,
+        type: 'Development Assessment',
+        title: `ECCD Assessment: ${a.interpretation || a.status || 'Recorded'}`,
+        description: `Scaled / Standard Score: ${a.standardScore || a.scaledScore || '—'}`,
+        date: a.date || a.assessmentDate || a.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+        author: a.evaluator || a.assessor || 'CDW Worker',
+        badgeVariant: 'warning',
+      })),
+      ...followUps.map((f) => ({
+        id: `TL-FUP-${f.id}`,
+        type: 'Follow-up',
+        title: `Follow-up Case: ${f.title || f.reason || 'Case Opened'}`,
+        description: `Priority: ${f.priority || 'Medium'} • Status: ${f.status || 'Open'}`,
+        date: f.createdDate || f.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+        author: f.assignedWorker || 'CSWDO Staff',
+        badgeVariant: 'danger',
+      })),
+    ].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
     return {
       ...child,
       household,
+      familyHousehold: household,
       enrollments,
       healthRecords,
       assessments,
+      developmentAssessments: assessments,
       followUps,
+      followUpCases: followUps,
+      timeline,
       dayCareCenter,
+      assignedCenter: child.dayCareCenterName || dayCareCenter?.name || enrollments[0]?.center || 'None',
+      statusPillars,
     };
   }
 
@@ -415,18 +542,34 @@ class CentralDataStore {
     // Generate persistent ECCD ID: ECCD-YYYY-NNNNNN
     const count = this.data.children.length + 1;
     const newId = childPayload.id || `ECCD-2026-${String(count).padStart(6, '0')}`;
+    const ageY = parseInt(childPayload.ageYears || 3, 10);
+    const ageM = parseInt(childPayload.ageMonths || 0, 10);
+
     const newChild = {
       ...childPayload,
       id: newId,
-      fullName: `${childPayload.firstName} ${childPayload.middleName ? childPayload.middleName + ' ' : ''}${childPayload.lastName}`,
+      fullName: childPayload.fullName || `${childPayload.firstName || ''} ${childPayload.middleName ? childPayload.middleName + ' ' : ''}${childPayload.lastName || ''}`.trim(),
+      ageYears: ageY,
+      ageMonths: ageM,
+      ageDisplay: childPayload.ageDisplay || `${ageY} yrs, ${ageM} mos`,
+      sex: childPayload.sex || 'Female',
+      barangay: childPayload.barangay || 'San Isidro',
+      parentGuardian: childPayload.parentGuardian || '',
       enrollmentStatus: childPayload.enrollmentStatus || 'Not Enrolled',
       healthStatus: childPayload.healthStatus || 'Due for Monitoring',
       developmentStatus: childPayload.developmentStatus || 'Pending Initial Assessment',
       hasOpenFollowUp: false,
+      statusPillars: {
+        mapped: { status: 'Mapped', variant: 'success', date: new Date().toISOString().split('T')[0] },
+        enrolled: { status: childPayload.enrollmentStatus || 'Not Enrolled', center: childPayload.dayCareCenterName || 'Pending CDC Slot' },
+        health: { status: childPayload.healthStatus || 'Due for Monitoring' },
+        development: { status: childPayload.developmentStatus || 'Pending Initial Assessment' },
+        followUp: { status: 'None' },
+      },
       createdAt: new Date().toISOString(),
     };
 
-    this.data.children.push(newChild);
+    this.data.children.unshift(newChild);
     this.save();
     return newChild;
   }
@@ -453,6 +596,14 @@ class CentralDataStore {
     // Update child master record without creating duplicate
     child.enrollmentStatus = 'Enrolled';
     child.dayCareCenterId = enrollmentPayload.dayCareCenterId || child.dayCareCenterId;
+    child.dayCareCenterName = enrollmentPayload.center || child.dayCareCenterName || 'San Isidro Child Development Center I';
+    if (!child.statusPillars) child.statusPillars = {};
+    child.statusPillars.enrolled = {
+      status: 'Enrolled',
+      center: child.dayCareCenterName,
+      variant: 'success',
+      enrolledDate: enrollmentPayload.enrollmentDate || new Date().toISOString().split('T')[0],
+    };
     child.updatedAt = new Date().toISOString();
 
     this.save();

@@ -220,6 +220,9 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
 
   useEffect(() => {
     loadData();
+    const handleStoreUpdate = () => loadData();
+    window.addEventListener('eccd:datastore-updated', handleStoreUpdate);
+    return () => window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
   }, []);
 
   // Save draft locally

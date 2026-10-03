@@ -20,10 +20,10 @@
  * Centralized data model + local draft persistence for mobile field workers.
  */
 
+import { centralDataStore } from './centralDataStore.js';
+
 const STORAGE_KEY_ACTIVITIES = 'eccd_mapping_activities_data_v2';
 const STORAGE_KEY_ASSIGNMENTS = 'eccd_mapping_assignments_data_v2';
-const STORAGE_KEY_HOUSEHOLDS = 'eccd_mapping_households_data_v2';
-const STORAGE_KEY_CHILDREN = 'eccd_mapping_children_data_v2';
 const STORAGE_KEY_DRAFT = 'eccd_mapping_field_draft_v2';
 
 // Default synthetic data
@@ -148,8 +148,6 @@ function setStored(key, data) {
 // In-memory data store initialized from storage
 let activitiesState = getStored(STORAGE_KEY_ACTIVITIES, DEFAULT_ACTIVITIES);
 let assignmentsState = getStored(STORAGE_KEY_ASSIGNMENTS, DEFAULT_ASSIGNMENTS);
-let householdsState = getStored(STORAGE_KEY_HOUSEHOLDS, DEFAULT_HOUSEHOLDS);
-let childrenState = getStored(STORAGE_KEY_CHILDREN, DEFAULT_CHILDREN);
 
 export const communityMappingService = {
   /**
@@ -285,15 +283,15 @@ export const communityMappingService = {
    * GET /api/households
    */
   async getHouseholds() {
-    return [...householdsState];
+    return centralDataStore.getHouseholds();
   },
 
   /**
    * POST /api/households
    */
   async createHousehold(hhData) {
-    const id = hhData.id || `HH-2026-${String(householdsState.length + 101).padStart(4, '0')}`;
-    const newHousehold = {
+    const id = hhData.id || `HH-2026-${String(centralDataStore.getHouseholds().length + 101).padStart(4, '0')}`;
+    const newHousehold = centralDataStore.createHousehold({
       id,
       parentGuardian: hhData.parentGuardian || 'Parent / Guardian',
       contactNumber: hhData.contactNumber || '',
@@ -304,10 +302,7 @@ export const communityMappingService = {
       mappedBy: hhData.mappedBy || 'Field Worker',
       childrenCount: parseInt(hhData.childrenCount || 1, 10),
       status: 'Completed',
-    };
-
-    householdsState.unshift(newHousehold);
-    setStored(STORAGE_KEY_HOUSEHOLDS, householdsState);
+    });
 
     try {
       await fetch('/api/households', {
@@ -328,8 +323,8 @@ export const communityMappingService = {
     const q = (query || '').toLowerCase().trim();
     if (!q && !birthDate) return [];
 
-    return childrenState.filter((c) => {
-      const fullName = `${c.firstName} ${c.lastName}`.toLowerCase();
+    return centralDataStore.getChildren().filter((c) => {
+      const fullName = (c.fullName || `${c.firstName} ${c.lastName}`).toLowerCase();
       const idMatch = c.id.toLowerCase().includes(q);
       const nameMatch = q ? fullName.includes(q) : false;
       const dobMatch = birthDate ? c.birthDate === birthDate : false;
@@ -339,17 +334,17 @@ export const communityMappingService = {
 
   /**
    * POST /api/children OR POST /api/mapping/children
-   * Generates Unique Child ID (ECCD-2026-001245) or links matched record without duplication
+   * Generates Unique Child ID or links matched record without duplication
    */
   async registerChild(childData) {
     // Check if user confirmed "This is the same child"
     if (childData.existingChildId) {
-      const existing = childrenState.find((c) => c.id === childData.existingChildId);
+      const existing = centralDataStore.getChildById(childData.existingChildId);
       if (existing) {
         if (childData.householdId) existing.householdId = childData.householdId;
         if (childData.enrollmentStatus) existing.enrollmentStatus = childData.enrollmentStatus;
         if (childData.enrollmentCenter) existing.enrollmentCenter = childData.enrollmentCenter;
-        setStored(STORAGE_KEY_CHILDREN, childrenState);
+        centralDataStore.save();
 
         return {
           child: existing,
@@ -359,12 +354,7 @@ export const communityMappingService = {
       }
     }
 
-    // Generate unique Child ID: ECCD-2026-001245
-    const sequence = 1245 + childrenState.length;
-    const uniqueId = `ECCD-2026-${String(sequence).padStart(6, '0')}`;
-
-    const newChild = {
-      id: uniqueId,
+    const newChild = centralDataStore.registerChild({
       firstName: childData.firstName,
       middleName: childData.middleName || '',
       lastName: childData.lastName,
@@ -378,10 +368,7 @@ export const communityMappingService = {
       enrollmentStatus: childData.enrollmentStatus || 'Not Enrolled',
       enrollmentCenter: childData.enrollmentCenter || null,
       matched: false,
-    };
-
-    childrenState.unshift(newChild);
-    setStored(STORAGE_KEY_CHILDREN, childrenState);
+    });
 
     try {
       await fetch('/api/children', {
@@ -394,7 +381,7 @@ export const communityMappingService = {
     return {
       child: newChild,
       isDuplicatePrevented: false,
-      message: `New unique child ID generated: ${uniqueId}`,
+      message: `New unique child ID generated: ${newChild.id}`,
     };
   },
 

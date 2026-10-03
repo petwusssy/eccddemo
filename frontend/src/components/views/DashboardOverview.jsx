@@ -103,6 +103,9 @@ export function DashboardOverview({ onNavigate }) {
 
   useEffect(() => {
     loadDashboardData();
+    const handleStoreUpdate = () => loadDashboardData();
+    window.addEventListener('eccd:datastore-updated', handleStoreUpdate);
+    return () => window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
   }, []);
 
   // Filtered Attention Cases

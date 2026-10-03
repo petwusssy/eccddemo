@@ -131,6 +131,15 @@ export function FollowUpView({ onNavigate }) {
     loadData();
   }, [categoryFilter, actionTypeFilter, barangayFilter, workerFilter, searchQuery]);
 
+  useEffect(() => {
+    const handleStoreUpdate = () => {
+      loadData();
+      if (selectedCaseId) loadCaseView(selectedCaseId);
+    };
+    window.addEventListener('eccd:datastore-updated', handleStoreUpdate);
+    return () => window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
+  }, [selectedCaseId]);
+
   // Load case view details
   const loadCaseView = async (id) => {
     if (!id) return;

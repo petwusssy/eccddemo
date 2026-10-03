@@ -124,6 +124,12 @@ export function EnrollmentView({ onNavigate }) {
     loadData();
   }, [searchDir, filterBarangay, filterCenter, filterSY, filterNotEnrBarangay, filterNotEnrAge, filterNotEnrYear, filterNotEnrStatus]);
 
+  useEffect(() => {
+    const handleStoreUpdate = () => loadData();
+    window.addEventListener('eccd:datastore-updated', handleStoreUpdate);
+    return () => window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
+  }, []);
+
   // Live search for Enroll Existing Child
   const handleSearchCandidates = async (query) => {
     setSearchQuery(query);

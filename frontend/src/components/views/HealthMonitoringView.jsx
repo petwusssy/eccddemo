@@ -94,6 +94,15 @@ export function HealthMonitoringView({ onNavigate }) {
     loadData();
   }, [statusFilter, barangayFilter, centerFilter, searchQuery]);
 
+  useEffect(() => {
+    const handleStoreUpdate = () => {
+      loadData();
+      if (selectedChildId) loadChildDetails(selectedChildId);
+    };
+    window.addEventListener('eccd:datastore-updated', handleStoreUpdate);
+    return () => window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
+  }, [selectedChildId]);
+
   // Load selected child health details
   const loadChildDetails = async (id) => {
     if (!id) return;
