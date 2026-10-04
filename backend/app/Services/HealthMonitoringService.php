@@ -100,7 +100,13 @@ class HealthMonitoringService
 
         // Sort chronological ascending for trend visualization
         $sortedAscending = $records;
-        usort($sortedAscending, fn($a, $b) => strcmp($a['date'], $b['date']));
+        usort($sortedAscending, function ($a, $b) {
+            $cmp = strcmp($a['date'] ?? '', $b['date'] ?? '');
+            if ($cmp !== 0) return $cmp;
+            $cmpCreated = strcmp($a['createdAt'] ?? '', $b['createdAt'] ?? '');
+            if ($cmpCreated !== 0) return $cmpCreated;
+            return strcmp($a['id'] ?? '', $b['id'] ?? '');
+        });
 
         $trendData = array_map(function ($r) {
             return [
@@ -113,7 +119,13 @@ class HealthMonitoringService
 
         // Sort descending for history table (newest first)
         $sortedDescending = $records;
-        usort($sortedDescending, fn($a, $b) => strcmp($b['date'], $a['date']));
+        usort($sortedDescending, function ($a, $b) {
+            $cmp = strcmp($b['date'] ?? '', $a['date'] ?? '');
+            if ($cmp !== 0) return $cmp;
+            $cmpCreated = strcmp($b['createdAt'] ?? '', $a['createdAt'] ?? '');
+            if ($cmpCreated !== 0) return $cmpCreated;
+            return strcmp($b['id'] ?? '', $a['id'] ?? '');
+        });
 
         // Add growth delta to historical records
         for ($i = 0; $i < count($sortedDescending); $i++) {
@@ -171,12 +183,15 @@ class HealthMonitoringService
         $notes = trim($data['notes'] ?? '');
         $recordedBy = $data['recordedBy'] ?? 'CSWDO Day Care Worker';
 
+        $nutritionalStatus = $data['nutritionalStatus'] ?? 'Normal Weight';
+
         $newRecord = [
             'id' => $newId,
             'childId' => $childId,
             'date' => $date,
             'heightCm' => $height,
             'weightKg' => $weight,
+            'nutritionalStatus' => $nutritionalStatus,
             'recordedBy' => $recordedBy,
             'notes' => $notes,
             'createdAt' => now()->toIso8601String(),
@@ -194,6 +209,7 @@ class HealthMonitoringService
                 $child['lastMeasurementDate'] = $date;
                 $child['lastHeightCm'] = $height;
                 $child['lastWeightKg'] = $weight;
+                $child['nutritionalStatus'] = $nutritionalStatus;
                 $child['status'] = 'Up to Date';
                 $child['daysSinceLastCheck'] = 0;
                 $child['dueDate'] = date('Y-m-d', strtotime($date . ' + 30 days'));
@@ -213,6 +229,7 @@ class HealthMonitoringService
                 'lastMeasurementDate' => $date,
                 'lastHeightCm' => $height,
                 'lastWeightKg' => $weight,
+                'nutritionalStatus' => $nutritionalStatus,
                 'status' => 'Up to Date',
                 'daysSinceLastCheck' => 0,
                 'dueDate' => date('Y-m-d', strtotime($date . ' + 30 days')),
@@ -231,6 +248,7 @@ class HealthMonitoringService
                             'variant' => 'success',
                             'lastWeightKg' => $weight,
                             'lastHeightCm' => $height,
+                            'nutritionalStatus' => $nutritionalStatus,
                             'lastMeasurementDate' => $date,
                             'nextDue' => date('M d, Y', strtotime($date . ' + 30 days')),
                         ],

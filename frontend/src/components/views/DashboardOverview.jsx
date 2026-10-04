@@ -40,6 +40,7 @@ import { Modal } from '../ui/Modal';
 import { useToast } from '../ui/Toast';
 import { dashboardService } from '../../services/dashboardService';
 import { BARANGAY_OPTIONS } from '../../data/sanFernandoBarangays';
+import { formatPHTDate } from '../../utils/phTime';
 
 export function DashboardOverview({ onNavigate }) {
   const { addToast } = useToast();
@@ -131,8 +132,8 @@ export function DashboardOverview({ onNavigate }) {
 
   // Filtered Barangays
   const filteredBarangays = useMemo(() => {
-    if (!barangays?.rankedBarangays) return [];
-    return barangays.rankedBarangays.filter((b) => {
+    const list = barangays?.rankedBarangays || barangays?.barangays || [];
+    return list.filter((b) => {
       const matchesSearch = b.name.toLowerCase().includes(barangaySearch.toLowerCase());
       const matchesRisk = !barangayRiskFilter || b.riskLevel === barangayRiskFilter;
       return matchesSearch && matchesRisk;
@@ -247,7 +248,7 @@ export function DashboardOverview({ onNavigate }) {
             <Badge variant="primary" size="sm">City Level</Badge>
           </div>
           <p className="page-subtitle">
-            ECCD CARE Central Decision System — City Social Welfare and Development Office, City of San Fernando, Pampanga ({summary?.reportingSchoolYear || 'SY 2026–2027'})
+            City Social Welfare and Development Office • City of San Fernando ({summary?.reportingSchoolYear || 'SY 2026–2027'})
           </p>
         </div>
 
@@ -259,56 +260,46 @@ export function DashboardOverview({ onNavigate }) {
             disabled={loading}
             aria-label="Refresh dashboard data"
           >
-            <RefreshCw size={14} className={loading ? 'spin' : ''} />
+            <RefreshCw size={16} className={loading ? 'spin' : ''} />
             Refresh Data
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setActiveQuickAction('register')}
-          >
-            <Plus size={14} />
-            Register Child
           </Button>
         </div>
       </div>
 
       {/* =========================================================================
-          OPERATIONAL DECISION STRIP: ANSWERS 6 CORE QUESTIONS IMMEDIATELY
+          OPERATIONAL DECISION STRIP: CSWDO EXECUTIVE BRIEFING
           ========================================================================= */}
-      <section className="dash-decision-strip" aria-label="Core Operational Answers">
+      <section className="dash-decision-strip" aria-label="Operational Executive Briefing">
         <div className="dash-decision-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <span className="dash-decision-badge">
-              <Sparkles size={13} />
-              CSWDO Executive Briefing
+              <Sparkles size={14} />
+              Executive Briefing
             </span>
             <span style={{ fontSize: 'var(--font-size-xs)', color: 'rgba(255,255,255,0.85)' }}>
-              Direct answers for administrative & field mobilization decisions
+              City-level operational indicators
             </span>
           </div>
           <span className="dash-decision-timestamp">
-            Updated: {summary ? new Date(summary.lastUpdated).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Live'}
+            {summary ? formatPHTDate(summary.lastUpdated) : 'Live'}
           </span>
         </div>
 
         <div className="dash-decision-grid">
-          {/* Question 1 */}
           <div className="dash-decision-item">
             <div className="dash-decision-num">1</div>
             <div>
-              <div className="dash-decision-question">Children Aged 0–4 Identified:</div>
+              <div className="dash-decision-question">Identified Cohort</div>
               <div className="dash-decision-answer">
-                <strong>{summary?.totalChildren !== undefined ? summary.totalChildren.toLocaleString() : '0'}</strong> documented across {summary?.totalBarangays || 10} barangays ({summary?.mappedPercentage ?? 0}% mapped)
+                <strong>{summary?.totalChildren !== undefined ? summary.totalChildren.toLocaleString() : '0'}</strong> children ({summary?.mappedPercentage ?? 0}% mapped)
               </div>
             </div>
           </div>
 
-          {/* Question 2 */}
           <div className="dash-decision-item">
             <div className="dash-decision-num">2</div>
             <div>
-              <div className="dash-decision-question">Enrolled in Day Care / SNP:</div>
+              <div className="dash-decision-question">CDC / SNP Enrollment</div>
               <div className="dash-decision-answer">
                 <span style={{ color: 'var(--color-success-light)' }}>
                   <strong>{summary?.enrolledChildren !== undefined ? summary.enrolledChildren.toLocaleString() : '0'} enrolled</strong>
@@ -317,53 +308,49 @@ export function DashboardOverview({ onNavigate }) {
             </div>
           </div>
 
-          {/* Question 3 */}
           <div className="dash-decision-item">
             <div className="dash-decision-num">3</div>
             <div>
-              <div className="dash-decision-question">Not Enrolled Children:</div>
+              <div className="dash-decision-question">Unenrolled Target</div>
               <div className="dash-decision-answer">
                 <span style={{ color: '#fca5a5' }}>
-                  <strong>{summary?.notEnrolledChildren !== undefined ? summary.notEnrolledChildren.toLocaleString() : '0'} unenrolled</strong>
-                </span> ({summary?.notEnrolledPercentage ?? 0}% of cohort)
+                  <strong>{summary?.notEnrolledChildren !== undefined ? summary.notEnrolledChildren.toLocaleString() : '0'} children</strong>
+                </span> ({summary?.notEnrolledPercentage ?? 0}%)
               </div>
             </div>
           </div>
 
-          {/* Question 4 */}
           <div className="dash-decision-item">
             <div className="dash-decision-num">4</div>
             <div>
-              <div className="dash-decision-question">Children Needing Health Monitoring:</div>
+              <div className="dash-decision-question">Health Monitoring Due</div>
               <div className="dash-decision-answer">
                 <span style={{ color: '#fde047' }}>
-                  <strong>{summary?.healthMonitoringDue ?? 0} children due/overdue</strong>
-                </span> for OPT Plus / vaccines
+                  <strong>{summary?.healthMonitoringDue ?? 0} pending</strong>
+                </span> for OPT Plus
               </div>
             </div>
           </div>
 
-          {/* Question 5 */}
           <div className="dash-decision-item">
             <div className="dash-decision-num">5</div>
             <div>
-              <div className="dash-decision-question">Children Needing Development Follow-up:</div>
+              <div className="dash-decision-question">Development Alerts</div>
               <div className="dash-decision-answer">
                 <span style={{ color: '#fca5a5' }}>
-                  <strong>{summary?.developmentFollowups ?? 0} children flagged</strong>
-                </span> with domain alerts (motor/speech)
+                  <strong>{summary?.developmentFollowups ?? 0} flagged</strong>
+                </span> for domain support
               </div>
             </div>
           </div>
 
-          {/* Question 6 */}
           <div className="dash-decision-item">
             <div className="dash-decision-num">6</div>
             <div>
-              <div className="dash-decision-question">Barangays Needing Immediate Attention:</div>
+              <div className="dash-decision-question">Priority Barangays</div>
               <div className="dash-decision-answer">
                 <span style={{ color: '#fde047' }}>
-                  <strong>{summary?.barangaysNeedingAttention ?? 0} priority barangays</strong>
+                  <strong>{summary?.barangaysNeedingAttention ?? 0} priority areas</strong>
                 </span>
               </div>
             </div>
@@ -374,18 +361,21 @@ export function DashboardOverview({ onNavigate }) {
       {/* =========================================================================
           TOP KPI CARDS (6 CARDS WITH REALISTIC SYNTHETIC METRICS)
           ========================================================================= */}
-      <section className="dash-kpis-grid" aria-label="Top Key Performance Indicators">
+      {/* =========================================================================
+          TOP KPI CARDS (BENTO GRID METRICS)
+          ========================================================================= */}
+      <section className="dash-kpis-grid" aria-label="Key Metrics Bento Grid">
         {/* Total Children */}
         <div className="kpi-card" onClick={() => onNavigate('children')} style={{ cursor: 'pointer' }} title="View Children Master Registry">
           <div className="kpi-top">
-            <span className="kpi-title">Total Children</span>
+            <span className="kpi-title">Total Cohort</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-primary-50)', color: 'var(--color-primary-800)' }}>
-              <Users size={17} />
+              <Users size={16} />
             </div>
           </div>
           <div className="kpi-value">{summary?.totalChildren !== undefined ? summary.totalChildren.toLocaleString() : '0'}</div>
           <div className="kpi-subtext">
-            <span>Aged 0–4 years cohort</span>
+            <Badge variant="primary" size="sm">0–4 Cohort</Badge>
           </div>
         </div>
 
@@ -394,13 +384,12 @@ export function DashboardOverview({ onNavigate }) {
           <div className="kpi-top">
             <span className="kpi-title">Mapped</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-accent-50)', color: 'var(--color-accent-700)' }}>
-              <MapPin size={17} />
+              <MapPin size={16} />
             </div>
           </div>
           <div className="kpi-value">{summary?.mappedChildren !== undefined ? summary.mappedChildren.toLocaleString() : '0'}</div>
           <div className="kpi-subtext">
-            <TrendingUp size={13} style={{ color: 'var(--color-success-primary)' }} />
-            <span><strong>{summary?.mappedPercentage ?? 0}%</strong> of LGU target</span>
+            <Badge variant="info" size="sm">{summary?.mappedPercentage ?? 0}% Mapped</Badge>
           </div>
         </div>
 
@@ -409,14 +398,14 @@ export function DashboardOverview({ onNavigate }) {
           <div className="kpi-top">
             <span className="kpi-title">Enrolled</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success-primary)' }}>
-              <School size={17} />
+              <School size={16} />
             </div>
           </div>
           <div className="kpi-value" style={{ color: 'var(--color-success-primary)' }}>
             {summary?.enrolledChildren !== undefined ? summary.enrolledChildren.toLocaleString() : '0'}
           </div>
           <div className="kpi-subtext">
-            <span><strong>{summary?.enrolledPercentage ?? 0}%</strong> in CDC & SNP</span>
+            <Badge variant="success" size="sm">{summary?.enrolledPercentage ?? 0}% Enrolled</Badge>
           </div>
         </div>
 
@@ -425,14 +414,14 @@ export function DashboardOverview({ onNavigate }) {
           <div className="kpi-top">
             <span className="kpi-title">Not Enrolled</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger-primary)' }}>
-              <UserX size={17} />
+              <UserX size={16} />
             </div>
           </div>
           <div className="kpi-value" style={{ color: 'var(--color-danger-primary)' }}>
             {summary?.notEnrolledChildren !== undefined ? summary.notEnrolledChildren.toLocaleString() : '0'}
           </div>
           <div className="kpi-subtext">
-            <span><strong>{summary?.notEnrolledPercentage ?? 0}%</strong> unenrolled</span>
+            <Badge variant="danger" size="sm">{summary?.notEnrolledPercentage ?? 0}% Target</Badge>
           </div>
         </div>
 
@@ -441,14 +430,14 @@ export function DashboardOverview({ onNavigate }) {
           <div className="kpi-top">
             <span className="kpi-title">Health Due</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-warning-bg)', color: 'var(--color-warning-primary)' }}>
-              <HeartPulse size={17} />
+              <HeartPulse size={16} />
             </div>
           </div>
           <div className="kpi-value" style={{ color: 'var(--color-warning-primary)' }}>
             {summary?.healthMonitoringDue ?? 0}
           </div>
           <div className="kpi-subtext">
-            <span>Overdue or scheduled now</span>
+            <Badge variant="warning" size="sm">OPT Plus Due</Badge>
           </div>
         </div>
 
@@ -457,14 +446,14 @@ export function DashboardOverview({ onNavigate }) {
           <div className="kpi-top">
             <span className="kpi-title">Dev Follow-ups</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#dc2626' }}>
-              <Brain size={17} />
+              <Brain size={16} />
             </div>
           </div>
           <div className="kpi-value" style={{ color: '#dc2626' }}>
             {summary?.developmentFollowups ?? 0}
           </div>
           <div className="kpi-subtext">
-            <span>Domain delays flagged</span>
+            <Badge variant="danger" size="sm">Active Alerts</Badge>
           </div>
         </div>
       </section>
@@ -474,7 +463,7 @@ export function DashboardOverview({ onNavigate }) {
           ========================================================================= */}
       <section className="dash-quick-actions-bar" aria-label="Operational Quick Actions">
         <span className="quick-actions-label">
-          <Activity size={14} />
+          <Activity size={16} />
           Quick Actions:
         </span>
         <Button
@@ -482,7 +471,7 @@ export function DashboardOverview({ onNavigate }) {
           size="sm"
           onClick={() => setActiveQuickAction('mapping')}
         >
-          <Plus size={13} />
+          <Plus size={16} />
           New Mapping Activity
         </Button>
         <Button
@@ -490,7 +479,7 @@ export function DashboardOverview({ onNavigate }) {
           size="sm"
           onClick={() => setActiveQuickAction('register')}
         >
-          <Plus size={13} />
+          <Plus size={16} />
           Register Child
         </Button>
         <Button
@@ -498,7 +487,7 @@ export function DashboardOverview({ onNavigate }) {
           size="sm"
           onClick={() => setActiveQuickAction('enroll')}
         >
-          <Plus size={13} />
+          <Plus size={16} />
           Enroll Child
         </Button>
         <Button
@@ -506,7 +495,7 @@ export function DashboardOverview({ onNavigate }) {
           size="sm"
           onClick={() => setActiveQuickAction('health')}
         >
-          <Plus size={13} />
+          <Plus size={16} />
           Record Health Monitoring
         </Button>
         <Button
@@ -514,31 +503,25 @@ export function DashboardOverview({ onNavigate }) {
           size="sm"
           onClick={() => setActiveQuickAction('assessment')}
         >
-          <Plus size={13} />
+          <Plus size={16} />
           Start Development Assessment
         </Button>
       </section>
 
       {/* =========================================================================
-          SECTION D: PROMINENT OPERATIONAL TABLE — "NEEDS ATTENTION"
-          PRIORITIZED OPERATIONAL DECISION MAKING OVER DECORATIVE CHARTS
+          SECTION D: ACTIVE INTERVENTION CASES
           ========================================================================= */}
-      <section className="attention-card" aria-label="Children Needing Attention Table">
+      <section className="attention-card" aria-label="Active Intervention Cases">
         <div style={{ backgroundColor: 'var(--bg-surface)', padding: 'var(--space-4) var(--space-5)', borderBottom: '1px solid var(--border-subtle)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <h2 className="text-h3" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <AlertTriangle size={18} style={{ color: 'var(--color-danger-primary)' }} />
-                  Needs Attention: Active Operational Intervention Cases
-                </h2>
-                <Badge variant="danger" size="sm">
-                  {attentionData?.highPriorityCount ?? 0} Urgent
-                </Badge>
-              </div>
-              <p className="card-subtitle" style={{ marginTop: '2px' }}>
-                Priority list of individual children requiring immediate CSWDO supervisor review, health endorsement, or field follow-up.
-              </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <h2 className="text-h3" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', margin: 0, fontWeight: 700 }}>
+                <AlertTriangle size={18} style={{ color: 'var(--color-danger-primary)' }} />
+                Needs Attention: Active Intervention Cases
+              </h2>
+              <Badge variant="danger" size="sm">
+                {attentionData?.highPriorityCount ?? 0} Urgent
+              </Badge>
             </div>
 
             {/* Filter Pills */}
@@ -555,7 +538,7 @@ export function DashboardOverview({ onNavigate }) {
                 className={`btn btn-sm ${attentionFilter === 'urgent' ? 'btn-danger' : 'btn-secondary'}`}
                 onClick={() => setAttentionFilter('urgent')}
               >
-                Urgent Only
+                Urgent
               </button>
               <button
                 type="button"
@@ -582,12 +565,12 @@ export function DashboardOverview({ onNavigate }) {
           </div>
 
           {/* Search Bar for Attention Table */}
-          <div style={{ marginTop: 'var(--space-3)', maxWidth: '420px' }}>
+          <div style={{ marginTop: 'var(--space-3)', maxWidth: '400px' }}>
             <Input
-              placeholder="Search by child name, ID, barangay or issue..."
+              placeholder="Search case by child name, ID, or barangay..."
               value={attentionSearch}
               onChange={(e) => setAttentionSearch(e.target.value)}
-              leftIcon={<Search size={15} />}
+              leftIcon={<Search size={16} />}
               className="input-sm"
             />
           </div>
@@ -689,8 +672,8 @@ export function DashboardOverview({ onNavigate }) {
                           setIsCaseModalOpen(true);
                         }}
                       >
-                        <Eye size={13} />
-                        Review Case
+                        <Eye size={16} />
+                        Review
                       </Button>
                     </TableCell>
                   </TableRow>

@@ -5,6 +5,7 @@
  */
 
 import { centralDataStore } from './centralDataStore.js';
+import { getPhilippinesDate, addDaysPHT } from '../utils/phTime.js';
 
 export const developmentService = {
   /**
@@ -121,7 +122,7 @@ export const developmentService = {
   async recordAssessment(childId, payload) {
     const status = payload.status || 'Assessment Completed';
     const cycle = payload.assessmentCycle || 'Cycle 1 (Baseline - SY 2026–2027)';
-    const date = payload.assessmentDate || payload.date || new Date().toISOString().slice(0, 10);
+    const date = payload.assessmentDate || payload.date || getPhilippinesDate();
     const assessor = payload.assessor || 'CSWDO Assessor';
     const notes = payload.notes || '';
 
@@ -149,7 +150,7 @@ export const developmentService = {
         status: 'Needs Attention',
         sourceModule: 'development',
         assignedWorkerName: assessor,
-        scheduledDate: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
+        scheduledDate: addDaysPHT(14),
       });
     }
 

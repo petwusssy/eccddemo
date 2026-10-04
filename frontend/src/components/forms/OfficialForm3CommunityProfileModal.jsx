@@ -17,6 +17,7 @@ import { officialFormsService } from '../../services/officialFormsService';
 import { centralDataStore } from '../../services/centralDataStore';
 import { useToast } from '../ui/Toast';
 import { BARANGAY_OPTIONS } from '../../data/sanFernandoBarangays';
+import { getPhilippinesDate } from '../../utils/phTime';
 
 export function OfficialForm3CommunityProfileModal({
   isOpen,
@@ -58,7 +59,7 @@ export function OfficialForm3CommunityProfileModal({
 
     // Metadata
     nameOfCDT: 'Maria C. Santos (CDW I)',
-    dateConducted: new Date().toISOString().split('T')[0],
+    dateConducted: getPhilippinesDate(),
   });
 
   // Calculate sum of 0-4 children

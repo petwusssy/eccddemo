@@ -7,6 +7,7 @@
  */
 
 import { centralDataStore } from './centralDataStore.js';
+import { getPhilippinesDate, addDaysPHT } from '../utils/phTime.js';
 
 export const followUpService = {
   /**
@@ -123,11 +124,11 @@ export const followUpService = {
       assignedWorker: payload.assignedWorker || 'Maria Santos, CDW I',
       assignedWorkerName: payload.assignedWorker || 'Maria Santos, CDW I',
       workerContact: payload.workerContact || '0917-123-4567',
-      dueDate: payload.dueDate || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      dueDate: payload.dueDate || addDaysPHT(30),
       notes: payload.notes || '',
       history: [
         {
-          date: new Date().toISOString().slice(0, 10),
+          date: getPhilippinesDate(),
           action: 'Case Created',
           worker: payload.assignedWorker || 'CDW Worker',
           notes: payload.notes || payload.reason || 'Follow-up initiated.',
@@ -146,7 +147,7 @@ export const followUpService = {
    */
   async resolveCase(caseId, payload) {
     const resolved = centralDataStore.resolveFollowUp(caseId, {
-      completedDate: payload.date || new Date().toISOString().slice(0, 10),
+      completedDate: payload.date || getPhilippinesDate(),
       actionTaken: payload.actionTaken || 'Case resolved and verified.',
       remarks: payload.notes || '',
     });
@@ -154,7 +155,7 @@ export const followUpService = {
     if (resolved) {
       if (!resolved.history) resolved.history = [];
       resolved.history.push({
-        date: payload.date || new Date().toISOString().slice(0, 10),
+        date: payload.date || getPhilippinesDate(),
         action: 'Case Resolved',
         worker: payload.worker || 'CSWDO Staff',
         notes: `${payload.actionTaken}. Remarks: ${payload.notes || 'None'}`,

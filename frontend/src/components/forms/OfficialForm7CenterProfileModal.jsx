@@ -20,6 +20,7 @@ import { Select } from '../ui/Select';
 import { officialFormsService } from '../../services/officialFormsService';
 import { centralDataStore } from '../../services/centralDataStore';
 import { useToast } from '../ui/Toast';
+import { getPhilippinesDate } from '../../utils/phTime';
 
 export function OfficialForm7CenterProfileModal({
   isOpen,
@@ -108,7 +109,7 @@ export function OfficialForm7CenterProfileModal({
 
     // Signatures
     cdwNamePrint: 'Maritess S. Pangilinan',
-    dateConducted: new Date().toISOString().split('T')[0],
+    dateConducted: getPhilippinesDate(),
   });
 
   // Load existing data if centerId provided

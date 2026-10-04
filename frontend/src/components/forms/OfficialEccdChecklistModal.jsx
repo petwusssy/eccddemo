@@ -20,6 +20,7 @@ import {
   HelpCircle,
   Eye,
   Check,
+  Minus,
   BookOpen,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
@@ -31,6 +32,7 @@ import { useToast } from '../ui/Toast';
 import { centralDataStore } from '../../services/centralDataStore';
 import { officialChecklistService } from '../../services/officialChecklistService';
 import { CHECKLIST_RECORD_1, CHECKLIST_RECORD_2 } from '../../data/officialChecklistData';
+import { getPhilippinesDate } from '../../utils/phTime';
 
 export function OfficialEccdChecklistModal({
   isOpen,
@@ -67,7 +69,7 @@ export function OfficialEccdChecklistModal({
   // Session metadata
   const [sessionMeta, setSessionMeta] = useState({
     assessmentCycle: 'Cycle 1 (Baseline - SY 2026–2027)',
-    assessmentDate: new Date().toISOString().slice(0, 10),
+    assessmentDate: getPhilippinesDate(),
     evaluator: 'Maria Santos, CDW I',
     placeAdministered: 'San Isidro Child Development Center I',
     handedness: 'right', // 'right' | 'left' | 'both' | 'not yet established'
@@ -409,53 +411,64 @@ export function OfficialEccdChecklistModal({
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
-              <Button variant="primary" size="sm" onClick={() => setCurrentStep('guidelines')}>
-                Next: Instructions & Guidelines <ChevronRight size={14} />
+              <Button variant="secondary" size="sm" onClick={() => setCurrentStep('guidelines')}>
+                <BookOpen size={14} /> Protocols & Rules
+              </Button>
+              <Button variant="primary" size="sm" onClick={() => setCurrentStep('assessment')}>
+                Start Assessment <ChevronRight size={14} />
               </Button>
             </div>
           </div>
         )}
 
         {/* =========================================================================
-            STEP 2: GUIDELINES & SCRIPTS (VERBATIM FROM MANUAL)
+            STEP 2: GUIDELINES & SCRIPTS (CONCISE PROTOCOL BLOCKS)
             ========================================================================= */}
         {currentStep === 'guidelines' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px', lineHeight: 1.6 }}>
-            <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', padding: '14px', borderRadius: '8px' }}>
-              <div style={{ fontWeight: 800, color: '#0369a1', marginBottom: '6px' }}>
-                Introducing the Checklist to the Parent/Caregiver (Script)
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', padding: '12px 14px', borderRadius: '8px' }}>
+                <div style={{ fontWeight: 800, color: '#0369a1', fontSize: '13px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <User size={15} /> Caregiver Briefing Protocol
+                </div>
+                <div style={{ fontSize: '12px', color: '#0c4a6e', lineHeight: 1.5 }}>
+                  Clarify to parent/guardian that this is a developmental screening tool, not a pass/fail exam. Emphasize that questions span ages up to 6, and asking parents not to coach the child.
+                </div>
               </div>
-              <p style={{ margin: 0, fontStyle: 'italic', color: '#0c4a6e' }}>
-                "We are here to help you find out how your child is developing by asking you some questions about the things he is able to do or having your child do some activities. There is no pass or fail score. This is just a checklist. Some of the questions are for children older than your child so I do not expect him to be able to do all the things I will be asking. We plan to administer this Checklist several times until your child is 6 years old. So please do not teach or coach him because it is important to know just what he can and cannot do at this age. Later on we will share the results with you and give suggestions on what else you can do to stimulate your child's development."
-              </p>
+
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '12px 14px', borderRadius: '8px' }}>
+                <div style={{ fontWeight: 800, color: '#1d4ed8', fontSize: '13px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Baby size={15} /> Child Rapport & Engagement
+                </div>
+                <div style={{ fontSize: '12px', color: '#1e3a8a', lineHeight: 1.5 }}>
+                  Establish warm, comfortable rapport. Introduce activities as play-based tasks. Reassure the child that attempting tasks is what matters, maintaining a relaxed assessment atmosphere.
+                </div>
+              </div>
             </div>
 
-            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '14px', borderRadius: '8px' }}>
-              <div style={{ fontWeight: 800, color: '#1d4ed8', marginBottom: '6px' }}>
-                Introducing the Checklist to the Child (Script for age 1.0+):
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 14px', borderRadius: '8px' }}>
+              <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '13px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CheckSquare size={15} /> Scoring Standards & Notation
               </div>
-              <p style={{ margin: 0, fontStyle: 'italic', color: '#1e3a8a' }}>
-                "I will be asking you to do some things for me today. Some of them will be very easy. Some of them may be a little hard for you. Do not worry if you cannot do them all because some of the activities are for children who are a little older than you. So I do not expect you to be able to do everything I ask. Just try your best."
-              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', fontSize: '12px', color: '#334155' }}>
+                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '8px 10px' }}>
+                  <strong style={{ color: '#16a34a' }}>✓ Present:</strong> Child readily demonstrates the skill during observation or assessment.
+                </div>
+                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '8px 10px' }}>
+                  <strong style={{ color: '#dc2626' }}>– Not Present:</strong> Child cannot demonstrate skill. Enter reason/observation in notes.
+                </div>
+                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '8px 10px' }}>
+                  <strong style={{ color: '#0284c7' }}>Parental Report:</strong> Accept caregiver confirmation for items tagged with this allowance.
+                </div>
+              </div>
             </div>
 
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '14px', borderRadius: '8px' }}>
-              <div style={{ fontWeight: 800, color: '#0f172a', marginBottom: '6px' }}>
-                Standard Evaluation Rule
-              </div>
-              <ul style={{ margin: 0, paddingLeft: '20px', color: '#334155' }}>
-                <li>Put a <strong>Check (✓ / Present)</strong> in the column if the child exhibits the skill or behavior.</li>
-                <li>Put a <strong>Hyphen (- / Not Present)</strong> if the child does not exhibit the skill, and write in <strong>Comments</strong> explaining why.</li>
-                <li><strong>Parental report will suffice</strong> for items explicitly tagged with that provision.</li>
-              </ul>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
               <Button variant="secondary" size="sm" onClick={() => setCurrentStep('profile')}>
                 <ChevronLeft size={14} /> Back to Profile
               </Button>
               <Button variant="primary" size="sm" onClick={() => setCurrentStep('assessment')}>
-                Proceed to Digital Assessment <ChevronRight size={14} />
+                Proceed to Checklist <ChevronRight size={14} />
               </Button>
             </div>
           </div>
@@ -550,11 +563,11 @@ export function OfficialEccdChecklistModal({
 
                       {dom.sections.map((sec, secIdx) => (
                         <div key={secIdx} style={{ marginBottom: '16px' }}>
-                          <div style={{ fontSize: '12px', fontWeight: 800, color: '#0369a1', background: '#e0f2fe', padding: '4px 8px', borderRadius: '4px', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 700, color: '#0369a1', background: '#f0f9ff', border: '1px solid #e0f2fe', padding: '4px 10px', borderRadius: '6px', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                             {sec.sectionName}
                           </div>
 
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             {sec.items.map((item) => {
                               const isPresent = answers[item.id]?.present === true;
                               const isNotPresent = answers[item.id]?.present === false;
@@ -565,39 +578,40 @@ export function OfficialEccdChecklistModal({
                                   key={item.id}
                                   style={{
                                     border: isPresent ? '1px solid #86efac' : isNotPresent ? '1px solid #fca5a5' : '1px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                    padding: '10px 12px',
+                                    borderRadius: '6px',
+                                    padding: '8px 12px',
                                     background: isPresent ? '#f0fdf4' : isNotPresent ? '#fff5f5' : '#ffffff',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     gap: '6px',
+                                    transition: 'all 0.15s ease',
                                   }}
                                 >
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                                    <div style={{ flex: 1 }}>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span style={{ fontWeight: 800, color: '#0f2744', fontSize: '13px' }}>
-                                          {item.itemNo}.
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                                    <div style={{ flex: 1, minWidth: '240px' }}>
+                                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
+                                        <span style={{ fontWeight: 800, color: '#0284c7', fontSize: '12px', fontFamily: 'monospace' }}>
+                                          #{item.itemNo}
                                         </span>
-                                        <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px' }}>
+                                        <span style={{ fontWeight: 600, color: '#0f172a', fontSize: '13px', lineHeight: 1.4 }}>
                                           {item.indicator}
                                         </span>
                                         {item.parentalReportAllowed && (
-                                          <span style={{ fontSize: '10px', color: '#0284c7', background: '#e0f2fe', padding: '1px 5px', borderRadius: '4px' }}>
-                                            Parental report allowed
+                                          <span style={{ fontSize: '10px', color: '#0284c7', background: '#e0f2fe', padding: '1px 6px', borderRadius: '10px', fontWeight: 600 }}>
+                                            Parental report
                                           </span>
                                         )}
                                       </div>
 
                                       {/* Procedure / Material detail */}
-                                      <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px', background: '#f8fafc', padding: '6px 8px', borderRadius: '4px', borderLeft: '3px solid #cbd5e1' }}>
-                                        {item.material && <span><strong>Material:</strong> {item.material} • </span>}
+                                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', lineHeight: 1.3 }}>
+                                        {item.material && <span style={{ color: '#475569' }}><strong>Material:</strong> {item.material} • </span>}
                                         <span>{item.procedure}</span>
                                       </div>
                                     </div>
 
-                                    {/* Action Buttons: Present vs Not Present */}
-                                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                                    {/* Action Buttons: Compact segmented pills */}
+                                    <div style={{ display: 'inline-flex', gap: '4px', flexShrink: 0 }}>
                                       <button
                                         type="button"
                                         onClick={() => handleItemToggle(item.id, true)}
@@ -605,18 +619,19 @@ export function OfficialEccdChecklistModal({
                                           display: 'inline-flex',
                                           alignItems: 'center',
                                           gap: '4px',
-                                          padding: '5px 10px',
-                                          borderRadius: '6px',
+                                          padding: '4px 10px',
+                                          borderRadius: '5px',
                                           fontSize: '11px',
                                           fontWeight: 700,
                                           cursor: 'pointer',
                                           border: isPresent ? '1px solid #16a34a' : '1px solid #cbd5e1',
                                           background: isPresent ? '#16a34a' : '#ffffff',
                                           color: isPresent ? '#ffffff' : '#334155',
+                                          transition: 'all 0.15s ease',
                                         }}
                                       >
                                         <Check size={13} />
-                                        <span>Present (✓)</span>
+                                        <span>Present</span>
                                       </button>
 
                                       <button
@@ -626,38 +641,42 @@ export function OfficialEccdChecklistModal({
                                           display: 'inline-flex',
                                           alignItems: 'center',
                                           gap: '4px',
-                                          padding: '5px 10px',
-                                          borderRadius: '6px',
+                                          padding: '4px 10px',
+                                          borderRadius: '5px',
                                           fontSize: '11px',
                                           fontWeight: 700,
                                           cursor: 'pointer',
                                           border: isNotPresent ? '1px solid #dc2626' : '1px solid #cbd5e1',
                                           background: isNotPresent ? '#dc2626' : '#ffffff',
                                           color: isNotPresent ? '#ffffff' : '#334155',
+                                          transition: 'all 0.15s ease',
                                         }}
                                       >
-                                        <span>Not Present (-)</span>
+                                        <Minus size={13} />
+                                        <span>Not Present</span>
                                       </button>
                                     </div>
                                   </div>
 
-                                  {/* Comments input */}
-                                  <div>
-                                    <input
-                                      type="text"
-                                      placeholder="Comments / reason if not present (e.g. No opportunity, child shy)..."
-                                      value={commentVal}
-                                      onChange={(e) => handleCommentChange(item.id, e.target.value)}
-                                      style={{
-                                        width: '100%',
-                                        fontSize: '11px',
-                                        padding: '4px 8px',
-                                        borderRadius: '4px',
-                                        border: '1px solid #cbd5e1',
-                                        background: '#fff',
-                                      }}
-                                    />
-                                  </div>
+                                  {/* Comments input: displayed when not present or if comment exists */}
+                                  {(isNotPresent || commentVal) && (
+                                    <div style={{ marginTop: '2px' }}>
+                                      <input
+                                        type="text"
+                                        placeholder="Reason / clinical observation (e.g., child shy, no opportunity, refused)..."
+                                        value={commentVal}
+                                        onChange={(e) => handleCommentChange(item.id, e.target.value)}
+                                        style={{
+                                          width: '100%',
+                                          fontSize: '11px',
+                                          padding: '4px 8px',
+                                          borderRadius: '4px',
+                                          border: isNotPresent ? '1px solid #fca5a5' : '1px solid #cbd5e1',
+                                          background: '#ffffff',
+                                        }}
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}
@@ -800,34 +819,35 @@ export function OfficialEccdChecklistModal({
                 </div>
               )}
 
-              {/* 7 Domains Grid showing both Raw Checks and Scaled Scores (1-19) */}
+              {/* 7 Domains Bento Grid showing both Raw Checks and Scaled Scores (1-19) */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                 {scoringSummary.domainDetails.map((dom) => (
                   <div
                     key={dom.name}
                     style={{
-                      background: dom.alert ? '#fef2f2' : '#fff',
-                      border: dom.alert ? '1px solid #f87171' : '1px solid #cbd5e1',
-                      borderRadius: '6px',
-                      padding: '10px',
+                      background: dom.alert ? '#fef2f2' : '#ffffff',
+                      border: dom.alert ? '1px solid #fca5a5' : '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '4px' }}>
-                      <div style={{ fontSize: '11px', color: dom.alert ? '#991b1b' : '#64748b', fontWeight: 700 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ fontSize: '12px', color: dom.alert ? '#991b1b' : '#0f172a', fontWeight: 700 }}>
                         {dom.name.replace(' Domain', '')}
                       </div>
                       {dom.alert && (
                         <Badge variant="danger" size="xs">Delay (≤6)</Badge>
                       )}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '8px' }}>
                       <div>
                         <span style={{ fontSize: '10px', color: '#64748b' }}>Raw: </span>
                         <strong style={{ fontSize: '14px', color: '#0f172a' }}>{dom.rawScore}</strong>
                         <span style={{ fontSize: '10px', color: '#94a3b8' }}>/{dom.max}</span>
                       </div>
                       <div>
-                        <span style={{ fontSize: '10px', color: '#64748b' }}>Scaled (1–19): </span>
+                        <span style={{ fontSize: '10px', color: '#64748b' }}>Scaled: </span>
                         <strong style={{ fontSize: '16px', color: dom.alert ? '#dc2626' : '#0284c7' }}>{dom.scaledScore}</strong>
                       </div>
                     </div>

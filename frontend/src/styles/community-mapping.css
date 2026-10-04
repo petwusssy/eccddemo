@@ -33,6 +33,12 @@
   margin-bottom: var(--space-4);
   border: 1px solid var(--border-subtle);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mapping-view-toggle::-webkit-scrollbar {
+  display: none;
 }
 
 .mapping-tab-btn {
@@ -64,78 +70,91 @@
   box-shadow: var(--shadow-xs);
 }
 
-/* Stepper Bar for House-to-House Mapping */
+/* Stepper Bar for House-to-House Mapping — Compact Pill Stepper */
 .mapping-stepper {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-2);
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: var(--space-3) var(--space-4);
-  margin-bottom: var(--space-5);
+  padding: 6px 12px;
+  margin-bottom: var(--space-4);
   box-shadow: var(--shadow-xs);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mapping-stepper::-webkit-scrollbar {
+  display: none;
 }
 
 .stepper-step {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  position: relative;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-neutral-50, #f8fafc);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
   flex: 1;
   min-width: 140px;
+  transition: all var(--transition-fast);
 }
 
-.stepper-step:not(:last-child)::after {
-  content: '';
-  height: 2px;
-  flex: 1;
-  background-color: var(--color-neutral-200);
-  margin: 0 var(--space-2);
+.stepper-step.active {
+  background-color: var(--color-primary-950, #0f2744);
+  border-color: var(--color-primary-950, #0f2744);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 39, 68, 0.2);
 }
 
-.stepper-step.completed:not(:last-child)::after {
-  background-color: var(--color-success-primary);
+.stepper-step.completed {
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
 }
 
 .stepper-circle {
-  width: 2rem;
-  height: 2rem;
+  width: 1.35rem;
+  height: 1.35rem;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--font-size-xs);
+  font-size: 11px;
   font-weight: var(--font-weight-bold);
-  background-color: var(--color-neutral-100);
+  background-color: var(--color-neutral-200, #e2e8f0);
   color: var(--text-muted);
-  border: 2px solid var(--color-neutral-200);
   flex-shrink: 0;
 }
 
 .stepper-step.active .stepper-circle {
-  background-color: var(--color-primary-900);
-  color: var(--color-white);
-  border-color: var(--color-primary-900);
-  box-shadow: 0 0 0 3px rgba(15, 30, 74, 0.15);
+  background-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
 .stepper-step.completed .stepper-circle {
-  background-color: var(--color-success-primary);
-  color: var(--color-white);
-  border-color: var(--color-success-primary);
+  background-color: #10b981;
+  color: #ffffff;
 }
 
 .stepper-label {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
-  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .stepper-step.active .stepper-label {
-  color: var(--color-primary-950);
-  font-weight: var(--font-weight-bold);
+  color: #ffffff;
+  font-weight: var(--font-weight-semibold);
+}
+
+.stepper-step.completed .stepper-label {
+  color: #047857;
+  font-weight: var(--font-weight-medium);
 }
 
 /* Official ECCD Form Integration Point Marker */
@@ -221,6 +240,20 @@
   .mobile-stepper-footer .btn {
     width: 100%;
     min-height: 48px; /* Touch target 48dp on mobile */
+  }
+}
+
+@media (max-width: 768px) {
+  .mapping-stepper {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  .stepper-step {
+    min-width: 120px;
+    padding: 5px 10px;
+  }
+  .assignment-card {
+    padding: var(--space-3);
   }
 }
 

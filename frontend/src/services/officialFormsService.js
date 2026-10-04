@@ -13,6 +13,7 @@
  */
 
 import { centralDataStore } from './centralDataStore.js';
+import { getPhilippinesDate, getPhilippinesDateTime, formatPHTDate } from '../utils/phTime.js';
 
 // Local storage keys for Draft persistence
 const DRAFT_KEYS = {
@@ -30,7 +31,7 @@ export const officialFormsService = {
     try {
       localStorage.setItem(DRAFT_KEYS[formKey] || `eccd_draft_${formKey}`, JSON.stringify({
         data,
-        updatedAt: new Date().toISOString(),
+        updatedAt: getPhilippinesDateTime(),
       }));
       return true;
     } catch (e) {
@@ -122,7 +123,7 @@ export const officialFormsService = {
           contactNumber: formData.motherContactHome || formData.fatherContactHome || formData.guardianPhone || '',
           is4Ps: formData.is4Ps || false,
           isIP: false,
-          mappedDate: formData.dateAccomplished || new Date().toISOString().split('T')[0],
+          mappedDate: formData.dateAccomplished || getPhilippinesDate(),
           mappedBy: formData.reviewedByCDT || 'Child Development Worker',
         });
       }
@@ -175,7 +176,7 @@ export const officialFormsService = {
       // Store complete official registration form data payload
       officialRegistration: {
         ...formData,
-        submittedAt: new Date().toISOString(),
+        submittedAt: getPhilippinesDateTime(),
       },
     });
 
@@ -241,7 +242,7 @@ export const officialFormsService = {
         emergencyPhone: regData.emergencyContactHome || '',
       },
       reviewedByCDT: regData.reviewedByCDT || '',
-      dateConducted: regData.dateAccomplished || new Date().toISOString().split('T')[0],
+      dateConducted: regData.dateAccomplished || getPhilippinesDate(),
     };
 
     this.saveForm1Data(householdId, updated);
@@ -275,7 +276,7 @@ export const officialFormsService = {
       metadata: {
         nameOfRespondent: regData.parentGuardianSignatureName || regData.guardianName || '',
         nameOfCDT: regData.reviewedByCDT || '',
-        dateConducted: regData.dateAccomplished || new Date().toISOString().split('T')[0],
+        dateConducted: regData.dateAccomplished || getPhilippinesDate(),
       },
     };
 
@@ -668,7 +669,7 @@ export const officialFormsService = {
         year,
         totalHouseholds: totalRespondents,
         totalChildren: targetChildren.length,
-        generatedAt: new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }),
+        generatedAt: formatPHTDate(new Date(), 'long'),
       },
       form4A: {
         totalRespondents,
@@ -883,7 +884,7 @@ export const officialFormsService = {
         center,
         year,
         totalChildrenSurveyed: filtered.length,
-        generatedAt: new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }),
+        generatedAt: formatPHTDate(new Date(), 'long'),
       },
       // 1. Age
       age: [
@@ -1133,7 +1134,7 @@ export const officialFormsService = {
         { label: 'Maid', count: Math.round(total * 0.01) },
       ],
       cdtName: 'Maritess S. Pangilinan',
-      dateAccomplished: new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }),
+      dateAccomplished: formatPHTDate(new Date(), 'long'),
     };
   },
 
@@ -1206,7 +1207,7 @@ export const officialFormsService = {
         totalCDWs: totalWorkers,
         totalCDCs: centers.length || 35,
         incomeClassification: '1st Class Component City',
-        generatedAt: new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }),
+        generatedAt: formatPHTDate(new Date(), 'long'),
       },
       totalRespondents: totalWorkers,
       // 6. Age
@@ -1437,7 +1438,7 @@ export const officialFormsService = {
         totalCDCs: totalCenters,
         totalCDWs: workers.length || 28,
         incomeClassification: '1st Class Component City',
-        generatedAt: new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }),
+        generatedAt: formatPHTDate(new Date(), 'long'),
       },
       totalRespondents: totalCenters,
       yearEstablished: [

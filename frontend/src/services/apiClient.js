@@ -17,6 +17,7 @@
  */
 
 import { centralDataStore } from './centralDataStore.js';
+import { getPhilippinesDate, getPhilippinesDateTime } from '../utils/phTime.js';
 
 const BASE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
@@ -174,7 +175,7 @@ class ApiClient {
         category: metadata.category || 'general',
         s3_bucket: 'eccd-care-bucket',
         s3_prefix: 'teams/hackathon-eccd/',
-        uploaded_at: new Date().toISOString(),
+        uploaded_at: getPhilippinesDateTime(),
         is_mock_fallback: true,
       },
     };
@@ -306,7 +307,7 @@ class ApiClient {
         const newHh = {
           id: body.id || `HH-2026-${Math.floor(100 + Math.random() * 900)}`,
           ...body,
-          mappedDate: new Date().toISOString().split('T')[0],
+          mappedDate: getPhilippinesDate(),
         };
         centralDataStore.data.households.unshift(newHh);
         centralDataStore.save();
@@ -370,7 +371,7 @@ class ApiClient {
         const id = cleanEndpoint.split('/')[2];
         const child = centralDataStore.getChildren().find((c) => c.id === id);
         if (!child) return { ok: false, status: 404, error: 'Child record not found' };
-        Object.assign(child, body, { updatedAt: new Date().toISOString() });
+        Object.assign(child, body, { updatedAt: getPhilippinesDateTime() });
         centralDataStore.save();
         return { ok: true, status: 200, data: child };
       }
@@ -489,7 +490,7 @@ class ApiClient {
             test_file_url: 'https://eccd-care-bucket.s3.amazonaws.com/teams/hackathon-eccd/healthcheck/test-s3-verified.txt',
             verified_exists: true,
             latency_ms: 42,
-            timestamp: new Date().toISOString(),
+            timestamp: getPhilippinesDateTime(),
           },
         };
       }

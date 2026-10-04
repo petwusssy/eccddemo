@@ -27,6 +27,7 @@ import {
 import { followUpService } from '../../services/followUpService';
 import { centralDataStore } from '../../services/centralDataStore';
 import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
+import { getPhilippinesDate, addDaysPHT } from '../../utils/phTime';
 import Button from '../ui/Button';
 
 const ACTION_TYPES = [
@@ -79,7 +80,7 @@ export function FollowUpView({ onNavigate }) {
     reason: '',
     assignedWorker: '',
     workerContact: '',
-    dueDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+    dueDate: addDaysPHT(30),
     category: 'Needs Attention',
     actionType: 'Follow-up',
     notes: '',
@@ -91,7 +92,7 @@ export function FollowUpView({ onNavigate }) {
   // Form states for Resolve Follow-up modal
   const [resolvingCase, setResolvingCase] = useState(null);
   const [resolveForm, setResolveForm] = useState({
-    date: new Date().toISOString().slice(0, 10),
+    date: getPhilippinesDate(),
     actionTaken: '',
     notes: '',
     status: 'Completed',
@@ -190,7 +191,7 @@ export function FollowUpView({ onNavigate }) {
         reason: '',
         assignedWorker: '',
         workerContact: '',
-        dueDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+        dueDate: addDaysPHT(30),
         category: 'Needs Attention',
         actionType: 'Follow-up',
         notes: '',
@@ -223,7 +224,7 @@ export function FollowUpView({ onNavigate }) {
       await followUpService.resolveFollowUp(resolvingCase.id, resolveForm);
       setResolvingCase(null);
       setResolveForm({
-        date: new Date().toISOString().slice(0, 10),
+        date: getPhilippinesDate(),
         actionTaken: '',
         notes: '',
         status: 'Completed',
@@ -577,7 +578,7 @@ export function FollowUpView({ onNavigate }) {
                                 onClick={() => {
                                   setResolvingCase(caseItem);
                                   setResolveForm({
-                                    date: new Date().toISOString().slice(0, 10),
+                                    date: getPhilippinesDate(),
                                     actionTaken: '',
                                     notes: '',
                                     status: 'Completed',
@@ -796,7 +797,7 @@ export function FollowUpView({ onNavigate }) {
                       reason: '',
                       assignedWorker: '',
                       workerContact: '',
-                      dueDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+                      dueDate: addDaysPHT(30),
                       category: 'Needs Attention',
                       actionType: 'Follow-up',
                       notes: '',
@@ -853,7 +854,7 @@ export function FollowUpView({ onNavigate }) {
                 onClick={() => {
                   setResolvingCase(caseViewData.case);
                   setResolveForm({
-                    date: new Date().toISOString().slice(0, 10),
+                    date: getPhilippinesDate(),
                     actionTaken: '',
                     notes: '',
                     status: 'Completed',

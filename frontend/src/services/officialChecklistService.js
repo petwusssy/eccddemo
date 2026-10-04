@@ -11,6 +11,7 @@
 
 import { centralDataStore } from './centralDataStore.js';
 import { followUpService } from './followUpService.js';
+import { getPhilippinesDate, getPhilippinesDateTime, addDaysPHT } from '../utils/phTime.js';
 import { CHECKLIST_RECORD_1, CHECKLIST_RECORD_2, HOW_TO_USE_MANUAL } from '../data/officialChecklistData.js';
 import {
   rawToScaledScore,
@@ -224,7 +225,7 @@ export const officialChecklistService = {
     if (!child) throw new Error(`Child with ID ${childId} not found.`);
 
     const assessmentId = `DEV-ASSESS-${Date.now()}`;
-    const formattedDate = assessmentDate || new Date().toISOString().slice(0, 10);
+    const formattedDate = assessmentDate || getPhilippinesDate();
     const examinerName = evaluator || 'Maria Santos, CDW I';
     const effectiveRecordType = recordType || (child.ageYears <= 3 ? "Child's Record 1" : "Child's Record 2");
 
@@ -264,7 +265,7 @@ export const officialChecklistService = {
       answers,
       qualitativeNotes: qualitativeNotes || {},
       status: autoFollowUpRequired ? 'Follow-up Required (Urgent)' : 'Assessment Completed',
-      createdAt: new Date().toISOString(),
+      createdAt: getPhilippinesDateTime(),
     };
 
     // 3. Update child record in central data store with standard scores
@@ -309,7 +310,7 @@ export const officialChecklistService = {
         issue: finalReason,
         priority: finalPriority,
         status: 'Open',
-        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        dueDate: addDaysPHT(14),
         assignedWorker: examinerName,
         createdAt: formattedDate,
       };

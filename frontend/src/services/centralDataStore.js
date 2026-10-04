@@ -40,6 +40,7 @@
  */
 
 import { SAN_FERNANDO_BARANGAYS } from '../data/sanFernandoBarangays.js';
+import { getPhilippinesDate, getPhilippinesDateTime, addDaysPHT } from '../utils/phTime.js';
 
 const STORAGE_KEY = 'eccd_care_central_datastore_v3';
 
@@ -330,7 +331,7 @@ class CentralDataStore {
     const newHousehold = {
       id: payload.id || `HH-2026-${String(this.data.households.length + 1).padStart(4, '0')}`,
       ...payload,
-      createdAt: new Date().toISOString(),
+      createdAt: getPhilippinesDateTime(),
     };
     this.data.households.push(newHousehold);
     this.save();
@@ -342,7 +343,7 @@ class CentralDataStore {
   updateChild(childId, updates) {
     const existing = this.data.children.find((c) => c.id === childId);
     if (existing) {
-      Object.assign(existing, updates, { updatedAt: new Date().toISOString() });
+      Object.assign(existing, updates, { updatedAt: getPhilippinesDateTime() });
       this.save();
       return existing;
     }
@@ -351,7 +352,7 @@ class CentralDataStore {
   updateHousehold(householdId, updates) {
     const existing = this.data.households.find((h) => h.id === householdId);
     if (existing) {
-      Object.assign(existing, updates, { updatedAt: new Date().toISOString() });
+      Object.assign(existing, updates, { updatedAt: getPhilippinesDateTime() });
       this.save();
       return existing;
     }
@@ -373,7 +374,15 @@ class CentralDataStore {
 
     const household = this.data.households.find((h) => h.id === child.householdId) || null;
     const enrollments = this.data.enrollments.filter((e) => e.childId === childId);
-    const healthRecords = this.data.healthMonitorings.filter((h) => h.childId === childId);
+    const healthRecords = this.data.healthMonitorings
+      .filter((h) => h.childId === childId)
+      .sort((a, b) => {
+        const dateDiff = (b.date || '').localeCompare(a.date || '');
+        if (dateDiff !== 0) return dateDiff;
+        const createdDiff = (b.createdAt || '').localeCompare(a.createdAt || '');
+        if (createdDiff !== 0) return createdDiff;
+        return (b.id || '').localeCompare(a.id || '');
+      });
     const assessments = this.data.developmentAssessments.filter((a) => a.childId === childId);
     const followUps = this.data.followUps.filter((f) => f.childId === childId);
     const dayCareCenter = child.dayCareCenterId
@@ -381,7 +390,7 @@ class CentralDataStore {
       : null;
 
     const statusPillars = child.statusPillars || {
-      mapped: { status: 'Mapped', variant: 'success', date: child.createdAt?.slice(0, 10) || new Date().toISOString().split('T')[0] },
+      mapped: { status: 'Mapped', variant: 'success', date: child.createdAt?.slice(0, 10) || getPhilippinesDate() },
       enrolled: {
         status: child.enrollmentStatus || (enrollments.length > 0 ? 'Enrolled' : 'Not Enrolled'),
         variant: (child.enrollmentStatus === 'Enrolled' || enrollments.length > 0) ? 'success' : 'neutral',
@@ -390,9 +399,9 @@ class CentralDataStore {
       health: {
         status: healthRecords.length > 0 ? 'Up to date' : (child.healthStatus || 'Due for Monitoring'),
         variant: healthRecords.length > 0 ? 'success' : 'warning',
-        lastWeightKg: healthRecords[0]?.weightKg || 14.5,
-        lastHeightCm: healthRecords[0]?.heightCm || 96.5,
-        nutritionalStatus: healthRecords[0]?.nutritionalStatus || 'Normal Weight for Age',
+        lastWeightKg: healthRecords[0]?.weightKg ?? child.lastWeightKg ?? 14.5,
+        lastHeightCm: healthRecords[0]?.heightCm ?? child.lastHeightCm ?? 96.5,
+        nutritionalStatus: healthRecords[0]?.nutritionalStatus ?? child.nutritionalStatus ?? 'Normal Weight for Age',
       },
       development: {
         status: assessments.length > 0 ? (assessments[0].status || 'Completed') : (child.developmentStatus || 'Pending Initial Assessment'),
@@ -421,7 +430,7 @@ class CentralDataStore {
         type: 'Enrollment',
         title: `Enrolled in ${enr.center || 'Day Care Center'}`,
         description: `Program: ${enr.program || 'CDC'} • Session: ${enr.session || 'Morning'}`,
-        date: enr.enrollmentDate || enr.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+        date: enr.enrollmentDate || enr.createdAt?.slice(0, 10) || getPhilippinesDate(),
         author: enr.teacher || 'CSWDO CDW',
         badgeVariant: 'success',
       })),
@@ -430,7 +439,7 @@ class CentralDataStore {
         type: 'Health Monitoring',
         title: 'Growth Measurement Recorded',
         description: `Weight: ${h.weightKg || h.weight || '—'} kg, Height: ${h.heightCm || h.height || '—'} cm`,
-        date: h.date || h.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+        date: h.date || h.createdAt?.slice(0, 10) || getPhilippinesDate(),
         author: h.examiner || h.recordedBy || 'Health Worker',
         badgeVariant: 'info',
       })),
@@ -439,7 +448,7 @@ class CentralDataStore {
         type: 'Development Assessment',
         title: `ECCD Assessment: ${a.interpretation || a.status || 'Recorded'}`,
         description: `Scaled / Standard Score: ${a.standardScore || a.scaledScore || '—'}`,
-        date: a.date || a.assessmentDate || a.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+        date: a.date || a.assessmentDate || a.createdAt?.slice(0, 10) || getPhilippinesDate(),
         author: a.evaluator || a.assessor || 'CDW Worker',
         badgeVariant: 'warning',
       })),
@@ -448,7 +457,7 @@ class CentralDataStore {
         type: 'Follow-up',
         title: `Follow-up Case: ${f.title || f.reason || 'Case Opened'}`,
         description: `Priority: ${f.priority || 'Medium'} • Status: ${f.status || 'Open'}`,
-        date: f.createdDate || f.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+        date: f.createdDate || f.createdAt?.slice(0, 10) || getPhilippinesDate(),
         author: f.assignedWorker || 'CSWDO Staff',
         badgeVariant: 'danger',
       })),
@@ -533,7 +542,7 @@ class CentralDataStore {
     if (childPayload.id) {
       const existing = this.data.children.find((c) => c.id === childPayload.id);
       if (existing) {
-        Object.assign(existing, childPayload, { updatedAt: new Date().toISOString() });
+        Object.assign(existing, childPayload, { updatedAt: getPhilippinesDateTime() });
         this.save();
         return existing;
       }
@@ -560,13 +569,33 @@ class CentralDataStore {
       developmentStatus: childPayload.developmentStatus || 'Pending Initial Assessment',
       hasOpenFollowUp: false,
       statusPillars: {
-        mapped: { status: 'Mapped', variant: 'success', date: new Date().toISOString().split('T')[0] },
-        enrolled: { status: childPayload.enrollmentStatus || 'Not Enrolled', center: childPayload.dayCareCenterName || 'Pending CDC Slot' },
-        health: { status: childPayload.healthStatus || 'Due for Monitoring' },
-        development: { status: childPayload.developmentStatus || 'Pending Initial Assessment' },
-        followUp: { status: 'None' },
+        mapped: { status: 'Mapped', variant: 'success', date: getPhilippinesDate() },
+        enrolled: {
+          status: childPayload.enrollmentStatus || 'Not Enrolled',
+          variant: (childPayload.enrollmentStatus === 'Enrolled' || childPayload?.enrollment?.enrolled) ? 'success' : 'neutral',
+          center: childPayload.dayCareCenterName || childPayload.enrollmentCenter || 'Pending CDC Slot',
+        },
+        health: {
+          status: childPayload.healthStatus || 'Due for Monitoring',
+          variant: (childPayload.healthStatus === 'Up to date' || childPayload.healthStatus === 'Up to Date') ? 'success' : 'warning',
+          lastWeightKg: childPayload.lastWeightKg || 14.5,
+          lastHeightCm: childPayload.lastHeightCm || 96.5,
+          nutritionalStatus: childPayload.nutritionalStatus || 'Normal Weight for Age',
+        },
+        development: {
+          status: childPayload.developmentStatus || 'Pending Initial Assessment',
+          variant: 'neutral',
+          scaledScore: null,
+          interpretation: 'Standard evaluation pending',
+        },
+        followUp: {
+          status: 'None',
+          variant: 'neutral',
+          issue: null,
+          dueDate: null,
+        },
       },
-      createdAt: new Date().toISOString(),
+      createdAt: getPhilippinesDateTime(),
     };
 
     this.data.children.unshift(newChild);
@@ -588,7 +617,7 @@ class CentralDataStore {
       id: `ENR-2026-${String(this.data.enrollments.length + 1).padStart(4, '0')}`,
       ...enrollmentPayload,
       status: 'Enrolled',
-      createdAt: new Date().toISOString(),
+      createdAt: getPhilippinesDateTime(),
     };
 
     this.data.enrollments.push(newEnrollment);
@@ -602,9 +631,9 @@ class CentralDataStore {
       status: 'Enrolled',
       center: child.dayCareCenterName,
       variant: 'success',
-      enrolledDate: enrollmentPayload.enrollmentDate || new Date().toISOString().split('T')[0],
+      enrolledDate: enrollmentPayload.enrollmentDate || getPhilippinesDate(),
     };
-    child.updatedAt = new Date().toISOString();
+    child.updatedAt = getPhilippinesDateTime();
 
     this.save();
     return newEnrollment;
@@ -620,17 +649,42 @@ class CentralDataStore {
       throw new Error(`Child with ECCD ID ${healthPayload.childId} not found in central registry.`);
     }
 
+    const height = Number(healthPayload.heightCm || healthPayload.height || 0);
+    const weight = Number(healthPayload.weightKg || healthPayload.weight || 0);
+    const date = healthPayload.date || getPhilippinesDate();
+    const nutStatus = healthPayload.nutritionalStatus || 'Normal Weight';
+
     const newHealth = {
       id: `HLT-2026-${String(this.data.healthMonitorings.length + 1).padStart(4, '0')}`,
       ...healthPayload,
-      createdAt: new Date().toISOString(),
+      heightCm: height,
+      weightKg: weight,
+      date,
+      nutritionalStatus: nutStatus,
+      createdAt: getPhilippinesDateTime(),
     };
 
-    this.data.healthMonitorings.push(newHealth);
+    // Prepend so the newest measurement is at index 0
+    this.data.healthMonitorings.unshift(newHealth);
 
-    // Update child master record health status
+    // Update child master record health status and root fields
     child.healthStatus = 'Up to Date';
-    child.updatedAt = new Date().toISOString();
+    child.lastWeightKg = weight;
+    child.lastHeightCm = height;
+    child.lastMeasurementDate = date;
+    child.nutritionalStatus = nutStatus;
+
+    if (!child.statusPillars) child.statusPillars = {};
+    child.statusPillars.health = {
+      status: 'Up to date',
+      variant: 'success',
+      lastWeightKg: weight,
+      lastHeightCm: height,
+      nutritionalStatus: nutStatus,
+      lastMeasurementDate: date,
+      nextDue: addDaysPHT(30),
+    };
+    child.updatedAt = getPhilippinesDateTime();
 
     this.save();
     return newHealth;
@@ -650,13 +704,21 @@ class CentralDataStore {
       id: `DEV-2026-${String(this.data.developmentAssessments.length + 1).padStart(4, '0')}`,
       ...assessmentPayload,
       status: 'Completed',
-      createdAt: new Date().toISOString(),
+      createdAt: getPhilippinesDateTime(),
     };
 
     this.data.developmentAssessments.push(newAssessment);
 
     child.developmentStatus = 'Completed';
-    child.updatedAt = new Date().toISOString();
+    if (!child.statusPillars) child.statusPillars = {};
+    child.statusPillars.development = {
+      status: 'Completed',
+      variant: 'success',
+      scaledScore: assessmentPayload.standardScore || assessmentPayload.scaledScore || 100,
+      interpretation: assessmentPayload.interpretation || 'Average Development',
+      lastAssessmentDate: assessmentPayload.assessmentDate || getPhilippinesDate(),
+    };
+    child.updatedAt = getPhilippinesDateTime();
 
     this.save();
     return newAssessment;
@@ -676,13 +738,20 @@ class CentralDataStore {
       id: `FLW-2026-${String(this.data.followUps.length + 1).padStart(4, '0')}`,
       ...followUpPayload,
       status: followUpPayload.status || 'Needs Attention',
-      createdAt: new Date().toISOString(),
+      createdAt: getPhilippinesDateTime(),
     };
 
     this.data.followUps.push(newFollowUp);
 
     child.hasOpenFollowUp = true;
-    child.updatedAt = new Date().toISOString();
+    if (!child.statusPillars) child.statusPillars = {};
+    child.statusPillars.followUp = {
+      status: followUpPayload.status || 'Active Case',
+      variant: 'danger',
+      issue: followUpPayload.reason || followUpPayload.concern || 'Needs Attention',
+      dueDate: followUpPayload.targetDate || followUpPayload.dueDate || getPhilippinesDate(),
+    };
+    child.updatedAt = getPhilippinesDateTime();
 
     this.save();
     return newFollowUp;
@@ -696,7 +765,7 @@ class CentralDataStore {
     if (!followUp) return null;
 
     followUp.status = 'Completed';
-    followUp.completedDate = resolutionData.completedDate || new Date().toISOString().split('T')[0];
+    followUp.completedDate = resolutionData.completedDate || getPhilippinesDate();
     followUp.actionTaken = resolutionData.actionTaken || followUp.actionTaken;
     followUp.remarks = resolutionData.remarks || followUp.remarks;
 
@@ -719,7 +788,7 @@ class CentralDataStore {
   logAudit(logData) {
     const newLog = {
       id: `LOG-2026-${String(this.data.auditLogs.length + 1).padStart(5, '0')}`,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      timestamp: getPhilippinesDateTime().replace('T', ' ').substring(0, 19),
       ...logData,
     };
     this.data.auditLogs.unshift(newLog);

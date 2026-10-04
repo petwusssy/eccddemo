@@ -6,6 +6,7 @@
  */
 
 import { centralDataStore } from './centralDataStore.js';
+import { getPhilippinesDate, addDaysPHT, getDaysAgoPHT } from '../utils/phTime.js';
 
 export const healthMonitoringService = {
   /**
@@ -19,11 +20,25 @@ export const healthMonitoringService = {
     const cohort = allChildren.map((c) => {
       const childRecords = allRecords
         .filter((r) => r.childId === c.id)
-        .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        .sort((a, b) => {
+          const dateDiff = (b.date || '').localeCompare(a.date || '');
+          if (dateDiff !== 0) return dateDiff;
+          const createdDiff = (b.createdAt || '').localeCompare(a.createdAt || '');
+          if (createdDiff !== 0) return createdDiff;
+          return (b.id || '').localeCompare(a.id || '');
+        });
 
       const latest = childRecords[0];
       const hasRecord = !!latest;
       const status = hasRecord ? 'Up to Date' : (c.healthStatus === 'Up to Date' ? 'Up to Date' : 'Due');
+
+      // Real days since last measurement
+      let daysSinceLastCheck = 45;
+      if (latest?.date) {
+        daysSinceLastCheck = Math.max(0, getDaysAgoPHT(latest.date));
+      } else if (hasRecord) {
+        daysSinceLastCheck = 0;
+      }
 
       return {
         childId: c.id,
@@ -32,14 +47,15 @@ export const healthMonitoringService = {
         ageDisplay: c.ageDisplay || `${c.ageYears || 3} yrs`,
         barangay: c.barangay || 'San Isidro',
         dayCareCenter: c.dayCareCenterName || 'San Isidro Child Development Center I',
-        lastMeasurementDate: latest?.date || (hasRecord ? '2026-09-15' : null),
-        lastHeightCm: latest?.heightCm || latest?.height || (c.statusPillars?.health?.lastHeightCm) || null,
-        lastWeightKg: latest?.weightKg || latest?.weight || (c.statusPillars?.health?.lastWeightKg) || null,
+        lastMeasurementDate: latest?.date || (hasRecord ? getPhilippinesDate() : (c.lastMeasurementDate || null)),
+        lastHeightCm: latest?.heightCm ?? latest?.height ?? c.lastHeightCm ?? (c.statusPillars?.health?.lastHeightCm) ?? null,
+        lastWeightKg: latest?.weightKg ?? latest?.weight ?? c.lastWeightKg ?? (c.statusPillars?.health?.lastWeightKg) ?? null,
+        nutritionalStatus: latest?.nutritionalStatus || c.nutritionalStatus || (c.statusPillars?.health?.nutritionalStatus) || 'Normal Weight',
         status,
-        daysSinceLastCheck: hasRecord ? 14 : 45,
+        daysSinceLastCheck,
         dueDate: hasRecord
-          ? new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
-          : new Date().toISOString().slice(0, 10),
+          ? addDaysPHT(30)
+          : getPhilippinesDate(),
       };
     });
 
@@ -93,15 +109,27 @@ export const healthMonitoringService = {
 
     // Chronological ascending for trend chart
     const trendData = [...rawList]
-      .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+      .sort((a, b) => {
+        const dateDiff = (a.date || '').localeCompare(b.date || '');
+        if (dateDiff !== 0) return dateDiff;
+        const createdDiff = (a.createdAt || '').localeCompare(b.createdAt || '');
+        if (createdDiff !== 0) return createdDiff;
+        return (a.id || '').localeCompare(b.id || '');
+      })
       .map((r) => ({
         date: r.date,
         heightCm: Number(r.heightCm || r.height || 0),
         weightKg: Number(r.weightKg || r.weight || 0),
       }));
 
-    // Chronological descending for history table
-    const sortedDesc = [...rawList].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    // Chronological descending for history table (newest first)
+    const sortedDesc = [...rawList].sort((a, b) => {
+      const dateDiff = (b.date || '').localeCompare(a.date || '');
+      if (dateDiff !== 0) return dateDiff;
+      const createdDiff = (b.createdAt || '').localeCompare(a.createdAt || '');
+      if (createdDiff !== 0) return createdDiff;
+      return (b.id || '').localeCompare(a.id || '');
+    });
     for (let i = 0; i < sortedDesc.length; i++) {
       const cur = sortedDesc[i];
       const prev = sortedDesc[i + 1];
@@ -145,7 +173,7 @@ export const healthMonitoringService = {
     const newRecord = centralDataStore.recordHealth({
       childId,
       childName: payload.childName || 'Child',
-      date: payload.date || new Date().toISOString().slice(0, 10),
+      date: payload.date || getPhilippinesDate(),
       heightCm: height,
       weightKg: weight,
       nutritionalStatus: payload.nutritionalStatus || 'Normal Weight for Age',
@@ -157,7 +185,7 @@ export const healthMonitoringService = {
       success: true,
       record: newRecord,
       monitoringStatus: 'Up to Date',
-      nextDueDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      nextDueDate: addDaysPHT(30),
     };
   },
 

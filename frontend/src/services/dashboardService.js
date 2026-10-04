@@ -13,6 +13,7 @@
  */
 
 import { centralDataStore } from './centralDataStore.js';
+import { getPhilippinesDateTime } from '../utils/phTime.js';
 
 export const dashboardService = {
   /**
@@ -50,7 +51,7 @@ export const dashboardService = {
       barangaysNeedingAttention: 0,
       reportingSchoolYear: 'SY 2026–2027',
       cityMunicipality: 'City of San Fernando, Pampanga',
-      lastUpdated: new Date().toISOString(),
+      lastUpdated: getPhilippinesDateTime(),
       coreAnswers: {
         identifiedChildren: `${total} children aged 0–4 documented in system`,
         enrolledChildren: `${enrolled} enrolled in CDCs and SNP programs (${total > 0 ? Math.round((enrolled / total) * 100) : 0}%)`,

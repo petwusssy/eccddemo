@@ -15,7 +15,8 @@
  *   - Role permissions filter navigation items
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
 import { AuthProvider, useAuth, AUTH_STATUS } from './components/auth/AuthProvider';
 import { LoginPage } from './components/auth/LoginPage';
@@ -33,13 +34,60 @@ import AuditLogsView from './components/views/AuditLogsView';
 import SettingsView from './components/views/SettingsView';
 import UnauthorizedView from './components/governance/UnauthorizedView';
 import SessionExpiryModal from './components/governance/SessionExpiryModal';
-import { ROLE_LANDING } from './services/authService';
+import { ROLES } from './services/authService';
 import auditService from './services/auditService';
 
 import ModulePlaceholder from './components/views/ModulePlaceholder';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import { Button } from './components/ui/Button';
 import { Printer, Loader2 } from 'lucide-react';
+
+const ROUTE_MAP = {
+  dashboard: '/dashboard',
+  children: '/children',
+  'community-mapping': '/mapping',
+  mapping: '/mapping',
+  households: '/mapping',
+  enrollment: '/enrollment',
+  'health-monitoring': '/health-monitoring',
+  'eccd-checklist': '/development-assessment',
+  'development-assessment': '/development-assessment',
+  'follow-ups': '/follow-ups',
+  'community-network': '/community-network',
+  barangays: '/community-network',
+  'daycare-centers': '/community-network',
+  workers: '/community-network',
+  reports: '/reports',
+  'audit-logs': '/audit-logs',
+  settings: '/settings',
+};
+
+const PATH_TO_SECTION = {
+  '/': 'dashboard',
+  '/dashboard': 'dashboard',
+  '/children': 'children',
+  '/mapping': 'community-mapping',
+  '/community-mapping': 'community-mapping',
+  '/households': 'community-mapping',
+  '/enrollment': 'enrollment',
+  '/health-monitoring': 'health-monitoring',
+  '/development-assessment': 'eccd-checklist',
+  '/eccd-checklist': 'eccd-checklist',
+  '/follow-ups': 'follow-ups',
+  '/community-network': 'community-network',
+  '/barangays': 'community-network',
+  '/daycare-centers': 'community-network',
+  '/workers': 'community-network',
+  '/reports': 'reports',
+  '/audit-logs': 'audit-logs',
+  '/settings': 'settings',
+};
+
+const ROLE_LANDING_ROUTE = {
+  [ROLES.ADMIN]: '/dashboard',
+  [ROLES.FIELD_WORKER]: '/mapping',
+  [ROLES.DAYCARE_WORKER]: '/enrollment',
+};
 
 /**
  * Loading screen shown during initial session validation.
@@ -69,7 +117,6 @@ function AuthLoadingScreen() {
 function AuthenticatedApp() {
   const {
     user,
-    getLandingPage,
     checkPermission,
     logout,
     roleLabel,
@@ -78,35 +125,36 @@ function AuthenticatedApp() {
     unlockSession,
     isExpired,
   } = useAuth();
-  const [activeItem, setActiveItem] = useState(null);
+
+  const location = useLocation();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Set initial page to role-based landing on first render
+  // Active navigation section derived directly from URL
+  const activeItem = PATH_TO_SECTION[location.pathname] || 'dashboard';
+
+  // Centralized navigation handler accepting route key or path
+  const handleNavigate = (target) => {
+    const route = ROUTE_MAP[target] || (target?.startsWith('/') ? target : `/${target}`);
+    navigate(route);
+  };
+
+  // Log unauthorized access attempts
   useEffect(() => {
-    if (!hasInitialized && user) {
-      setActiveItem(getLandingPage());
-      setHasInitialized(true);
-    }
-  }, [user, getLandingPage, hasInitialized]);
-
-  // Navigation handler with role-based permission enforcement & audit logging
-  const handleSelectItem = (itemId) => {
-    setActiveItem(itemId);
-    if (!checkPermission(itemId)) {
+    if (!checkPermission(activeItem)) {
       auditService.logActivity({
         user: user?.name || 'Authorized Staff',
         role: roleLabel || user?.role,
         action: 'Attempted Access to Restricted Section',
         module: 'System Governance',
-        record: `/${itemId}`,
+        record: location.pathname,
         status: 'Unauthorized Attempt',
-        details: `${roleLabel} role lacks permission for ${itemId}.`,
+        details: `${roleLabel} role lacks permission for ${activeItem}.`,
       });
     }
-  };
+  }, [activeItem, checkPermission, user, roleLabel, location.pathname]);
 
-  // Determine page titles and breadcrumbs based on navigation item
+  // Determine page titles and breadcrumbs based on active item
   const getPageInfo = () => {
     switch (activeItem) {
       case 'dashboard':
@@ -114,7 +162,7 @@ function AuthenticatedApp() {
           title: 'CSWDO ECCD Monitoring Dashboard',
           subtitle: 'Centralized registry for children aged 0–4 • City Social Welfare & Development Office',
           breadcrumbs: [
-            { label: 'ECCD CARE', onClick: () => handleSelectItem('dashboard') },
+            { label: 'ECCD CARE', onClick: () => navigate('/dashboard') },
             { label: 'Executive Dashboard' },
           ],
           actions: (
@@ -134,21 +182,12 @@ function AuthenticatedApp() {
           title: 'Children Demographic Registry (0–4)',
           subtitle: 'Masterlist of children registered with PSA Civil Registry and PhilSys linkage',
           breadcrumbs: [
-            { label: 'Child Management', onClick: () => handleSelectItem('children') },
+            { label: 'Child Management', onClick: () => navigate('/children') },
             { label: 'Children Masterlist' },
           ],
         };
 
       case 'households':
-        return {
-          title: 'Households & Families Profiling',
-          subtitle: 'Community profiling, 4Ps beneficiary tagging, and household mapping',
-          breadcrumbs: [
-            { label: 'Child Management' },
-            { label: 'Households' },
-          ],
-        };
-
       case 'community-mapping':
         return {
           title: 'Community Mapping',
@@ -200,41 +239,14 @@ function AuthenticatedApp() {
         };
 
       case 'barangays':
-        return {
-          title: 'Barangays',
-          subtitle: 'Jurisdictional masterlist of barangays and community focal points',
-          breadcrumbs: [
-            { label: 'Community' },
-            { label: 'Barangays' },
-          ],
-        };
-
       case 'daycare-centers':
-        return {
-          title: 'Day Care Centers',
-          subtitle: 'Accredited public Day Care Centers and early childhood learning facilities',
-          breadcrumbs: [
-            { label: 'Community' },
-            { label: 'Day Care Centers' },
-          ],
-        };
-
       case 'workers':
-        return {
-          title: 'Day Care Workers & Service Providers',
-          subtitle: 'Accredited daycare teachers and CSWDO community case officers',
-          breadcrumbs: [
-            { label: 'Community' },
-            { label: 'Workers' },
-          ],
-        };
-
       case 'community-network':
         return {
           title: 'Community Network',
           subtitle: 'ECCD Barangay coverage (Form 3), accredited Day Care Centers (Form 7), and Workers (Form 6)',
           breadcrumbs: [
-            { label: 'Community', onClick: () => handleSelectItem('community-network') },
+            { label: 'Community', onClick: () => navigate('/community-network') },
             { label: 'Community Network' },
           ],
         };
@@ -283,19 +295,17 @@ function AuthenticatedApp() {
         return {
           title: 'ECCD CARE System',
           subtitle: 'City Social Welfare and Development Office',
-          breadcrumbs: [{ label: 'ECCD CARE' }],
+          breadcrumbs: [{ label: 'ECCD CARE', onClick: () => navigate('/dashboard') }],
         };
     }
   };
-
-  if (!activeItem) return null; // Wait for role-based landing page to initialize
 
   const pageInfo = getPageInfo();
 
   return (
     <AppShell
       activeItem={activeItem}
-      onSelectItem={handleSelectItem}
+      onSelectItem={handleNavigate}
       breadcrumbs={pageInfo.breadcrumbs}
       pageTitle={pageInfo.title}
       pageSubtitle={pageInfo.subtitle}
@@ -312,59 +322,49 @@ function AuthenticatedApp() {
           attemptedModule={activeItem}
           user={user}
           roleLabel={roleLabel}
-          onReturnToAllowed={() => setActiveItem(getLandingPage())}
+          onReturnToAllowed={() => navigate(ROLE_LANDING_ROUTE[user?.role] || '/dashboard')}
           onSwitchRole={(newRole) => {
             switchRole(newRole);
-            setActiveItem(ROLE_LANDING[newRole] || 'dashboard');
+            navigate(ROLE_LANDING_ROUTE[newRole] || '/dashboard');
           }}
         />
       ) : (
-        <ErrorBoundary key={activeItem} onNavigate={handleSelectItem}>
-          {activeItem === 'dashboard' && <DashboardOverview onNavigate={handleSelectItem} />}
-          {(activeItem === 'community-mapping' || activeItem === 'households') && (
-            <CommunityMappingView
-              initialTab={activeItem === 'households' ? 'households' : undefined}
-              onNavigate={handleSelectItem}
+        <ErrorBoundary key={location.pathname} onNavigate={handleNavigate}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardOverview onNavigate={handleNavigate} />} />
+            <Route path="/children" element={<ChildManagementView onNavigate={handleNavigate} />} />
+            <Route path="/mapping" element={<CommunityMappingView onNavigate={handleNavigate} />} />
+            <Route path="/community-mapping" element={<Navigate to="/mapping" replace />} />
+            <Route path="/households" element={<CommunityMappingView initialTab="households" onNavigate={handleNavigate} />} />
+            <Route path="/enrollment" element={<EnrollmentView onNavigate={handleNavigate} />} />
+            <Route path="/health-monitoring" element={<HealthMonitoringView onNavigate={handleNavigate} />} />
+            <Route path="/development-assessment" element={<DevelopmentView onNavigate={handleNavigate} />} />
+            <Route path="/eccd-checklist" element={<Navigate to="/development-assessment" replace />} />
+            <Route path="/follow-ups" element={<FollowUpView onNavigate={handleNavigate} />} />
+            <Route path="/community-network" element={<CommunityView initialTab="barangays" onNavigate={handleNavigate} />} />
+            <Route path="/barangays" element={<Navigate to="/community-network" replace />} />
+            <Route path="/daycare-centers" element={<Navigate to="/community-network" replace />} />
+            <Route path="/workers" element={<Navigate to="/community-network" replace />} />
+            <Route path="/reports" element={<ReportsView onNavigate={handleNavigate} />} />
+            <Route
+              path="/audit-logs"
+              element={
+                <AuditLogsView
+                  user={user}
+                  roleLabel={roleLabel}
+                  onSwitchRole={(newRole) => {
+                    switchRole(newRole);
+                    navigate(ROLE_LANDING_ROUTE[newRole] || '/dashboard');
+                  }}
+                  onTriggerSessionExpiry={triggerSessionExpiry}
+                />
+              }
             />
-          )}
-          {activeItem === 'children' && <ChildManagementView onNavigate={handleSelectItem} />}
-          {activeItem === 'enrollment' && <EnrollmentView onNavigate={handleSelectItem} />}
-          {activeItem === 'health-monitoring' && <HealthMonitoringView onNavigate={handleSelectItem} />}
-          {activeItem === 'eccd-checklist' && <DevelopmentView onNavigate={handleSelectItem} />}
-          {activeItem === 'follow-ups' && <FollowUpView onNavigate={handleSelectItem} />}
-          {(activeItem === 'barangays' || activeItem === 'daycare-centers' || activeItem === 'workers' || activeItem === 'community-network') && (
-            <CommunityView initialTab={activeItem === 'community-network' ? 'barangays' : activeItem} onNavigate={handleSelectItem} />
-          )}
-          {activeItem === 'reports' && <ReportsView onNavigate={handleSelectItem} />}
-          {activeItem === 'audit-logs' && (
-            <AuditLogsView
-              user={user}
-              roleLabel={roleLabel}
-              onSwitchRole={(newRole) => {
-                switchRole(newRole);
-                setActiveItem(ROLE_LANDING[newRole] || 'dashboard');
-              }}
-              onTriggerSessionExpiry={triggerSessionExpiry}
-            />
-          )}
-          {activeItem === 'settings' && <SettingsView onNavigate={handleSelectItem} />}
-          {activeItem !== 'dashboard' &&
-            activeItem !== 'community-mapping' &&
-            activeItem !== 'households' &&
-            activeItem !== 'children' &&
-            activeItem !== 'enrollment' &&
-            activeItem !== 'health-monitoring' &&
-            activeItem !== 'eccd-checklist' &&
-            activeItem !== 'follow-ups' &&
-            activeItem !== 'barangays' &&
-            activeItem !== 'daycare-centers' &&
-            activeItem !== 'workers' &&
-            activeItem !== 'community-network' &&
-            activeItem !== 'reports' &&
-            activeItem !== 'audit-logs' &&
-            activeItem !== 'settings' && (
-              <ModulePlaceholder moduleId={activeItem} onNavigate={handleSelectItem} />
-            )}
+            <Route path="/settings" element={<SettingsView onNavigate={handleNavigate} />} />
+            <Route path="/resources" element={<ModulePlaceholder moduleId="resources" onNavigate={handleNavigate} />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
         </ErrorBoundary>
       )}
       {isExpired && (
@@ -402,15 +402,17 @@ function AuthRouter() {
 
 /**
  * Root App Component
- * react-patterns: provider tree at root (AuthProvider → ToastProvider → Router).
+ * react-patterns: provider tree at root (Router → AuthProvider → ToastProvider).
  */
 export function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <AuthRouter />
-      </ToastProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <ToastProvider>
+          <AuthRouter />
+        </ToastProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

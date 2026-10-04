@@ -17,6 +17,8 @@
  * GET /api/reports/consolidated-children
  */
 
+import { getPhilippinesDate, formatPHTDate, formatPHTTime } from '../utils/phTime.js';
+
 export const REPORT_CATEGORIES = [
   {
     id: 'mapping',
@@ -170,7 +172,7 @@ export const reportService = {
     const link = document.createElement('a');
     const safeTitle = (meta.title || 'ECCD_CARE_Report').replace(/[^a-zA-Z0-9]/g, '_');
     link.setAttribute('href', url);
-    link.setAttribute('download', `${safeTitle}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `${safeTitle}_${getPhilippinesDate()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -190,11 +192,7 @@ export const reportService = {
         office: 'City Social Welfare and Development Office (CSWDO)',
         system: 'ECCD CARE System — Centralized Child Demographic Registry',
         centralDataConcept: 'DATA ENCODED ONCE • Dynamically compiled from persistent child master records',
-        generatedDate: new Date().toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }) + ' • 05:00 PM',
+        generatedDate: `${formatPHTDate(new Date(), 'long')} • ${formatPHTTime(new Date())}`,
         preparedBy: 'Ma. Elena D. Santos, RSW (ECCD Focal Person / CSWDO Admin)',
         systemGeneratedNotice:
           'This is an official system-generated report from ECCD CARE. Compliant with RA 10410 (Early Years Act) and RA 10173 (Data Privacy Act of 2012). Generated directly from authoritative central master records.',

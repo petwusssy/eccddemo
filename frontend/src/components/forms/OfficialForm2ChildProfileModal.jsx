@@ -21,6 +21,7 @@ import { Select } from '../ui/Select';
 import { officialFormsService } from '../../services/officialFormsService';
 import { centralDataStore } from '../../services/centralDataStore';
 import { useToast } from '../ui/Toast';
+import { getPhilippinesDate } from '../../utils/phTime';
 
 export function OfficialForm2ChildProfileModal({
   isOpen,
@@ -129,7 +130,7 @@ export function OfficialForm2ChildProfileModal({
     // Metadata & Signatures
     nameOfRespondent: '',
     nameOfCDT: 'Maria C. Santos (CDW I)',
-    dateConducted: new Date().toISOString().split('T')[0],
+    dateConducted: getPhilippinesDate(),
   });
 
   // Prepopulate from Child record in Central Store (Capture Once → Reuse Everywhere!)

@@ -13,6 +13,8 @@
  * GET  /api/governance/roles
  */
 
+import { getPhilippinesDateTime } from '../utils/phTime.js';
+
 const STORAGE_KEY = 'eccd_care_audit_logs_v2';
 
 export const INITIAL_AUDIT_LOGS = [];
@@ -76,7 +78,7 @@ export const auditService = {
   async logActivity({ user, role, action, module, record, status = 'Successful', details = '' }) {
     const entry = {
       id: 'LOG-2026-' + Math.floor(1000 + Math.random() * 9000),
-      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      timestamp: getPhilippinesDateTime().replace('T', ' ').slice(0, 19),
       user: user || 'Authorized User',
       role: role || 'Staff',
       action,

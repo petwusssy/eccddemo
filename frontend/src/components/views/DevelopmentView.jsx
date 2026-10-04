@@ -29,6 +29,7 @@ import { barangaysList, dayCareCentersList } from '../../data/mockData';
 import Button from '../ui/Button';
 import { OfficialEccdChecklistModal } from '../forms/OfficialEccdChecklistModal';
 import { EccdManualReferenceModal } from '../forms/EccdManualReferenceModal';
+import { getPhilippinesDate } from '../../utils/phTime';
 
 export function DevelopmentView({ onNavigate }) {
   // Navigation tabs
@@ -55,7 +56,7 @@ export function DevelopmentView({ onNavigate }) {
 
   // Form states for Assessment Session Metadata
   const [sessionForm, setSessionForm] = useState({
-    assessmentDate: new Date().toISOString().slice(0, 10),
+    assessmentDate: getPhilippinesDate(),
     assessmentCycle: 'Cycle 1 (Baseline - SY 2026–2027)',
     assessor: 'Maria Santos, CDW I',
     status: 'Assessment Completed', // 'Assessment Pending' | 'Assessment Completed' | 'Follow-up Required'
@@ -169,7 +170,7 @@ export function DevelopmentView({ onNavigate }) {
       );
 
       setSessionForm({
-        assessmentDate: new Date().toISOString().slice(0, 10),
+        assessmentDate: getPhilippinesDate(),
         assessmentCycle: 'Cycle 1 (Baseline - SY 2026–2027)',
         assessor: sessionForm.assessor,
         status: 'Assessment Completed',
@@ -199,7 +200,7 @@ export function DevelopmentView({ onNavigate }) {
         childName: quickAssessChild.fullName,
         barangay: quickAssessChild.barangay,
         dayCareCenter: quickAssessChild.dayCareCenter,
-        assessmentDate: quickAssessChild.inputDate || new Date().toISOString().slice(0, 10),
+        assessmentDate: quickAssessChild.inputDate || getPhilippinesDate(),
         assessmentCycle: quickAssessChild.inputCycle || 'Cycle 1 (Baseline - SY 2026–2027)',
         assessor: quickAssessChild.inputAssessor || 'Maria Santos, CDW I',
         status: quickAssessChild.inputStatus || 'Assessment Completed',
@@ -218,95 +219,197 @@ export function DevelopmentView({ onNavigate }) {
 
   return (
     <div className="dev-module-container">
-      {/* 1. Guideline Notice Banner */}
-      <div className="dev-guideline-banner">
-        <Info size={20} className="flex-shrink-0" style={{ color: '#0f2744' }} />
-        <div style={{ flex: 1 }}>
-          <strong>Official Assessment Framework:</strong> DepEd &amp; National ECCD Council official
-          Checklist (Child's Record 1 &amp; Child's Record 2) digitized and active.
-          <em>
-            {' '}
-            Strict official protocols only. No invented questions or medical diagnoses.
-          </em>
+      {/* Page Header */}
+      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
+        <div>
+          <h1 className="text-h1" style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
+            ECCD Developmental Assessment
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', margin: 'var(--space-1) 0 0 0' }}>
+            National ECCD Council 7-Domain Checklist administration and domain scoring
+          </p>
         </div>
         <Button
           variant="outline"
-          size="xs"
-          icon={BookOpen}
+          size="sm"
           onClick={() => setIsManualModalOpen(true)}
         >
-          How to Use Checklist (Manual)
+          <BookOpen size={14} />
+          Checklist Manual
         </Button>
       </div>
 
-      {/* 2. Top KPI Cards Grid */}
-      <div className="dev-kpi-grid">
+      {/* 2. Bento Grid Metrics */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 'var(--space-3)',
+          marginBottom: 'var(--space-4)',
+        }}
+      >
         <div
-          className={`dev-kpi-card ${statusFilter === 'assessment completed' ? 'is-active' : ''}`}
           onClick={() =>
             setStatusFilter(statusFilter === 'assessment completed' ? 'all' : 'assessment completed')
           }
+          style={{
+            background: statusFilter === 'assessment completed' ? 'var(--color-success-50)' : 'var(--surface-primary)',
+            border: statusFilter === 'assessment completed' ? '1.5px solid var(--color-success-500)' : '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: 'var(--shadow-xs)',
+            cursor: 'pointer',
+          }}
           title="Filter completed assessments"
         >
-          <div className="dev-kpi-icon completed">
-            <CheckCircle2 size={24} />
+          <div>
+            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Completed Assessments
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-success-600)', marginTop: '2px' }}>
+              {cohortData.counts.completedAssessments}
+            </div>
           </div>
-          <div className="dev-kpi-body">
-            <span className="dev-kpi-label">Completed Assessments</span>
-            <span className="dev-kpi-value">{cohortData.counts.completedAssessments}</span>
-            <span className="dev-kpi-subtext">Administered &amp; logged</span>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-success-50)',
+              color: 'var(--color-success-600)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <CheckCircle2 size={18} />
           </div>
         </div>
 
         <div
-          className={`dev-kpi-card ${statusFilter === 'assessment pending' ? 'is-active' : ''}`}
           onClick={() =>
             setStatusFilter(statusFilter === 'assessment pending' ? 'all' : 'assessment pending')
           }
+          style={{
+            background: statusFilter === 'assessment pending' ? 'var(--color-warning-50)' : 'var(--surface-primary)',
+            border: statusFilter === 'assessment pending' ? '1.5px solid var(--color-warning-500)' : '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: 'var(--shadow-xs)',
+            cursor: 'pointer',
+          }}
           title="Filter pending assessments"
         >
-          <div className="dev-kpi-icon pending">
-            <Clock size={24} />
+          <div>
+            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Pending Assessments
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-warning-600)', marginTop: '2px' }}>
+              {cohortData.counts.pendingAssessments}
+            </div>
           </div>
-          <div className="dev-kpi-body">
-            <span className="dev-kpi-label">Pending Assessments</span>
-            <span className="dev-kpi-value">{cohortData.counts.pendingAssessments}</span>
-            <span className="dev-kpi-subtext">Scheduled for administration</span>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-warning-50)',
+              color: 'var(--color-warning-600)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Clock size={18} />
           </div>
         </div>
 
         <div
-          className={`dev-kpi-card ${statusFilter === 'follow-up required' ? 'is-active' : ''}`}
           onClick={() =>
             setStatusFilter(statusFilter === 'follow-up required' ? 'all' : 'follow-up required')
           }
+          style={{
+            background: statusFilter === 'follow-up required' ? '#fef2f2' : 'var(--surface-primary)',
+            border: statusFilter === 'follow-up required' ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: 'var(--shadow-xs)',
+            cursor: 'pointer',
+          }}
           title="Filter assessments flagged for follow-up"
         >
-          <div className="dev-kpi-icon followup">
-            <AlertTriangle size={24} />
+          <div>
+            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Follow-ups Needed
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#dc2626', marginTop: '2px' }}>
+              {cohortData.counts.followUps}
+            </div>
           </div>
-          <div className="dev-kpi-body">
-            <span className="dev-kpi-label">Follow-ups</span>
-            <span className="dev-kpi-value">{cohortData.counts.followUps}</span>
-            <span className="dev-kpi-subtext">Action / guided session queued</span>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: 'var(--radius-md)',
+              background: 'rgba(239, 68, 68, 0.1)',
+              color: '#dc2626',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <AlertTriangle size={18} />
           </div>
         </div>
 
         <div
-          className="dev-kpi-card"
           onClick={() => {
             setStatusFilter('all');
             setSearchQuery('');
           }}
+          style={{
+            background: 'var(--surface-primary)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: 'var(--shadow-xs)',
+            cursor: 'pointer',
+          }}
           title="Total due assessments in current cycle"
         >
-          <div className="dev-kpi-icon due">
-            <CalendarClock size={24} />
+          <div>
+            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Due Baseline Rate
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-primary-600)', marginTop: '2px' }}>
+              {cohortData.counts.dueAssessments}
+            </div>
           </div>
-          <div className="dev-kpi-body">
-            <span className="dev-kpi-label">Due Assessments</span>
-            <span className="dev-kpi-value">{cohortData.counts.dueAssessments}</span>
-            <span className="dev-kpi-subtext">Active cohort baseline</span>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-primary-50)',
+              color: 'var(--color-primary-600)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <CalendarClock size={18} />
           </div>
         </div>
       </div>
@@ -424,7 +527,7 @@ export function DevelopmentView({ onNavigate }) {
               <thead>
                 <tr>
                   <th>Child</th>
-                  <th>ECCD Child ID</th>
+                  <th>ECCD ID</th>
                   <th>Barangay</th>
                   <th>Day Care Center</th>
                   <th>Cycle</th>
@@ -514,7 +617,7 @@ export function DevelopmentView({ onNavigate }) {
                               }}
                               title="View Assessment History"
                             >
-                              <FileText size={13} style={{ marginRight: '0.25rem' }} />
+                              <FileText size={16} style={{ marginRight: '0.25rem' }} />
                               History
                             </button>
 
@@ -527,8 +630,8 @@ export function DevelopmentView({ onNavigate }) {
                                 setIsChecklistModalOpen(true);
                               }}
                             >
-                              <CheckSquare size={13} style={{ marginRight: '0.25rem' }} />
-                              Official Checklist
+                              <CheckSquare size={16} style={{ marginRight: '0.25rem' }} />
+                              Checklist
                             </button>
                           </div>
                         </td>
@@ -630,12 +733,13 @@ export function DevelopmentView({ onNavigate }) {
           </div>
 
           {/* -------------------------------------------------------------
-              2. START ASSESSMENT: OFFICIAL CHECKLIST INTEGRATION POINT
+          {/* -------------------------------------------------------------
+              2. OFFICIAL ECCD CHECKLIST ASSESSMENTS
               ------------------------------------------------------------- */}
           <div className="dev-integration-box">
             <div className="dev-integration-header">
               <div className="dev-integration-title">
-                <ShieldCheck size={20} style={{ color: '#0f2744' }} />
+                <ShieldCheck size={18} style={{ color: '#0f2744' }} />
                 <span>OFFICIAL ECCD CHECKLIST ASSESSMENTS</span>
               </div>
               <span
@@ -648,23 +752,23 @@ export function DevelopmentView({ onNavigate }) {
                   borderRadius: '4px',
                 }}
               >
-                Integrated &amp; Active
+                Standard Form Active
               </span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
               <div className="dev-placeholder-card" style={{ background: '#f8fafc', borderColor: '#cbd5e1' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <span style={{ fontWeight: 800, color: '#0f2744', fontSize: '13px' }}>
-                    Official Child's Record 1
+                    Child's Record 1 (Form 2)
                   </span>
                   <span style={{ fontSize: '11px', color: '#0369a1', background: '#e0f2fe', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
-                    Ages 0 to 3.0 years
+                    Ages 0 to 3.0 yrs
                   </span>
                 </div>
-                <p className="dev-placeholder-desc" style={{ marginBottom: '12px' }}>
-                  Standardized 7 developmental domains for infants and toddlers (115 official items across Infants Section &amp; Optional Starting Point).
-                </p>
+                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                  7 developmental domains for infants and toddlers (115 standardized items).
+                </div>
                 <Button
                   variant="primary"
                   size="sm"
@@ -674,22 +778,22 @@ export function DevelopmentView({ onNavigate }) {
                     setIsChecklistModalOpen(true);
                   }}
                 >
-                  Start Child's Record 1 Assessment
+                  Start Record 1 Assessment
                 </Button>
               </div>
 
               <div className="dev-placeholder-card" style={{ background: '#f8fafc', borderColor: '#cbd5e1' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <span style={{ fontWeight: 800, color: '#0f2744', fontSize: '13px' }}>
-                    Official Child's Record 2
+                    Child's Record 2 (Form 2)
                   </span>
                   <span style={{ fontSize: '11px', color: '#166534', background: '#dcfce7', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
-                    Ages 3.1 to 5.11 years
+                    Ages 3.1 to 5.11 yrs
                   </span>
                 </div>
-                <p className="dev-placeholder-desc" style={{ marginBottom: '12px' }}>
-                  Standardized 7 developmental domains for preschool children (109 items including feeding, dressing, toilet training, and bathing).
-                </p>
+                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                  7 developmental domains for preschool children (109 standardized items).
+                </div>
                 <Button
                   variant="primary"
                   size="sm"
@@ -699,20 +803,20 @@ export function DevelopmentView({ onNavigate }) {
                     setIsChecklistModalOpen(true);
                   }}
                 >
-                  Start Child's Record 2 Assessment
+                  Start Record 2 Assessment
                 </Button>
               </div>
             </div>
           </div>
 
           {/* -------------------------------------------------------------
-              3. SCORING AREA: OFFICIAL SCORING INTEGRATION POINT
+              3. OFFICIAL SCORING CONVERSION STATUS
               ------------------------------------------------------------- */}
           <div className="dev-scoring-box">
             <div className="dev-scoring-header">
               <div className="dev-scoring-title">
-                <TrendingUp size={20} style={{ color: '#0284c7' }} />
-                <span>OFFICIAL SCORING INTEGRATION POINT</span>
+                <TrendingUp size={18} style={{ color: '#0284c7' }} />
+                <span>OFFICIAL ECCD COUNCIL SCORING MATRIX</span>
               </div>
               <span
                 style={{
@@ -724,20 +828,15 @@ export function DevelopmentView({ onNavigate }) {
                   borderRadius: '4px',
                 }}
               >
-                Standard Conversion Socket
+                Norms Table Connected
               </span>
             </div>
 
-            <div className="dev-placeholder-card" style={{ background: '#ffffff', borderColor: '#bae6fd' }}>
-              <span className="dev-placeholder-code" style={{ color: '#0284c7', background: '#f0f9ff' }}>
-                [PLACEHOLDER — CONNECT OFFICIAL SCALED SCORE / STANDARD SCORE REFERENCE HERE]
-              </span>
-              <p className="dev-placeholder-desc" style={{ marginTop: '0.5rem' }}>
-                <strong>Strict Standard: Do not calculate fake results.</strong> Official raw score
-                conversion tables (Domain Raw Score $\rightarrow$ Scaled Score $\rightarrow$ Sum of
-                Scaled Scores $\rightarrow$ Standard Score) will automatically calculate in this area
-                upon integration of the official DepEd/ECCD Council scoring matrix.
-              </p>
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 14px' }}>
+              <div style={{ fontSize: '12px', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={16} style={{ color: '#16a34a', flexShrink: 0 }} />
+                <span>Domain Raw Scores are automatically converted to Scaled Scores (1–19) and Standard Score (Mean 100, SD 15) inside the digital checklist.</span>
+              </div>
             </div>
           </div>
 
@@ -837,7 +936,7 @@ export function DevelopmentView({ onNavigate }) {
                   variant="outline"
                   onClick={() => {
                     setSessionForm({
-                      assessmentDate: new Date().toISOString().slice(0, 10),
+                      assessmentDate: getPhilippinesDate(),
                       assessmentCycle: 'Cycle 1 (Baseline - SY 2026–2027)',
                       assessor: 'Maria Santos, CDW I',
                       status: 'Assessment Completed',
@@ -1216,7 +1315,7 @@ export function DevelopmentView({ onNavigate }) {
                   setViewHistoryModal(null);
                   setQuickAssessChild({
                     ...target,
-                    inputDate: new Date().toISOString().slice(0, 10),
+                    inputDate: getPhilippinesDate(),
                     inputCycle: 'Cycle 1 (Baseline - SY 2026–2027)',
                     inputAssessor: 'Maria Santos, CDW I',
                     inputStatus: 'Assessment Completed',

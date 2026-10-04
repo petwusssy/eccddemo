@@ -13,6 +13,7 @@
  */
 
 import { centralDataStore } from './centralDataStore.js';
+import { getPhilippinesDate } from '../utils/phTime.js';
 
 export const enrollmentService = {
   /**
@@ -34,7 +35,7 @@ export const enrollmentService = {
         center: enr.center || child?.dayCareCenterName || 'San Isidro Child Development Center I',
         session: enr.session || 'Morning Session (8:00 AM – 11:00 AM)',
         schoolYear: enr.schoolYear || 'SY 2026–2027',
-        enrollmentDate: enr.enrollmentDate || enr.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+        enrollmentDate: enr.enrollmentDate || enr.createdAt?.slice(0, 10) || getPhilippinesDate(),
         status: enr.status || 'Enrolled',
       };
     });
@@ -52,7 +53,7 @@ export const enrollmentService = {
           center: c.dayCareCenterName || 'San Isidro Child Development Center I',
           session: 'Morning Session (8:00 AM – 11:00 AM)',
           schoolYear: 'SY 2026–2027',
-          enrollmentDate: c.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+          enrollmentDate: c.createdAt?.slice(0, 10) || getPhilippinesDate(),
           status: 'Enrolled',
         });
       }
@@ -87,7 +88,14 @@ export const enrollmentService = {
   async getNotEnrolledChildren(filters = {}) {
     const rawChildren = centralDataStore.getChildren() || [];
     let list = rawChildren
-      .filter((c) => c.enrollmentStatus === 'Not Enrolled' || !c.enrollmentStatus)
+      .filter((c) => {
+        const isEnrolled =
+          c.statusPillars?.enrolled?.status === 'Enrolled' ||
+          c.enrollmentStatus === 'Enrolled' ||
+          c.isEnrolled === true ||
+          c.enrollment?.enrolled === true;
+        return !isEnrolled;
+      })
       .map((c) => ({
         ...c,
         childId: c.id,
@@ -147,7 +155,7 @@ export const enrollmentService = {
       program: payload.program || 'Child Development Center (CDC)',
       session: payload.session || 'Morning Session (8:00 AM – 11:00 AM)',
       schoolYear: payload.schoolYear || 'SY 2026–2027',
-      enrollmentDate: payload.enrollmentDate || new Date().toISOString().split('T')[0],
+      enrollmentDate: payload.enrollmentDate || getPhilippinesDate(),
       teacher: payload.teacher || 'Maria Santos, CDW I',
       status: payload.status || 'Enrolled',
     });
@@ -171,7 +179,7 @@ export const enrollmentService = {
       center: child?.dayCareCenterName || 'San Isidro Child Development Center I',
       status: 'Enrolled',
       schoolYear: 'SY 2026–2027',
-      enrollmentDate: child?.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+      enrollmentDate: child?.createdAt?.slice(0, 10) || getPhilippinesDate(),
     } : null);
 
     return {

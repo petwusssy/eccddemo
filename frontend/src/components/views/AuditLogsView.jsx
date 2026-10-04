@@ -77,19 +77,15 @@ export function AuditLogsView({
 
   return (
     <div className="gov-container">
-      {/* =========================================================================
-          1. POLICY DISCLAIMER BANNER
-          Do not claim compliance certifications. Prototype security and governance controls.
-          ========================================================================= */}
-      <div className="gov-disclaimer">
-        <Shield size={22} color="#0f2744" style={{ flexShrink: 0, marginTop: '2px' }} />
+      {/* Page Header */}
+      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
         <div>
-          <div className="gov-disclaimer-title">
-            Prototype Security & System Governance Controls
-          </div>
-          <div className="gov-disclaimer-desc">
-            This module presents prototype security, role-based boundary enforcement, and operational activity auditing for the ECCD CARE system. These controls reflect public-service governance principles without claiming formal third-party compliance certifications.
-          </div>
+          <h1 className="text-h1" style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
+            Audit Logs &amp; System Governance
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', margin: 'var(--space-1) 0 0 0' }}>
+            Role-based boundary enforcement, security logs, and operational audit trail
+          </p>
         </div>
       </div>
 

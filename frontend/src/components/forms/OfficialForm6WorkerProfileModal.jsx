@@ -20,6 +20,7 @@ import { Select } from '../ui/Select';
 import { officialFormsService } from '../../services/officialFormsService';
 import { centralDataStore } from '../../services/centralDataStore';
 import { useToast } from '../ui/Toast';
+import { getPhilippinesDate } from '../../utils/phTime';
 
 export function OfficialForm6WorkerProfileModal({
   isOpen,
@@ -106,7 +107,7 @@ export function OfficialForm6WorkerProfileModal({
     hoursStayingInCenter: '8 hours', // 1-2 hrs., 2 ½ - 3 hrs., 4-5 hrs., 6-7 hrs., 8 hours
     howSessionsConducted: 'With reference materials', // With reference materials, Without reference materials
     cdwNamePrint: '',
-    dateConducted: new Date().toISOString().split('T')[0],
+    dateConducted: getPhilippinesDate(),
   });
 
   // Load existing worker data if workerId provided

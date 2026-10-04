@@ -35,6 +35,7 @@ import { useToast } from '../ui/Toast';
 import { useAuth } from '../auth/AuthProvider';
 import { enrollmentService } from '../../services/enrollmentService';
 import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
+import { getPhilippinesDate } from '../../utils/phTime';
 
 const AVAILABLE_BARANGAYS = SAN_FERNANDO_BARANGAYS;
 
@@ -85,7 +86,7 @@ export function EnrollmentView({ onNavigate }) {
     program: 'Child Development Center (CDC)',
     session: 'Morning Session (8:00 AM – 11:00 AM)',
     schoolYear: 'SY 2026–2027',
-    enrollmentDate: new Date().toISOString().split('T')[0],
+    enrollmentDate: getPhilippinesDate(),
     status: 'Enrolled',
     teacher: 'Maria Santos, CDW I',
   });
@@ -206,11 +207,11 @@ export function EnrollmentView({ onNavigate }) {
       <div className="page-header" style={{ marginBottom: 'var(--space-3)' }}>
         <div className="page-title-group">
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <h1 className="page-title">Day Care & CDC Enrollment Tracking</h1>
+            <h1 className="page-title">Day Care &amp; CDC Enrollment</h1>
             <Badge variant="primary" size="sm">SY 2026–2027</Badge>
           </div>
           <p className="page-subtitle">
-            Lifecycle transition from community mapping to official Day Care admission. Reuses existing ECCD Child IDs.
+            Community mapping to Day Care admission tracking and enrollment.
           </p>
         </div>
 
@@ -221,38 +222,171 @@ export function EnrollmentView({ onNavigate }) {
               size="sm"
               onClick={() => setActiveTab('enroll-wizard')}
             >
-              <Plus size={14} />
+              <Plus size={16} />
               Enroll Existing Child
             </Button>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', color: '#64748b' }}>
-              <Lock size={12} />
+              <Lock size={16} />
               <span>Admission: CDW Only</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Field Worker View-Only Informational Banner */}
-      {isFieldWorker && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '10px 16px',
-          backgroundColor: '#eff6ff',
-          border: '1px solid #bfdbfe',
-          borderRadius: '8px',
-          marginBottom: 'var(--space-3)',
-          color: '#1e40af',
-          fontSize: '13px'
-        }}>
-          <ShieldAlert size={18} style={{ color: '#2563eb', flexShrink: 0 }} />
+      {/* Bento Grid Metrics */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 'var(--space-3)',
+          marginBottom: 'var(--space-4)',
+        }}
+      >
+        <div
+          style={{
+            background: 'var(--surface-primary)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: 'var(--shadow-xs)',
+          }}
+        >
           <div>
-            <strong>Field Worker Scope (View-Only Mode):</strong> You have read-only tracking access to monitor not-enrolled children for house-to-house follow-up and mapping intake. Official admission into Day Care Centers is reserved for accredited Child Development Workers (CDWs).
+            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Active Enrollments
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-success-600)', marginTop: '2px' }}>
+              {enrollments.length}
+            </div>
+          </div>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-success-50)',
+              color: 'var(--color-success-600)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <School size={18} />
           </div>
         </div>
-      )}
+
+        <div
+          style={{
+            background: 'var(--surface-primary)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: 'var(--shadow-xs)',
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Not Enrolled Queue
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-warning-600)', marginTop: '2px' }}>
+              {notEnrolledChildren.length}
+            </div>
+          </div>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-warning-50)',
+              color: 'var(--color-warning-600)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <AlertTriangle size={18} />
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: 'var(--surface-primary)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: 'var(--shadow-xs)',
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              4-Year-Old Priority
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-danger-600)', marginTop: '2px' }}>
+              {notEnrolledChildren.filter((c) => c?.priorityTarget?.includes('4-Year-Old') || c?.ageYears >= 4).length}
+            </div>
+          </div>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-danger-50)',
+              color: 'var(--color-danger-600)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Baby size={18} />
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: 'var(--surface-primary)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: 'var(--shadow-xs)',
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Enrollment Ratio
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-primary-600)', marginTop: '2px' }}>
+              {Math.round((enrollments.length / ((enrollments.length + notEnrolledChildren.length) || 1)) * 100)}%
+            </div>
+          </div>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-primary-50)',
+              color: 'var(--color-primary-600)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <UserCheck size={18} />
+          </div>
+        </div>
+      </div>
 
       {/* -------------------------------------------------------------
           6. IMPORTANT UX: MAPPED → NOT ENROLLED → ENROLLED LIFECYCLE STRIP
@@ -338,10 +472,10 @@ export function EnrollmentView({ onNavigate }) {
             <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
               <div style={{ flex: 2, minWidth: '240px' }}>
                 <Input
-                  placeholder="Search child name, ECCD Child ID, barangay or center..."
+                  placeholder="Search child name, ECCD ID, barangay or center..."
                   value={searchDir}
                   onChange={(e) => setSearchDir(e.target.value)}
-                  leftIcon={<Search size={14} />}
+                  leftIcon={<Search size={16} />}
                   className="input-sm"
                 />
               </div>
@@ -380,7 +514,7 @@ export function EnrollmentView({ onNavigate }) {
                 <TableHead>
                   <TableRow>
                     <TableHeader>Child</TableHeader>
-                    <TableHeader>ECCD Child ID</TableHeader>
+                    <TableHeader>ECCD ID</TableHeader>
                     <TableHeader>Barangay</TableHeader>
                     <TableHeader>Day Care Center</TableHeader>
                     <TableHeader>School Year</TableHeader>
@@ -441,7 +575,7 @@ export function EnrollmentView({ onNavigate }) {
                             size="sm"
                             onClick={() => handleViewHistory(enr)}
                           >
-                            <History size={13} />
+                            <History size={16} />
                             History
                           </Button>
                         </TableCell>
@@ -460,22 +594,17 @@ export function EnrollmentView({ onNavigate }) {
           ========================================================================= */}
       {activeTab === 'not-enrolled' && (
         <div>
-          {/* Operational Banner */}
-          <div className="not-enrolled-banner">
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <AlertTriangle size={20} style={{ color: '#ea580c' }} />
-                <h2 style={{ fontSize: 'var(--font-size-md)', fontWeight: 'bold', color: '#9a3412', margin: 0 }}>
-                  Children Identified Through Mapping but Not Yet Enrolled
-                </h2>
-              </div>
-              <p style={{ margin: '4px 0 0', fontSize: 'var(--font-size-xs)', color: '#c2410c' }}>
-                These children were surveyed during house-to-house community mapping and have existing ECCD Child IDs. Enroll them directly without creating duplicate records.
-              </p>
+          {/* Operational Header Bar */}
+          <div className="not-enrolled-banner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-3) var(--space-4)', marginBottom: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <AlertTriangle size={18} style={{ color: '#ea580c' }} />
+              <h2 style={{ fontSize: 'var(--font-size-md)', fontWeight: 'bold', color: '#9a3412', margin: 0 }}>
+                Unenrolled Mapped Cohort
+              </h2>
             </div>
 
-            <Badge variant="warning">
-              {notEnrolledChildren.length} Priority Intake Targets
+            <Badge variant="warning" size="sm">
+              {notEnrolledChildren.length} Targets
             </Badge>
           </div>
 
@@ -539,9 +668,9 @@ export function EnrollmentView({ onNavigate }) {
                   <TableHead>
                     <TableRow>
                       <TableHeader>Child Name</TableHeader>
-                      <TableHeader>ECCD Child ID</TableHeader>
-                      <TableHeader>Age & Sex</TableHeader>
-                      <TableHeader>Barangay & Purok</TableHeader>
+                      <TableHeader>ECCD ID</TableHeader>
+                      <TableHeader>Age &amp; Sex</TableHeader>
+                      <TableHeader>Barangay &amp; Purok</TableHeader>
                       <TableHeader>Mapping Date</TableHeader>
                       <TableHeader>Priority Target</TableHeader>
                       <TableHeader>Nearest Center</TableHeader>
@@ -556,44 +685,48 @@ export function EnrollmentView({ onNavigate }) {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      notEnrolledChildren.map((child) => (
-                        <TableRow key={child.childId}>
-                          <TableCell>
-                            <strong>{child.childName}</strong>
-                            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-                              Guardian: {child.parentGuardian} ({child.contactNumber})
-                            </div>
-                          </TableCell>
+                      notEnrolledChildren.map((child) => {
+                        const priority = child?.priorityTarget || (child?.ageYears >= 4 ? '4-Year-Old Priority' : 'Age 3 Target');
+                        const isPriority = priority.includes('4-Year-Old');
 
-                          <TableCell>
-                            <code style={{ fontSize: 'var(--font-size-xs)', backgroundColor: 'var(--color-warning-bg)', padding: '2px 6px', borderRadius: 'var(--radius-sm)' }}>
-                              {child.childId}
-                            </code>
-                          </TableCell>
+                        return (
+                          <TableRow key={child.childId}>
+                            <TableCell>
+                              <strong>{child.childName}</strong>
+                              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
+                                Guardian: {child.parentGuardian} ({child.contactNumber})
+                              </div>
+                            </TableCell>
 
-                          <TableCell>{child.ageDisplay} • {child.sex}</TableCell>
+                            <TableCell>
+                              <code style={{ fontSize: 'var(--font-size-xs)', backgroundColor: 'var(--color-warning-bg)', padding: '2px 6px', borderRadius: 'var(--radius-sm)' }}>
+                                {child.childId}
+                              </code>
+                            </TableCell>
 
-                          <TableCell>
-                            <div>{child.barangay}</div>
-                            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>{child.purok}</div>
-                          </TableCell>
+                            <TableCell>{child.ageDisplay} • {child.sex}</TableCell>
 
-                          <TableCell style={{ fontSize: 'var(--font-size-xs)' }}>
-                            {child.mappedDate}
-                          </TableCell>
+                            <TableCell>
+                              <div>{child.barangay}</div>
+                              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>{child.purok}</div>
+                            </TableCell>
 
-                          <TableCell>
-                            <Badge variant={child.priorityTarget.includes('4-Year-Old') ? 'danger' : 'warning'} size="sm">
-                              {child.priorityTarget}
-                            </Badge>
-                          </TableCell>
+                            <TableCell style={{ fontSize: 'var(--font-size-xs)' }}>
+                              {child.mappedDate || child.mappingDate || getPhilippinesDate()}
+                            </TableCell>
 
-                          <TableCell>
-                            <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '500' }}>{child.nearestCenter}</span>
-                            <div style={{ fontSize: '11px', color: 'var(--color-success-primary)' }}>
-                              {child.availableSlots} open slots
-                            </div>
-                          </TableCell>
+                            <TableCell>
+                              <Badge variant={isPriority ? 'danger' : 'warning'} size="sm">
+                                {priority}
+                              </Badge>
+                            </TableCell>
+
+                            <TableCell>
+                              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '500' }}>{child.nearestCenter || 'San Isidro Child Development Center I'}</span>
+                              <div style={{ fontSize: '11px', color: 'var(--color-success-primary)' }}>
+                                {child.availableSlots ?? 12} open slots
+                              </div>
+                            </TableCell>
 
                           <TableCell style={{ textAlign: 'right' }}>
                             {!isFieldWorker ? (
@@ -602,18 +735,19 @@ export function EnrollmentView({ onNavigate }) {
                                 size="sm"
                                 onClick={() => handleInitiateEnrollment(child)}
                               >
-                                <Plus size={13} />
-                                Enroll This Child
+                                <Plus size={16} />
+                                Enroll
                               </Button>
                             ) : (
                               <span style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                <Lock size={11} /> CDW Admission Only
+                                <Lock size={14} /> CDW Only
                               </span>
                             )}
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
+                      );
+                    })
+                  )}
                   </TableBody>
                 </Table>
               </div>
@@ -695,8 +829,8 @@ export function EnrollmentView({ onNavigate }) {
                       size="sm"
                       onClick={() => handleInitiateEnrollment(c)}
                     >
-                      <UserCheck size={14} />
-                      Select & Enroll
+                      <UserCheck size={16} />
+                      Select &amp; Enroll
                     </Button>
                   </div>
                 ))}
@@ -714,7 +848,7 @@ export function EnrollmentView({ onNavigate }) {
         <Modal
           isOpen={isEnrollModalOpen}
           onClose={() => setIsEnrollModalOpen(false)}
-          title="Child Confirmation Before Enrollment"
+          title="Child Admission Confirmation"
           subtitle="Verify existing child record to prevent duplicate entries"
           size="lg"
         >

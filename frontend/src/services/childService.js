@@ -40,11 +40,19 @@ export const childService = {
     }
 
     if (filters.enrollmentStatus) {
-      list = list.filter(
-        (c) =>
+      list = list.filter((c) => {
+        const isEnrolled =
+          c.statusPillars?.enrolled?.status === 'Enrolled' ||
+          c.enrollmentStatus === 'Enrolled' ||
+          c.isEnrolled === true ||
+          c.enrollment?.enrolled === true;
+        if (filters.enrollmentStatus === 'Enrolled') return isEnrolled;
+        if (filters.enrollmentStatus === 'Not Enrolled') return !isEnrolled;
+        return (
           c.enrollmentStatus === filters.enrollmentStatus ||
           c.statusPillars?.enrolled?.status === filters.enrollmentStatus
-      );
+        );
+      });
     }
 
     if (filters.healthStatus) {

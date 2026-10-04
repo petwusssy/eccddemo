@@ -46,10 +46,10 @@ import { Modal } from '../ui/Modal';
 import { useToast } from '../ui/Toast';
 import { communityMappingService } from '../../services/communityMappingService';
 import { apiClient } from '../../services/apiClient';
-import { MobileFieldWorker } from '../mobile/MobileFieldWorker';
 import { OfficialForm1HomeProfileModal } from '../forms/OfficialForm1HomeProfileModal';
 import { OfficialForm3CommunityProfileModal } from '../forms/OfficialForm3CommunityProfileModal';
 import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
+import { formatPHTTime } from '../../utils/phTime';
 
 const AVAILABLE_BARANGAYS = SAN_FERNANDO_BARANGAYS;
 
@@ -64,18 +64,12 @@ const AVAILABLE_WORKERS = [
 export function CommunityMappingView({ onNavigate, initialTab }) {
   const { addToast } = useToast();
 
-  // Field experience mode: 'mobile-field' | 'desktop'
-  const [viewMode, setViewMode] = useState(initialTab === 'households' ? 'desktop' : 'mobile-field');
-
   // Navigation tab state
   const [activeTab, setActiveTab] = useState(initialTab || 'stepper'); // 'stepper' | 'activities' | 'assignments' | 'households'
 
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab);
-      if (initialTab === 'households') {
-        setViewMode('desktop');
-      }
     }
   }, [initialTab]);
 
@@ -231,7 +225,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       householdForm,
       childrenList,
       currentStep,
-      timestamp: new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: formatPHTTime(new Date(), false),
     };
     const res = communityMappingService.saveDraft(draftPayload);
     if (res.ok) {
@@ -378,7 +372,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       setCompletedSummary({
         household: createdHh,
         children: savedChildren,
-        timestamp: new Date().toLocaleTimeString('en-PH'),
+        timestamp: formatPHTTime(new Date(), true),
       });
 
       setCurrentStep(5);
@@ -469,78 +463,82 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
 
   return (
     <div className="community-mapping-view">
-      {/* Field Experience Mode Switcher */}
-      <div className="field-mode-toggle-bar" style={{ marginBottom: '1.25rem' }}>
-        <div className="field-mode-label">
-          <Smartphone size={18} color="#0284c7" />
-          <span>ECCD CARE Field View:</span>
-        </div>
-        <div className="field-segmented-toggle">
-          <button
-            type="button"
-            className={`field-segment-btn ${viewMode === 'mobile-field' ? 'is-active' : ''}`}
-            onClick={() => setViewMode('mobile-field')}
-          >
-            <Smartphone size={14} />
-            <span>📱 Mobile Field Worker (Smartphone View)</span>
-          </button>
-          <button
-            type="button"
-            className={`field-segment-btn ${viewMode === 'desktop' ? 'is-active' : ''}`}
-            onClick={() => setViewMode('desktop')}
-          >
-            <Layers size={14} />
-            <span>🖥️ Desktop / Supervisor View</span>
-          </button>
-        </div>
-      </div>
-
-      {viewMode === 'mobile-field' ? (
-        <MobileFieldWorker onNavigate={onNavigate} />
-      ) : (
-        <>
-          {/* Top Header with Sync Indicator */}
-          <div className="page-header" style={{ marginBottom: 'var(--space-3)' }}>
-            <div className="page-title-group">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <h1 className="page-title">Community Child Mapping Module</h1>
-                <Badge variant="primary" size="sm">0–4 Cohort</Badge>
-              </div>
+      {/* Top Header with Sync Indicator */}
+      <div className="page-header" style={{ marginBottom: 'var(--space-3)' }}>
+        <div className="page-title-group">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <h1 className="page-title">Community Child Mapping</h1>
+            <Badge variant="primary" size="sm">0–4 Cohort</Badge>
+          </div>
           <p className="page-subtitle">
-            House-to-house demographic profiling, deduplication, and early education tracking for the City of San Fernando, Pampanga.
+            Demographic profiling, deduplication &amp; early education tracking
           </p>
         </div>
 
-        {/* Sync Status Badge (mobile-design skill) */}
+        {/* Sync Status Badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           {syncStatus === 'synced' && (
             <div className="mapping-sync-badge">
-              <Wifi size={14} />
+              <Wifi size={16} />
               <span>Online • All Records Synced</span>
             </div>
           )}
           {syncStatus === 'draft' && (
             <div className="mapping-sync-badge draft">
-              <Smartphone size={14} />
+              <Smartphone size={16} />
               <span>Draft Saved Locally ({lastSavedTime || 'Recent'})</span>
             </div>
           )}
           {syncStatus === 'saving' && (
             <div className="mapping-sync-badge draft">
-              <span>Saving & Synchronizing...</span>
+              <span>Saving &amp; Synchronizing...</span>
             </div>
           )}
+        </div>
+      </div>
 
-          {activeTab === 'activities' && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setIsCreateActivityOpen(true)}
-            >
-              <Plus size={14} />
-              Create Mapping Activity
-            </Button>
-          )}
+      {/* Community Mapping Bento Quick Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+        <div className="kpi-card" style={{ padding: 'var(--space-3) var(--space-4)' }}>
+          <div className="kpi-top" style={{ marginBottom: '4px' }}>
+            <span className="kpi-title">Mapped Households</span>
+            <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-primary-50)', color: 'var(--color-primary-800)', width: '1.75rem', height: '1.75rem' }}>
+              <Home size={16} />
+            </div>
+          </div>
+          <div className="kpi-value" style={{ fontSize: '1.5rem', margin: 0 }}>{households.length}</div>
+        </div>
+
+        <div className="kpi-card" style={{ padding: 'var(--space-3) var(--space-4)' }}>
+          <div className="kpi-top" style={{ marginBottom: '4px' }}>
+            <span className="kpi-title">Active Rounds</span>
+            <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-accent-50)', color: 'var(--color-accent-700)', width: '1.75rem', height: '1.75rem' }}>
+              <MapPin size={16} />
+            </div>
+          </div>
+          <div className="kpi-value" style={{ fontSize: '1.5rem', margin: 0 }}>{activities.filter(a => a.status === 'In Progress').length || activities.length}</div>
+        </div>
+
+        <div className="kpi-card" style={{ padding: 'var(--space-3) var(--space-4)' }}>
+          <div className="kpi-top" style={{ marginBottom: '4px' }}>
+            <span className="kpi-title">Field Workers</span>
+            <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success-primary)', width: '1.75rem', height: '1.75rem' }}>
+              <Users size={16} />
+            </div>
+          </div>
+          <div className="kpi-value" style={{ fontSize: '1.5rem', margin: 0 }}>{assignments.length}</div>
+        </div>
+
+        <div className="kpi-card" style={{ padding: 'var(--space-3) var(--space-4)' }}>
+          <div className="kpi-top" style={{ marginBottom: '4px' }}>
+            <span className="kpi-title">Surveyed Children</span>
+            <div className="kpi-icon-wrap" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', width: '1.75rem', height: '1.75rem' }}>
+              <Baby size={16} />
+            </div>
+          </div>
+          <div className="kpi-value" style={{ fontSize: '1.5rem', margin: 0 }}>
+            {households.reduce((acc, h) => acc + (h.children?.length || (h.childrenAges ? h.childrenAges.length : 0) || 1), 0)}
+          </div>
         </div>
       </div>
 
@@ -589,7 +587,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
             onClick={() => setActiveTab('stepper')}
             style={{ borderRadius: '20px', padding: '6px 14px', fontSize: '13px' }}
           >
-            <Home size={14} style={{ marginRight: '6px' }} />
+            <Home size={16} style={{ marginRight: '6px' }} />
             House-to-House Stepper
           </button>
           <button
@@ -598,8 +596,8 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
             onClick={() => setActiveTab('activities')}
             style={{ borderRadius: '20px', padding: '6px 14px', fontSize: '13px' }}
           >
-            <MapPin size={14} style={{ marginRight: '6px' }} />
-            Mapping Rounds & Activities ({activities.length})
+            <MapPin size={16} style={{ marginRight: '6px' }} />
+            Mapping Rounds &amp; Activities ({activities.length})
           </button>
           <button
             type="button"
@@ -607,7 +605,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
             onClick={() => setActiveTab('assignments')}
             style={{ borderRadius: '20px', padding: '6px 14px', fontSize: '13px' }}
           >
-            <Users size={14} style={{ marginRight: '6px' }} />
+            <Users size={16} style={{ marginRight: '6px' }} />
             Field Worker Assignments ({assignments.length})
           </button>
         </div>
@@ -619,27 +617,34 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           ========================================================================= */}
       {activeTab === 'stepper' && (
         <div className="mapping-stepper-container">
-          {/* Stepper Progress Bar */}
-          <div className="mapping-stepper">
-            <div className={`stepper-step ${currentStep === 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
-              <div className="stepper-circle">{currentStep > 1 ? <Check size={14} /> : '1'}</div>
-              <span className="stepper-label">Household Info</span>
-            </div>
-
-            <div className={`stepper-step ${currentStep === 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
-              <div className="stepper-circle">{currentStep > 2 ? <Check size={14} /> : '2'}</div>
-              <span className="stepper-label">Children 0–4 ({childrenList.length})</span>
-            </div>
-
-            <div className={`stepper-step ${currentStep === 3 ? 'active' : ''} ${currentStep > 3 ? 'completed' : ''}`}>
-              <div className="stepper-circle">{currentStep > 3 ? <Check size={14} /> : '3'}</div>
-              <span className="stepper-label">Record Check</span>
-            </div>
-
-            <div className={`stepper-step ${currentStep === 4 ? 'active' : ''} ${currentStep > 4 ? 'completed' : ''}`}>
-              <div className="stepper-circle">{currentStep > 4 ? <Check size={14} /> : '4'}</div>
-              <span className="stepper-label">Review & Save</span>
-            </div>
+          {/* Modern Compact Pill Stepper */}
+          <div className="mapping-stepper" role="navigation" aria-label="Mapping Stepper">
+            {[
+              { num: 1, label: 'Household Info' },
+              { num: 2, label: `Children 0–4 (${childrenList.length})` },
+              { num: 3, label: 'Record Check' },
+              { num: 4, label: 'Review & Save' },
+            ].map((step) => {
+              const isActive = currentStep === step.num;
+              const isDone = currentStep > step.num;
+              return (
+                <button
+                  key={step.num}
+                  type="button"
+                  onClick={() => {
+                    if (isDone || isActive) setCurrentStep(step.num);
+                  }}
+                  disabled={!isDone && !isActive}
+                  className={`stepper-step ${isActive ? 'active' : ''} ${isDone ? 'completed' : ''}`}
+                  style={{ border: 'none', cursor: isDone ? 'pointer' : isActive ? 'default' : 'not-allowed', textAlign: 'left' }}
+                >
+                  <div className="stepper-circle">
+                    {isDone ? <Check size={12} /> : step.num}
+                  </div>
+                  <span className="stepper-label">{step.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* -------------------------------------------------------------
@@ -649,31 +654,12 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
             <Card>
               <CardHeader>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <CardTitle subtitle="Step 1: Record basic household identifiers and residential address">
+                  <CardTitle subtitle="Household identifiers and residential location">
                     Household Information
                   </CardTitle>
-                  <Button variant="ghost" size="sm" onClick={handleSaveDraft}>
-                    <Save size={14} />
-                    Save Draft
-                  </Button>
                 </div>
               </CardHeader>
               <CardBody>
-                {/* IMPORTANT INTEGRATION MARKER: AS INSTRUCTED */}
-                <div className="eccd-official-marker">
-                  <div className="eccd-official-marker-icon">
-                    <ShieldCheck size={20} />
-                  </div>
-                  <div className="eccd-official-marker-content">
-                    <div className="eccd-official-marker-title">
-                      OFFICIAL ECCD FORM INTEGRATION POINT
-                    </div>
-                    <div className="eccd-official-marker-sub">
-                      [CONNECT OFFICIAL REGISTRATION / HOME PROFILE FORM HERE]
-                    </div>
-                  </div>
-                </div>
-
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-3)' }}>
                     <Input
@@ -739,7 +725,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                   Save Draft
                 </Button>
                 <Button variant="primary" size="md" onClick={handleNextStep}>
-                  Save & Continue to Children
+                  Next: Children (0–4)
                   <ArrowRight size={16} />
                 </Button>
               </div>
@@ -753,7 +739,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
             <Card>
               <CardHeader>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <CardTitle subtitle="Step 2: Add all children residing in this household aged below 5 years">
+                  <CardTitle subtitle="Children residing in household (Ages 0–4)">
                     Children Aged 0–4 Roster
                   </CardTitle>
                   <Badge variant="primary" size="sm">
@@ -936,10 +922,10 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
               <div className="mobile-stepper-footer">
                 <Button variant="secondary" size="md" onClick={() => setCurrentStep(1)}>
                   <ArrowLeft size={16} />
-                  Back to Household
+                  Back
                 </Button>
                 <Button variant="primary" size="md" onClick={handleNextStep}>
-                  Check Existing Records ({childrenList.length})
+                  Next: Record Check ({childrenList.length})
                   <ArrowRight size={16} />
                 </Button>
               </div>
@@ -953,7 +939,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
             <Card>
               <CardHeader>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <CardTitle subtitle="Step 3: Verification against central ECCD CARE registry to prevent duplicates">
+                  <CardTitle subtitle="Central registry cross-reference and deduplication">
                     Existing Record Verification & Deduplication
                   </CardTitle>
                   <Button variant="secondary" size="sm" onClick={runDuplicateCheck} disabled={isSearchingMatch}>
@@ -1060,10 +1046,10 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
               <div className="mobile-stepper-footer">
                 <Button variant="secondary" size="md" onClick={() => setCurrentStep(2)}>
                   <ArrowLeft size={16} />
-                  Back to Children Roster
+                  Back
                 </Button>
                 <Button variant="primary" size="md" onClick={handleNextStep}>
-                  Review & Save Household
+                  Next: Review & Save
                   <ArrowRight size={16} />
                 </Button>
               </div>
@@ -1076,7 +1062,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           {currentStep === 4 && (
             <Card>
               <CardHeader>
-                <CardTitle subtitle="Step 4: Verify household summary before committing to official CSWDO database">
+                <CardTitle subtitle="Verify household profile and children entries before saving">
                   Review & Save Household Mapping
                 </CardTitle>
               </CardHeader>
@@ -1149,7 +1135,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
               <div className="mobile-stepper-footer">
                 <Button variant="secondary" size="md" onClick={() => setCurrentStep(3)}>
                   <ArrowLeft size={16} />
-                  Back to Record Check
+                  Back
                 </Button>
                 <Button
                   variant="primary"
@@ -1757,8 +1743,6 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
         onClose={() => setIsForm3ModalOpen(false)}
         barangayName={selectedBarangayForForm3}
       />
-        </>
-      )}
     </div>
   );
 }

@@ -150,9 +150,13 @@ export function ReportsView({ onNavigate }) {
               className="report-filter-select"
             >
               <option value="all">All Barangays</option>
-              {barangaysList.map(b => (
-                <option key={b} value={b}>{b}</option>
-              ))}
+              {barangaysList.map(b => {
+                const name = typeof b === 'object' ? b.name : b;
+                const id = typeof b === 'object' ? (b.id || b.name) : b;
+                return (
+                  <option key={id} value={name}>{name}</option>
+                );
+              })}
             </select>
           </div>
 
@@ -165,9 +169,13 @@ export function ReportsView({ onNavigate }) {
               className="report-filter-select"
             >
               <option value="all">All Day Care Centers</option>
-              {dayCareCentersList.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
+              {dayCareCentersList.map(c => {
+                const name = typeof c === 'object' ? c.name : c;
+                const id = typeof c === 'object' ? (c.id || c.name) : c;
+                return (
+                  <option key={id} value={name}>{name}</option>
+                );
+              })}
             </select>
           </div>
 
@@ -413,12 +421,12 @@ export function ReportsView({ onNavigate }) {
           {/* Applied Filters Strip */}
           <div className="report-meta-filters">
             <span style={{ fontWeight: 700, color: '#0f2744' }}>Filters Active:</span>
-            <span className="report-filter-pill">Year: <strong>{reportData?.meta?.appliedFilters?.year}</strong></span>
-            <span className="report-filter-pill">Barangay: <strong>{reportData?.meta?.appliedFilters?.barangay}</strong></span>
-            <span className="report-filter-pill">Center: <strong>{reportData?.meta?.appliedFilters?.dayCareCenter}</strong></span>
-            <span className="report-filter-pill">Age: <strong>{reportData?.meta?.appliedFilters?.age}</strong></span>
-            <span className="report-filter-pill">Status: <strong>{reportData?.meta?.appliedFilters?.status}</strong></span>
-            <span className="report-filter-pill">Period: <strong>{reportData?.meta?.appliedFilters?.dateRange}</strong></span>
+            <span className="report-filter-pill">Year: <strong>{typeof reportData?.meta?.appliedFilters?.year === 'object' ? (reportData.meta.appliedFilters.year?.name || reportData.meta.appliedFilters.year?.id) : reportData?.meta?.appliedFilters?.year}</strong></span>
+            <span className="report-filter-pill">Barangay: <strong>{typeof reportData?.meta?.appliedFilters?.barangay === 'object' ? (reportData.meta.appliedFilters.barangay?.name || reportData.meta.appliedFilters.barangay?.id) : reportData?.meta?.appliedFilters?.barangay}</strong></span>
+            <span className="report-filter-pill">Center: <strong>{typeof reportData?.meta?.appliedFilters?.dayCareCenter === 'object' ? (reportData.meta.appliedFilters.dayCareCenter?.name || reportData.meta.appliedFilters.dayCareCenter?.id) : reportData?.meta?.appliedFilters?.dayCareCenter}</strong></span>
+            <span className="report-filter-pill">Age: <strong>{typeof reportData?.meta?.appliedFilters?.age === 'object' ? (reportData.meta.appliedFilters.age?.name || reportData.meta.appliedFilters.age?.id) : reportData?.meta?.appliedFilters?.age}</strong></span>
+            <span className="report-filter-pill">Status: <strong>{typeof reportData?.meta?.appliedFilters?.status === 'object' ? (reportData.meta.appliedFilters.status?.name || reportData.meta.appliedFilters.status?.id) : reportData?.meta?.appliedFilters?.status}</strong></span>
+            <span className="report-filter-pill">Period: <strong>{typeof reportData?.meta?.appliedFilters?.dateRange === 'object' ? (reportData.meta.appliedFilters.dateRange?.name || reportData.meta.appliedFilters.dateRange?.id) : reportData?.meta?.appliedFilters?.dateRange}</strong></span>
           </div>
 
           {/* Summary Statistics Strip */}
@@ -429,10 +437,13 @@ export function ReportsView({ onNavigate }) {
                 const label = key
                   .replace(/([A-Z])/g, ' $1')
                   .replace(/^./, str => str.toUpperCase());
+                const displayVal = (val !== null && typeof val === 'object')
+                  ? (val.name || val.count || val.total || JSON.stringify(val))
+                  : String(val ?? 0);
                 return (
                   <div key={key} className="report-summary-box">
                     <div className="report-summary-label">{label}</div>
-                    <div className="report-summary-val">{String(val)}</div>
+                    <div className="report-summary-val">{displayVal}</div>
                   </div>
                 );
               })}
@@ -475,11 +486,17 @@ export function ReportsView({ onNavigate }) {
                       <td style={{ textAlign: 'center', fontWeight: 600, color: '#64748b' }}>
                         {index + 1}
                       </td>
-                      {reportData?.table?.columns?.map(col => (
-                        <td key={col.key}>
-                          {row[col.key] !== undefined && row[col.key] !== null ? String(row[col.key]) : '—'}
-                        </td>
-                      ))}
+                      {reportData?.table?.columns?.map(col => {
+                        const cellVal = row[col.key];
+                        const displayVal = (cellVal !== undefined && cellVal !== null)
+                          ? (typeof cellVal === 'object' ? (cellVal.name || cellVal.id || cellVal.label || JSON.stringify(cellVal)) : String(cellVal))
+                          : '—';
+                        return (
+                          <td key={col.key}>
+                            {displayVal}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))
                 )}

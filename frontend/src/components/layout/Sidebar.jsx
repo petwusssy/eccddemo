@@ -1,64 +1,61 @@
 import React from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
-  Home,
   MapPin,
   ClipboardCheck,
   HeartPulse,
   CheckSquare,
   CalendarClock,
   Building2,
-  School,
-  UserCheck,
   FileBarChart,
   FileClock,
   Settings,
+  Lock,
   ChevronLeft,
   ChevronRight,
-  ShieldAlert,
-  Lock,
 } from 'lucide-react';
 import Tooltip from '../ui/Tooltip';
 
-export const navigationSections = [
+const navigationSections = [
   {
     title: 'MAIN',
     items: [
-      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     ],
   },
   {
     title: 'CHILD MANAGEMENT',
     items: [
-      { id: 'children', label: 'Children', icon: Users },
-      { id: 'community-mapping', label: 'Community Mapping', icon: MapPin },
-      { id: 'enrollment', label: 'Enrollment', icon: ClipboardCheck },
+      { id: 'children', label: 'Children', path: '/children', icon: Users },
+      { id: 'community-mapping', label: 'Community Mapping', path: '/mapping', icon: MapPin },
+      { id: 'enrollment', label: 'Enrollment', path: '/enrollment', icon: ClipboardCheck },
     ],
   },
   {
     title: 'MONITORING',
     items: [
-      { id: 'health-monitoring', label: 'Health Monitoring', icon: HeartPulse },
-      { id: 'eccd-checklist', label: 'Development Assessment', icon: CheckSquare },
-      { id: 'follow-ups', label: 'Follow-ups', icon: CalendarClock },
+      { id: 'health-monitoring', label: 'Health Monitoring', path: '/health-monitoring', icon: HeartPulse },
+      { id: 'eccd-checklist', label: 'Development Assessment', path: '/development-assessment', icon: CheckSquare },
+      { id: 'follow-ups', label: 'Follow-ups', path: '/follow-ups', icon: CalendarClock },
     ],
   },
   {
     title: 'COMMUNITY',
     items: [
-      { id: 'community-network', label: 'Community Network', icon: Building2 },
+      { id: 'community-network', label: 'Community Network', path: '/community-network', icon: Building2 },
     ],
   },
   {
     title: 'REPORTS',
-    items: [{ id: 'reports', label: 'Reports', icon: FileBarChart }],
+    items: [{ id: 'reports', label: 'Reports', path: '/reports', icon: FileBarChart }],
   },
   {
     title: 'SYSTEM',
     items: [
-      { id: 'audit-logs', label: 'Audit Logs', icon: FileClock },
-      { id: 'settings', label: 'Settings', icon: Settings },
+      { id: 'audit-logs', label: 'Audit Logs', path: '/audit-logs', icon: FileClock },
+      { id: 'settings', label: 'Settings', path: '/settings', icon: Settings },
     ],
   },
 ];
@@ -72,6 +69,8 @@ export function Sidebar({
   onSelectItem,
   checkPermission,
 }) {
+  const location = useLocation();
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -118,11 +117,14 @@ export function Sidebar({
 
               {section.items.map((item) => {
                 const Icon = item.icon;
-                const isActive =
+                const isItemActive =
+                  location.pathname === item.path ||
                   activeItem === item.id ||
-                  (item.id === 'community-mapping' && activeItem === 'households') ||
+                  (item.id === 'community-mapping' && (location.pathname === '/mapping' || location.pathname === '/community-mapping' || location.pathname === '/households')) ||
+                  (item.id === 'eccd-checklist' && (location.pathname === '/development-assessment' || location.pathname === '/eccd-checklist')) ||
                   (item.id === 'community-network' &&
-                    ['barangays', 'daycare-centers', 'workers', 'community-network'].includes(activeItem));
+                    ['/community-network', '/barangays', '/daycare-centers', '/workers'].includes(location.pathname));
+
                 const isAllowed = checkPermission
                   ? item.id === 'community-network'
                     ? checkPermission('community-network') ||
@@ -132,12 +134,12 @@ export function Sidebar({
                     : checkPermission(item.id)
                   : true;
 
-                const buttonContent = (
-                  <button
-                    type="button"
-                    className={`sidebar-item ${isActive ? 'is-active' : ''} ${!isAllowed ? 'is-restricted' : ''}`}
+                const linkContent = (
+                  <NavLink
+                    to={item.path}
+                    className={`sidebar-item ${isItemActive ? 'is-active' : ''} ${!isAllowed ? 'is-restricted' : ''}`}
                     onClick={() => {
-                      onSelectItem(item.id);
+                      if (onSelectItem) onSelectItem(item.id);
                       if (onCloseMobile) onCloseMobile();
                     }}
                     title={isCollapsed ? (isAllowed ? item.label : `${item.label} (Access Restricted)`) : undefined}
@@ -160,15 +162,15 @@ export function Sidebar({
                         )}
                       </>
                     )}
-                  </button>
+                  </NavLink>
                 );
 
                 return isCollapsed ? (
                   <Tooltip key={item.id} text={isAllowed ? item.label : `${item.label} (Access Restricted)`} position="right">
-                    {buttonContent}
+                    {linkContent}
                   </Tooltip>
                 ) : (
-                  <React.Fragment key={item.id}>{buttonContent}</React.Fragment>
+                  <React.Fragment key={item.id}>{linkContent}</React.Fragment>
                 );
               })}
             </div>

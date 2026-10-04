@@ -23,6 +23,7 @@ import { Alert } from '../ui/Alert';
 import { officialFormsService } from '../../services/officialFormsService';
 import { centralDataStore } from '../../services/centralDataStore';
 import { useToast } from '../ui/Toast';
+import { getPhilippinesDate } from '../../utils/phTime';
 import { BARANGAY_OPTIONS } from '../../data/sanFernandoBarangays';
 
 export function OfficialRegistrationFormModal({
@@ -83,9 +84,9 @@ export function OfficialRegistrationFormModal({
 
     // Signatures
     parentGuardianSignatureName: '',
-    dateAccomplished: new Date().toISOString().split('T')[0],
+    dateAccomplished: getPhilippinesDate(),
     reviewedByCDT: 'Maria C. Santos (CDW I)',
-    dateReviewed: new Date().toISOString().split('T')[0],
+    dateReviewed: getPhilippinesDate(),
 
     // System Linkage
     barangay: 'Alasas',

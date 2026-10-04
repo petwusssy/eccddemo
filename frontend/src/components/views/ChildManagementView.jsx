@@ -57,6 +57,30 @@ import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
 
 const AVAILABLE_BARANGAYS = SAN_FERNANDO_BARANGAYS;
 
+// Safe pillar resolution helpers to prevent render crashes on newly mapped or partial records
+const isChildEnrolled = (child) =>
+  Boolean(
+    child?.statusPillars?.enrolled?.status === 'Enrolled' ||
+    child?.enrollment?.enrolled ||
+    child?.enrollmentStatus === 'Enrolled' ||
+    child?.isEnrolled
+  );
+
+const getChildEnrollmentStatus = (child) =>
+  child?.statusPillars?.enrolled?.status ||
+  child?.enrollmentStatus ||
+  (isChildEnrolled(child) ? 'Enrolled' : 'Not Enrolled');
+
+const getChildEnrollmentVariant = (child) =>
+  child?.statusPillars?.enrolled?.variant ||
+  (isChildEnrolled(child) ? 'success' : (getChildEnrollmentStatus(child) === 'Conditionally Enrolled' ? 'warning' : 'neutral'));
+
+const getChildEnrollmentCenter = (child) =>
+  child?.statusPillars?.enrolled?.center ||
+  child?.dayCareCenterName ||
+  child?.dayCareCenter ||
+  (isChildEnrolled(child) ? 'Assigned Day Care Center' : 'No Day Care assigned');
+
 export function ChildManagementView({ initialChildId, onNavigate }) {
   const { addToast } = useToast();
 
@@ -259,8 +283,8 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
     const mappedDate = childProfile.statusPillars?.mapped?.date || childProfile.createdAt?.slice(0, 10) || 'Completed';
 
     // Step 2: Enrolled (CDC)
-    const isEnrolled = childProfile.statusPillars?.enrolled?.status === 'Enrolled' || childProfile.isEnrolled === true;
-    const enrolledCenter = childProfile.statusPillars?.enrolled?.center || childProfile.dayCareCenter || 'Pending Enrollment';
+    const isEnrolled = isChildEnrolled(childProfile);
+    const enrolledCenter = getChildEnrollmentCenter(childProfile);
 
     // Step 3: Health Monitored
     const hasHealthRecords = childProfile.healthRecords && childProfile.healthRecords.length > 0;
@@ -364,11 +388,11 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
           <div className="page-header" style={{ marginBottom: 'var(--space-4)' }}>
             <div className="page-title-group">
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <h1 className="page-title">Children Master Registry (0–4 Cohort)</h1>
-                <Badge variant="primary" size="sm">Central Directory</Badge>
+                <h1 className="page-title">Children Master Registry</h1>
+                <Badge variant="primary" size="sm">0–4 Cohort</Badge>
               </div>
               <p className="page-subtitle">
-                Unified persistent child records linking community mapping, daycare admissions, health checks, and ECCD assessments.
+                Central registry for child profiles, admissions, health records, and ECCD milestones.
               </p>
             </div>
             <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
@@ -377,29 +401,171 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                 size="sm"
                 onClick={() => setIsForm5ModalOpen(true)}
               >
-                <FileText size={14} />
-                Official Form 5 (Consolidated Profile)
+                <FileText size={16} />
+                ECCD Form 5
               </Button>
               <Button
                 variant="primary"
                 size="sm"
                 onClick={() => setIsRegisterModalOpen(true)}
               >
-                <Plus size={14} />
-                Register Child (Official Form 1)
+                <Plus size={16} />
+                Register Child
               </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  if (childrenList.length > 0) {
-                    handleOpenProfile(childrenList[0].id);
-                  }
+            </div>
+          </div>
+
+          {/* Quick Metrics Bento Grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: 'var(--space-3)',
+              marginBottom: 'var(--space-4)',
+            }}
+          >
+            <div
+              style={{
+                background: 'var(--surface-primary)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: 'var(--shadow-xs)',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Total Registered
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', marginTop: '2px' }}>
+                  {childrenList.length}
+                </div>
+              </div>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-primary-50)',
+                  color: 'var(--color-primary-600)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                <Sparkles size={14} />
-                Open Hero 360° Profile
-              </Button>
+                <Baby size={18} />
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: 'var(--surface-primary)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: 'var(--shadow-xs)',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Enrolled in CDC
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-success-600)', marginTop: '2px' }}>
+                  {childrenList.filter(isChildEnrolled).length}
+                </div>
+              </div>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-success-50)',
+                  color: 'var(--color-success-600)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <School size={18} />
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: 'var(--surface-primary)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: 'var(--shadow-xs)',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Unenrolled Target
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-warning-600)', marginTop: '2px' }}>
+                  {childrenList.filter((c) => !isChildEnrolled(c)).length}
+                </div>
+              </div>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-warning-50)',
+                  color: 'var(--color-warning-600)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Users size={18} />
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: 'var(--surface-primary)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: 'var(--shadow-xs)',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Active Follow-ups
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-danger-600)', marginTop: '2px' }}>
+                  {childrenList.filter((c) => c?.hasOpenFollowUp || c?.statusPillars?.followUp?.status === 'Active' || c?.statusPillars?.followUp?.variant === 'danger' || c?.statusPillars?.followUp?.variant === 'warning').length}
+                </div>
+              </div>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-danger-50)',
+                  color: 'var(--color-danger-600)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <AlertTriangle size={18} />
+              </div>
             </div>
           </div>
 
@@ -411,10 +577,10 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                 <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                   <div style={{ flex: 2, minWidth: '260px' }}>
                     <Input
-                      placeholder="Search child name, ECCD Child ID, household, barangay or center..."
+                      placeholder="Search child name, ECCD ID, barangay or center..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      leftIcon={<Search size={15} />}
+                      leftIcon={<Search size={16} />}
                       className="input-sm"
                     />
                   </div>
@@ -535,7 +701,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               <TableHead>
                 <TableRow>
                   <TableHeader>Child</TableHeader>
-                  <TableHeader>ECCD Child ID</TableHeader>
+                  <TableHeader>ECCD ID</TableHeader>
                   <TableHeader>Age</TableHeader>
                   <TableHeader>Barangay</TableHeader>
                   <TableHeader>Enrollment</TableHeader>
@@ -587,26 +753,26 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                       </TableCell>
 
                       <TableCell>
-                        <Badge variant={child.statusPillars.enrolled.variant} size="sm">
-                          {child.statusPillars.enrolled.status}
+                        <Badge variant={getChildEnrollmentVariant(child)} size="sm">
+                           {getChildEnrollmentStatus(child)}
                         </Badge>
                       </TableCell>
 
                       <TableCell>
-                        <Badge variant={child.statusPillars.health.variant} size="sm">
-                          {child.statusPillars.health.status}
+                        <Badge variant={child?.statusPillars?.health?.variant || 'warning'} size="sm">
+                          {child?.statusPillars?.health?.status || child?.healthStatus || 'Due for Monitoring'}
                         </Badge>
                       </TableCell>
 
                       <TableCell>
-                        <Badge variant={child.statusPillars.development.variant} size="sm">
-                          {child.statusPillars.development.status}
+                        <Badge variant={child?.statusPillars?.development?.variant || 'neutral'} size="sm">
+                          {child?.statusPillars?.development?.status || child?.developmentStatus || 'Pending Initial Assessment'}
                         </Badge>
                       </TableCell>
 
                       <TableCell>
-                        <Badge variant={child.statusPillars.followUp.variant} size="sm">
-                          {child.statusPillars.followUp.status}
+                        <Badge variant={child?.statusPillars?.followUp?.variant || 'neutral'} size="sm">
+                          {child?.statusPillars?.followUp?.status || (child?.hasOpenFollowUp ? 'Active Case' : 'None')}
                         </Badge>
                       </TableCell>
 
@@ -616,8 +782,8 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                           size="sm"
                           onClick={() => handleOpenProfile(child.id)}
                         >
-                          <Eye size={13} />
-                          View 360° Profile
+                          <Eye size={16} />
+                          Profile
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -636,8 +802,8 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
         <div style={{ textAlign: 'center', padding: 'var(--space-12)', background: 'var(--surface-primary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', margin: 'var(--space-4) 0' }}>
           <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>No child profile record selected.</p>
           <Button variant="outline" size="sm" onClick={() => setViewMode('directory')}>
-            <ArrowLeft size={14} style={{ marginRight: 'var(--space-2)' }} />
-            Back to Children Directory
+            <ArrowLeft size={16} style={{ marginRight: 'var(--space-2)' }} />
+            Back to Directory
           </Button>
         </div>
       )}
@@ -647,14 +813,13 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
           {/* Back button */}
           <div style={{ marginBottom: 'var(--space-3)' }}>
             <Button variant="ghost" size="sm" onClick={() => setViewMode('directory')}>
-              <ArrowLeft size={14} />
-              Back to Children Directory
+              <ArrowLeft size={16} />
+              Back to Directory
             </Button>
           </div>
 
           {/* -------------------------------------------------------------
               HERO HEADER BANNER & 5 STATUS INDICATORS
-              Answers: WHO? WHERE? ENROLLED? MONITORING UPDATED? FOLLOW-UP?
               ------------------------------------------------------------- */}
           <div className="child-360-hero-banner" role="region" aria-label="Child 360 Master Record">
             <div className="child-360-header-top">
@@ -691,7 +856,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                       justifyContent: 'center',
                     }}
                   >
-                    <Upload size={12} />
+                    <Upload size={14} />
                     <input
                       type="file"
                       accept="image/*"
@@ -708,12 +873,12 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                       {childProfile.fullName}
                     </h1>
                     <span className="child-id-pill">
-                      <ShieldCheck size={14} />
+                      <ShieldCheck size={16} />
                       {childProfile.id}
                     </span>
                     {childProfile.photoUrl && (
                       <span className="child-id-pill" style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', borderColor: 'rgba(34, 197, 94, 0.4)' }}>
-                        <Cloud size={13} />
+                        <Cloud size={16} />
                         AWS S3 Storage
                       </span>
                     )}
@@ -721,22 +886,22 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
 
                   <div className="child-demographics-strip">
                     <span className="child-demo-item">
-                      <Baby size={15} />
+                      <Baby size={16} />
                       {childProfile.ageDisplay} ({childProfile.sex})
                     </span>
                     <span>•</span>
                     <span className="child-demo-item">
-                      <Calendar size={15} />
+                      <Calendar size={16} />
                       DOB: {childProfile.birthDate}
                     </span>
                     <span>•</span>
                     <span className="child-demo-item">
-                      <MapPin size={15} />
+                      <MapPin size={16} />
                       {childProfile.barangay} ({childProfile.purok})
                     </span>
                     <span>•</span>
                     <span className="child-demo-item">
-                      <Users size={15} />
+                      <Users size={16} />
                       Guardian: {childProfile.parentGuardian} ({childProfile.guardianRelationship})
                     </span>
                   </div>
@@ -746,17 +911,16 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               {/* LGU Tag */}
               <div style={{ textAlign: 'right' }}>
                 <Badge variant="primary" size="sm">
-                  ONE CHILD = ONE PERSISTENT RECORD
+                  ONE CHILD = ONE RECORD
                 </Badge>
                 <div style={{ fontSize: '11px', color: 'var(--color-primary-200)', marginTop: '4px' }}>
-                  City of San Fernando CSWDO Master Registry
+                  City of San Fernando CSWDO
                 </div>
               </div>
             </div>
 
             {/* =============================================================
                 GOLDEN PATH LIFECYCLE INDICATOR (5-STEP HORIZONTAL TRACKER)
-                [1. Mapped by Field Worker] -> [2. Admitted by CDW] -> [3. Monthly OPT Plus Logged] -> [4. ECCD Checklist Assessed] -> [5. DepEd Kinder Handover Ready]
                 ============================================================= */}
             <div
               style={{
@@ -771,9 +935,9 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#93c5fd' }}>
-                    Golden Path Demo: [1. Mapped by Field Worker] → [2. Admitted by CDW] → [3. Monthly OPT Plus Logged] → [4. ECCD Checklist Assessed] → [5. DepEd Kinder Handover Ready]
+                    Golden Path: [1. Mapping] → [2. CDW Admission] → [3. OPT Plus] → [4. ECCD Checklist] → [5. Kinder Ready]
                   </span>
-                  <Badge variant="primary" size="xs">Live Role Handoff Flow</Badge>
+                  <Badge variant="primary" size="xs">Live Handoff</Badge>
                 </div>
                 <div style={{ fontSize: '11px', color: '#cbd5e1' }}>
                   Progress: <strong style={{ color: '#4ade80' }}>{goldenPath.filter(s => s.isCompleted).length} of 5 Completed</strong>
@@ -863,11 +1027,11 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               <div className="pillar-card">
                 <div className="pillar-label">1. Mapped Status</div>
                 <div className="pillar-val">
-                  <CheckCircle2 size={15} style={{ color: 'var(--color-success-light)' }} />
-                  {childProfile.statusPillars.mapped.status}
+                  <CheckCircle2 size={16} style={{ color: 'var(--color-success-light)' }} />
+                  {childProfile.statusPillars?.mapped?.status || 'Mapped'}
                 </div>
                 <div className="pillar-sub">
-                  Date: {childProfile.statusPillars.mapped.date}
+                  Date: {childProfile.statusPillars?.mapped?.date || childProfile.createdAt?.slice(0, 10) || 'Completed'}
                 </div>
               </div>
 
@@ -875,11 +1039,11 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               <div className="pillar-card">
                 <div className="pillar-label">2. Enrollment Status</div>
                 <div className="pillar-val">
-                  <School size={15} style={{ color: childProfile.statusPillars.enrolled.status === 'Enrolled' ? 'var(--color-success-light)' : '#fca5a5' }} />
-                  {childProfile.statusPillars.enrolled.status}
+                  <School size={16} style={{ color: isChildEnrolled(childProfile) ? 'var(--color-success-light)' : '#fca5a5' }} />
+                  {getChildEnrollmentStatus(childProfile)}
                 </div>
                 <div className="pillar-sub">
-                  {childProfile.statusPillars.enrolled.center || 'No Day Care assigned'}
+                  {getChildEnrollmentCenter(childProfile)}
                 </div>
               </div>
 
@@ -887,11 +1051,11 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               <div className="pillar-card">
                 <div className="pillar-label">3. Health Monitoring</div>
                 <div className="pillar-val">
-                  <HeartPulse size={15} style={{ color: childProfile.statusPillars.health.status === 'Up to date' ? 'var(--color-success-light)' : '#fca5a5' }} />
-                  {childProfile.statusPillars.health.status}
+                  <HeartPulse size={16} style={{ color: childProfile.statusPillars?.health?.status === 'Up to date' ? 'var(--color-success-light)' : '#fca5a5' }} />
+                  {childProfile.statusPillars?.health?.status || childProfile.healthStatus || 'Due for Monitoring'}
                 </div>
                 <div className="pillar-sub">
-                  {childProfile.statusPillars.health.lastWeightKg} kg • {childProfile.statusPillars.health.nutritionalStatus}
+                  {childProfile.statusPillars?.health?.lastWeightKg ? `${childProfile.statusPillars.health.lastWeightKg} kg • ` : ''}{childProfile.statusPillars?.health?.nutritionalStatus || 'Pending OPT Plus'}
                 </div>
               </div>
 
@@ -899,11 +1063,11 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               <div className="pillar-card">
                 <div className="pillar-label">4. Development Status</div>
                 <div className="pillar-val">
-                  <Brain size={15} style={{ color: childProfile.statusPillars.development.status.includes('Completed') ? 'var(--color-success-light)' : '#fca5a5' }} />
-                  {childProfile.statusPillars.development.status}
+                  <Brain size={16} style={{ color: childProfile.statusPillars?.development?.status?.includes('Completed') ? 'var(--color-success-light)' : '#fca5a5' }} />
+                  {childProfile.statusPillars?.development?.status || childProfile.developmentStatus || 'Pending Assessment'}
                 </div>
                 <div className="pillar-sub">
-                  {childProfile.statusPillars.development.scaledScore ? `Score: ${childProfile.statusPillars.development.scaledScore}` : 'Evaluation pending'}
+                  {childProfile.statusPillars?.development?.scaledScore ? `Score: ${childProfile.statusPillars.development.scaledScore}` : 'Evaluation pending'}
                 </div>
               </div>
 
@@ -911,11 +1075,11 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               <div className="pillar-card">
                 <div className="pillar-label">5. Follow-up Needed?</div>
                 <div className="pillar-val">
-                  <AlertTriangle size={15} style={{ color: childProfile.statusPillars.followUp.status !== 'None' ? '#fde047' : 'var(--color-success-light)' }} />
-                  {childProfile.statusPillars.followUp.status}
+                  <AlertTriangle size={16} style={{ color: (childProfile.statusPillars?.followUp?.status && childProfile.statusPillars.followUp.status !== 'None') ? '#fde047' : 'var(--color-success-light)' }} />
+                  {childProfile.statusPillars?.followUp?.status || (childProfile.hasOpenFollowUp ? 'Active Case' : 'None')}
                 </div>
                 <div className="pillar-sub">
-                  {childProfile.statusPillars.followUp.dueDate ? `Due: ${childProfile.statusPillars.followUp.dueDate}` : 'No active alerts'}
+                  {childProfile.statusPillars?.followUp?.dueDate ? `Due: ${childProfile.statusPillars.followUp.dueDate}` : 'No active alerts'}
                 </div>
               </div>
             </div>
@@ -933,40 +1097,40 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               size="sm"
               onClick={() => setActiveQuickAction('enrollment')}
             >
-              <Plus size={13} />
-              Add Enrollment
+              <Plus size={16} />
+              Enrollment
             </Button>
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setActiveQuickAction('health')}
             >
-              <Plus size={13} />
-              Record Health
+              <Plus size={16} />
+              Health Record
             </Button>
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setActiveQuickAction('assessment')}
             >
-              <Plus size={13} />
-              Start Development Assessment
+              <Plus size={16} />
+              Assessment
             </Button>
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setActiveQuickAction('followup')}
             >
-              <Plus size={13} />
-              Create Follow-up
+              <Plus size={16} />
+              Follow-up
             </Button>
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setIsForm2ModalOpen(true)}
             >
-              <FileText size={13} />
-              Official Form 2 (Children's Profile)
+              <FileText size={16} />
+              Official Form 2
             </Button>
           </div>
 
@@ -979,7 +1143,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               className={`child-tab-item ${profileTab === 'overview' ? 'active' : ''}`}
               onClick={() => setProfileTab('overview')}
             >
-              <Sparkles size={15} />
+              <Sparkles size={16} />
               <span>Overview</span>
             </button>
             <button
@@ -987,7 +1151,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               className={`child-tab-item ${profileTab === 'family' ? 'active' : ''}`}
               onClick={() => setProfileTab('family')}
             >
-              <Users size={15} />
+              <Users size={16} />
               <span>Family & Household</span>
             </button>
             <button
@@ -995,7 +1159,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               className={`child-tab-item ${profileTab === 'enrollment' ? 'active' : ''}`}
               onClick={() => setProfileTab('enrollment')}
             >
-              <School size={15} />
+              <School size={16} />
               <span>Enrollment</span>
             </button>
             <button
@@ -1003,7 +1167,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               className={`child-tab-item ${profileTab === 'health' ? 'active' : ''}`}
               onClick={() => setProfileTab('health')}
             >
-              <HeartPulse size={15} />
+              <HeartPulse size={16} />
               <span>Health ({childProfile.healthRecords?.length || 0})</span>
             </button>
             <button
@@ -1011,7 +1175,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               className={`child-tab-item ${profileTab === 'development' ? 'active' : ''}`}
               onClick={() => setProfileTab('development')}
             >
-              <Brain size={15} />
+              <Brain size={16} />
               <span>Development ({childProfile.developmentAssessments?.length || 0})</span>
             </button>
             <button
@@ -1019,7 +1183,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               className={`child-tab-item ${profileTab === 'followups' ? 'active' : ''}`}
               onClick={() => setProfileTab('followups')}
             >
-              <AlertTriangle size={15} />
+              <AlertTriangle size={16} />
               <span>Follow-ups ({childProfile.followUpCases?.length || 0})</span>
             </button>
             <button
@@ -1027,7 +1191,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               className={`child-tab-item ${profileTab === 'timeline' ? 'active' : ''}`}
               onClick={() => setProfileTab('timeline')}
             >
-              <Clock size={15} />
+              <Clock size={16} />
               <span>Timeline ({childProfile.timeline?.length || 0})</span>
             </button>
             <button
@@ -1035,8 +1199,8 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               className={`child-tab-item ${profileTab === 'form2' ? 'active' : ''}`}
               onClick={() => setProfileTab('form2')}
             >
-              <FileText size={15} />
-              <span>Form 2 (Children's Profile)</span>
+              <FileText size={16} />
+              <span>Form 2</span>
             </button>
           </div>
 
@@ -1056,21 +1220,21 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Status:</span>
-                      <Badge variant={childProfile.statusPillars.enrolled.variant}>
-                        {childProfile.statusPillars.enrolled.status}
+                      <Badge variant={getChildEnrollmentVariant(childProfile)}>
+                        {getChildEnrollmentStatus(childProfile)}
                       </Badge>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Assigned Center:</span>
-                      <span style={{ fontWeight: '600' }}>{childProfile.assignedCenter || 'None'}</span>
+                      <span style={{ fontWeight: '600' }}>{childProfile.assignedCenter || getChildEnrollmentCenter(childProfile) || 'None'}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Program:</span>
-                      <span>{childProfile.statusPillars.enrolled.program || 'N/A'}</span>
+                      <span>{childProfile.statusPillars?.enrolled?.program || (isChildEnrolled(childProfile) ? 'Child Development Center (CDC)' : 'N/A')}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Session:</span>
-                      <span>{childProfile.statusPillars.enrolled.session || 'N/A'}</span>
+                      <span>{childProfile.statusPillars?.enrolled?.session || (isChildEnrolled(childProfile) ? 'Morning Session' : 'N/A')}</span>
                     </div>
                   </div>
                 </CardBody>
@@ -1087,23 +1251,23 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Health Status:</span>
-                      <Badge variant={childProfile.statusPillars.health.variant}>
-                        {childProfile.statusPillars.health.status}
+                      <Badge variant={childProfile.statusPillars?.health?.variant || 'warning'}>
+                        {childProfile.statusPillars?.health?.status || childProfile.healthStatus || 'Due for Monitoring'}
                       </Badge>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Weight & Height:</span>
                       <span style={{ fontWeight: '600' }}>
-                        {childProfile.statusPillars.health.lastWeightKg} kg • {childProfile.statusPillars.health.lastHeightCm} cm
+                        {childProfile.statusPillars?.health?.lastWeightKg || '—'} kg • {childProfile.statusPillars?.health?.lastHeightCm || '—'} cm
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Nutritional Status:</span>
-                      <span>{childProfile.statusPillars.health.nutritionalStatus}</span>
+                      <span>{childProfile.statusPillars?.health?.nutritionalStatus || 'Pending OPT Plus'}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Next Schedule:</span>
-                      <span>{childProfile.statusPillars.health.nextDue}</span>
+                      <span>{childProfile.statusPillars?.health?.nextDue || 'Pending Schedule'}</span>
                     </div>
                   </div>
                 </CardBody>
@@ -1120,21 +1284,21 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Status:</span>
-                      <Badge variant={childProfile.statusPillars.development.variant}>
-                        {childProfile.statusPillars.development.status}
+                      <Badge variant={childProfile.statusPillars?.development?.variant || 'neutral'}>
+                        {childProfile.statusPillars?.development?.status || childProfile.developmentStatus || 'Pending Initial Assessment'}
                       </Badge>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Scaled Standard Score:</span>
-                      <span style={{ fontWeight: 'bold', fontSize: 'var(--font-size-md)', color: childProfile.statusPillars.development.scaledScore < 90 ? 'var(--color-danger-primary)' : 'var(--color-success-primary)' }}>
-                        {childProfile.statusPillars.development.scaledScore || 'Unscored'}
+                      <span style={{ fontWeight: 'bold', fontSize: 'var(--font-size-md)', color: (childProfile.statusPillars?.development?.scaledScore && childProfile.statusPillars.development.scaledScore < 90) ? 'var(--color-danger-primary)' : 'var(--color-success-primary)' }}>
+                        {childProfile.statusPillars?.development?.scaledScore || 'Unscored'}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Interpretation:</span>
-                      <span>{childProfile.statusPillars.development.interpretation}</span>
+                      <span>{childProfile.statusPillars?.development?.interpretation || 'Standard evaluation pending'}</span>
                     </div>
-                    {childProfile.statusPillars.development.flaggedDomains?.length > 0 && (
+                    {childProfile.statusPillars?.development?.flaggedDomains?.length > 0 && (
                       <div style={{ marginTop: 'var(--space-1)', padding: 'var(--space-2)', backgroundColor: 'var(--color-danger-bg)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-danger-border)' }}>
                         <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-danger-primary)' }}>Flagged Delays:</span>
                         <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-primary)' }}>
@@ -1157,14 +1321,14 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Active Follow-up:</span>
-                      <Badge variant={childProfile.statusPillars.followUp.variant}>
-                        {childProfile.statusPillars.followUp.status}
+                      <Badge variant={childProfile.statusPillars?.followUp?.variant || 'neutral'}>
+                        {childProfile.statusPillars?.followUp?.status || (childProfile.hasOpenFollowUp ? 'Active Case' : 'None')}
                       </Badge>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Case Summary:</span>
                       <span style={{ fontWeight: '500', maxWidth: '180px', textAlign: 'right' }}>
-                        {childProfile.statusPillars.followUp.issue || 'None'}
+                        {childProfile.statusPillars?.followUp?.issue || 'None'}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1442,7 +1606,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                     <div style={{ fontWeight: 'bold', fontSize: 'var(--font-size-xs)', color: '#475569', marginBottom: '6px' }}>SECTIONS 8–11: HEALTH &amp; VACCINES</div>
                     <div style={{ fontSize: 'var(--font-size-sm)' }}><strong>Height:</strong> {childProfile.anthropometrics?.heightCm || 92} cm</div>
                     <div style={{ fontSize: 'var(--font-size-sm)' }}><strong>Weight:</strong> {childProfile.anthropometrics?.weightKg || 13.5} kg</div>
-                    <div style={{ fontSize: 'var(--font-size-sm)' }}><strong>Nutritional Status:</strong> {childProfile.statusPillars.health.nutritionalStatus || 'Normal Weight for Age'}</div>
+                    <div style={{ fontSize: 'var(--font-size-sm)' }}><strong>Nutritional Status:</strong> {childProfile.statusPillars?.health?.nutritionalStatus || childProfile.healthStatus || 'Normal Weight for Age'}</div>
                     <div style={{ fontSize: 'var(--font-size-sm)' }}><strong>ECCD Card:</strong> Recorded in Portfolio</div>
                     <div style={{ fontSize: 'var(--font-size-sm)' }}><strong>Vaccines:</strong> BCG, DPT, Oral Polio, Hepa B, Measles</div>
                   </div>
@@ -1480,27 +1644,27 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)' }}>
                   <div>
                     <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Enrollment Status:</span>
-                    <div><Badge variant={childProfile.statusPillars.enrolled.variant}>{childProfile.statusPillars.enrolled.status}</Badge></div>
+                    <div><Badge variant={getChildEnrollmentVariant(childProfile)}>{getChildEnrollmentStatus(childProfile)}</Badge></div>
                   </div>
                   <div>
                     <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Assigned Day Care Center:</span>
-                    <div style={{ fontWeight: '600' }}>{childProfile.statusPillars.enrolled.center || 'Unassigned'}</div>
+                    <div style={{ fontWeight: '600' }}>{getChildEnrollmentCenter(childProfile) || 'Unassigned'}</div>
                   </div>
                   <div>
                     <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Program Modality:</span>
-                    <div>{childProfile.statusPillars.enrolled.program || 'N/A'}</div>
+                    <div>{childProfile.statusPillars?.enrolled?.program || (isChildEnrolled(childProfile) ? 'Child Development Center (CDC)' : 'N/A')}</div>
                   </div>
                   <div>
                     <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Session Schedule:</span>
-                    <div>{childProfile.statusPillars.enrolled.session || 'N/A'}</div>
+                    <div>{childProfile.statusPillars?.enrolled?.session || (isChildEnrolled(childProfile) ? 'Morning Session' : 'N/A')}</div>
                   </div>
                   <div>
                     <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>School Year:</span>
-                    <div>{childProfile.statusPillars.enrolled.sy || 'SY 2026–2027'}</div>
+                    <div>{childProfile.statusPillars?.enrolled?.sy || 'SY 2026–2027'}</div>
                   </div>
                   <div>
                     <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Admission Date:</span>
-                    <div>{childProfile.statusPillars.enrolled.date || 'N/A'}</div>
+                    <div>{childProfile.statusPillars?.enrolled?.date || childProfile.statusPillars?.enrolled?.enrolledDate || 'N/A'}</div>
                   </div>
                 </div>
               </CardBody>

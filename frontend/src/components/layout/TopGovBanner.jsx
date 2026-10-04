@@ -1,10 +1,21 @@
-import React from 'react';
-import { ShieldCheck, HelpCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShieldCheck, HelpCircle, Clock } from 'lucide-react';
+import { formatPHTDate, formatPHTTime } from '../../utils/phTime';
 
 /**
  * ECCD CARE - Official Philippine Government Masthead
+ * Republic Act 10535 - Philippine Standard Time (PST)
  */
 export function TopGovBanner() {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="gov-masthead">
       <div className="gov-masthead-brand">
@@ -12,6 +23,11 @@ export function TopGovBanner() {
           🇵🇭 GOVPH
         </span>
         <span>Republic of the Philippines • City Social Welfare & Development Office</span>
+        <span style={{ margin: '0 6px', opacity: 0.4 }}>|</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600, color: 'var(--color-accent-300, #38bdf8)', fontSize: '11px' }} title="Official Philippine Standard Time (PST, UTC+8)">
+          <Clock size={11} />
+          <span>PST: {formatPHTDate(currentTime, 'medium')} {formatPHTTime(currentTime, true)}</span>
+        </span>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>

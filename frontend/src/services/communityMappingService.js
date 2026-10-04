@@ -21,6 +21,7 @@
  */
 
 import { centralDataStore } from './centralDataStore.js';
+import { getPhilippinesDate, addDaysPHT, formatPHTTime } from '../utils/phTime.js';
 
 const STORAGE_KEY_ACTIVITIES = 'eccd_mapping_activities_data_v2';
 const STORAGE_KEY_ASSIGNMENTS = 'eccd_mapping_assignments_data_v2';
@@ -182,8 +183,8 @@ export const communityMappingService = {
       name: activityData.name,
       year,
       barangays: activityData.barangays || ['San Isidro'],
-      startDate: activityData.startDate || new Date().toISOString().split('T')[0],
-      endDate: activityData.endDate || new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0],
+      startDate: activityData.startDate || getPhilippinesDate(),
+      endDate: activityData.endDate || addDaysPHT(60),
       assignedWorkers: activityData.assignedWorkers || [],
       status: 'In Progress',
       progress: 0,
@@ -298,7 +299,7 @@ export const communityMappingService = {
       address: hhData.address || '',
       barangay: hhData.barangay || 'San Isidro',
       mappingActivityId: hhData.mappingActivityId || 'ACT-MAP-2026-001',
-      mappedDate: new Date().toISOString().split('T')[0],
+      mappedDate: getPhilippinesDate(),
       mappedBy: hhData.mappedBy || 'Field Worker',
       childrenCount: parseInt(hhData.childrenCount || 1, 10),
       status: 'Completed',
@@ -391,7 +392,7 @@ export const communityMappingService = {
   saveDraft(draftData) {
     try {
       localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(draftData));
-      return { ok: true, timestamp: new Date().toLocaleTimeString() };
+      return { ok: true, timestamp: formatPHTTime(new Date()) };
     } catch (e) {
       return { ok: false };
     }

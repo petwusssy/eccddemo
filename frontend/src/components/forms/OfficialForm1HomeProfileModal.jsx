@@ -19,6 +19,7 @@ import { Badge } from '../ui/Badge';
 import { officialFormsService } from '../../services/officialFormsService';
 import { centralDataStore } from '../../services/centralDataStore';
 import { useToast } from '../ui/Toast';
+import { getPhilippinesDate } from '../../utils/phTime';
 
 export function OfficialForm1HomeProfileModal({
   isOpen,
@@ -118,7 +119,7 @@ export function OfficialForm1HomeProfileModal({
 
     // Metadata
     nameOfCDT: 'Maria C. Santos (CDW I)',
-    dateConducted: new Date().toISOString().split('T')[0],
+    dateConducted: getPhilippinesDate(),
   });
 
   // Load existing Form 1 data or prefill from Household / Children in store

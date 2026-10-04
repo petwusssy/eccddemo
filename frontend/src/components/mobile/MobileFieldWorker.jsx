@@ -57,6 +57,7 @@ import {
 import { useToast } from '../ui/Toast';
 import { communityMappingService } from '../../services/communityMappingService';
 import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
+import { formatPHTTime } from '../../utils/phTime';
 
 const AVAILABLE_BARANGAYS = SAN_FERNANDO_BARANGAYS;
 
@@ -153,7 +154,7 @@ export function MobileFieldWorker({ onNavigate }) {
     setTimeout(() => {
       setSyncState('synced');
       setPendingCount(0);
-      const currentTime = new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+      const currentTime = formatPHTTime(new Date(), false);
       setLastSyncedTime(`${currentTime} Today`);
       addToast('All field records synced successfully!', 'success');
     }, 1800);
@@ -200,7 +201,7 @@ export function MobileFieldWorker({ onNavigate }) {
       selectedPurok,
       householdForm,
       childrenList,
-      timestamp: new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: formatPHTTime(new Date(), false),
     };
     communityMappingService.saveDraft(draftPayload);
     addToast('Draft saved securely to mobile device', 'success');
@@ -384,7 +385,7 @@ export function MobileFieldWorker({ onNavigate }) {
           childrenNames: savedChildren.map((c) => `${c.firstName} (${c.ageYears}y)`).join(', '),
           is4Ps: householdForm.is4Ps === 'Yes',
           syncStatus: syncState === 'offline' ? 'Waiting to sync' : 'Pending Sync',
-          time: new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
+          time: formatPHTTime(new Date(), false),
         },
         ...recentRecords,
       ]);
@@ -392,7 +393,7 @@ export function MobileFieldWorker({ onNavigate }) {
       setSavedHouseholdRecord({
         household: createdHh,
         children: savedChildren,
-        time: new Date().toLocaleTimeString('en-PH'),
+        time: formatPHTTime(new Date(), true),
       });
 
       // Move to step 7: Next Household prompt
@@ -629,9 +630,6 @@ export function MobileFieldWorker({ onNavigate }) {
                 <MapPin size={20} color="#0284c7" />
                 Step 1: Mapping Assignment
               </h3>
-              <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: 0 }}>
-                Confirm your active mapping cluster and enumerator identification.
-              </p>
 
               <div className="mobile-input-group">
                 <label className="mobile-input-label">Assigned Barangay</label>
@@ -695,9 +693,6 @@ export function MobileFieldWorker({ onNavigate }) {
                 <Home size={20} color="#0284c7" />
                 Step 2: Household Profile
               </h3>
-              <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: 0 }}>
-                Encode the primary household details and location.
-              </p>
 
               <div className="mobile-input-group">
                 <label className="mobile-input-label">Household Tracking ID</label>
@@ -779,9 +774,6 @@ export function MobileFieldWorker({ onNavigate }) {
                 </h3>
                 <span className="assignment-badge">{childrenList.length} Added</span>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: 0 }}>
-                Identify all children living in this household born between 2021 and 2026.
-              </p>
 
               {/* Roster of added children */}
               {childrenList.length > 0 ? (
@@ -964,9 +956,6 @@ export function MobileFieldWorker({ onNavigate }) {
                 <Search size={20} color="#0284c7" />
                 Step 4: Existing Record Check
               </h3>
-              <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: 0 }}>
-                Automatic scan prevents creating duplicate child records across barangays.
-              </p>
 
               {isCheckingDuplicates ? (
                 <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
@@ -1063,9 +1052,6 @@ export function MobileFieldWorker({ onNavigate }) {
                 <FileCheck2 size={20} color="#0284c7" />
                 Step 5: Review Before Saving
               </h3>
-              <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: 0 }}>
-                Verify household and children entries before finalizing.
-              </p>
 
               <div className="mobile-review-section">
                 <div className="mobile-review-row">
