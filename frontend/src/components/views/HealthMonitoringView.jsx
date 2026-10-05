@@ -27,7 +27,106 @@ import { healthMonitoringService } from '../../services/healthMonitoringService'
 import { followUpService } from '../../services/followUpService';
 import { barangaysList, dayCareCentersList } from '../../data/mockData';
 import { getPhilippinesDate, addDaysPHT } from '../../utils/phTime';
+import { computeNutritionalStatus } from '../../utils/whoGrowthStandards';
 import Button from '../ui/Button';
+import { Badge } from '../ui/Badge';
+import { TableHead, TableBody, TableRow, TableHeader, TableCell } from '../ui/Table';
+
+const formatChildName = (name) => {
+  if (!name) return '—';
+  if (name === name.toUpperCase() && name.length > 2) {
+    return name
+      .toLowerCase()
+      .split(' ')
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+  return name;
+};
+
+const getInitials = (fullName, firstName, lastName) => {
+  if (firstName && lastName) {
+    return `${firstName[0] || ''}${lastName[0] || ''}`.toUpperCase();
+  }
+  if (!fullName) return 'C';
+  const parts = fullName.trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+  return parts[0]?.[0]?.toUpperCase() || 'C';
+};
+
+const getNutritionalBadgeStyle = (status) => {
+  if (!status) {
+    return {
+      backgroundColor: '#f1f5f9',
+      color: '#64748b',
+      border: '1px solid #cbd5e1',
+      dotColor: '#94a3b8',
+    };
+  }
+  const s = status.toLowerCase();
+  if (s.includes('severely') || s.includes('severe')) {
+    return {
+      backgroundColor: '#fee2e2', // bg-red-100
+      color: '#b91c1c',           // text-red-700
+      border: '1px solid #fca5a5', // border-red-300
+      dotColor: '#dc2626',
+    };
+  }
+  if (s.includes('underweight') || s.includes('wasted') || s.includes('stunted')) {
+    return {
+      backgroundColor: '#fef3c7', // bg-amber-100
+      color: '#b45309',           // text-amber-700
+      border: '1px solid #fcd34d', // border-amber-300
+      dotColor: '#d97706',
+    };
+  }
+  if (s.includes('overweight') || s.includes('obese')) {
+    return {
+      backgroundColor: '#ede9fe', // purple
+      color: '#6d28d9',
+      border: '1px solid #c4b5fd',
+      dotColor: '#7c3aed',
+    };
+  }
+  return {
+    backgroundColor: '#d1fae5', // bg-emerald-100
+    color: '#047857',           // text-emerald-700
+    border: '1px solid #6ee7b7', // border-emerald-300
+    dotColor: '#059669',
+  };
+};
+
+const getNutritionalBadgeVariant = (status) => {
+  if (!status) return 'neutral';
+  const s = status.toLowerCase();
+  if (s.includes('severely') || s.includes('underweight') || s.includes('wasted') || s.includes('stunted')) {
+    return 'danger';
+  }
+  if (s.includes('overweight') || s.includes('obese') || s.includes('risk')) {
+    return 'warning';
+  }
+  if (s.includes('normal')) {
+    return 'success';
+  }
+  return 'neutral';
+};
+
+const getMonitoringBadgeVariant = (status) => {
+  if (status === 'Up to Date') return 'success';
+  if (status === 'Overdue') return 'danger';
+  if (status === 'Due') return 'warning';
+  return 'neutral';
+};
+
+const getMonitoringIcon = (status) => {
+  if (status === 'Up to Date') return CheckCircle2;
+  if (status === 'Overdue') return AlertTriangle;
+  if (status === 'Due') return Clock;
+  return null;
+};
 
 export function HealthMonitoringView({ onNavigate }) {
   // Navigation tabs
@@ -131,6 +230,41 @@ export function HealthMonitoringView({ onNavigate }) {
     return monitoringData.children.find((c) => c.childId === selectedChildId) || null;
   }, [monitoringData.children, selectedChildId]);
 
+  // Real-time Dynamic Calculation for Modal (Record Monthly Measurement)
+  const modalCalc = useMemo(() => {
+    if (!quickRecordChild) return null;
+    return computeNutritionalStatus({
+      weightKg: quickRecordChild.inputWeight,
+      heightCm: quickRecordChild.inputHeight,
+      birthDate: quickRecordChild.birthDate,
+      sex: quickRecordChild.sex || 'Female',
+      measurementDate: quickRecordChild.inputDate || getPhilippinesDate(),
+    });
+  }, [
+    quickRecordChild?.inputWeight,
+    quickRecordChild?.inputHeight,
+    quickRecordChild?.inputDate,
+    quickRecordChild?.birthDate,
+    quickRecordChild?.sex,
+  ]);
+
+  // Real-time Dynamic Calculation for Tab 2 Form
+  const formCalc = useMemo(() => {
+    return computeNutritionalStatus({
+      weightKg: formData.weightKg,
+      heightCm: formData.heightCm,
+      birthDate: currentChildProfile?.birthDate,
+      sex: currentChildProfile?.sex || 'Female',
+      measurementDate: formData.date || getPhilippinesDate(),
+    });
+  }, [
+    formData.weightKg,
+    formData.heightCm,
+    formData.date,
+    currentChildProfile?.birthDate,
+    currentChildProfile?.sex,
+  ]);
+
   // Form input validation
   const validateForm = (data) => {
     const errs = {};
@@ -140,8 +274,8 @@ export function HealthMonitoringView({ onNavigate }) {
       errs.heightCm = 'Height must be between 40.0 cm and 140.0 cm.';
     }
     const w = parseFloat(data.weightKg);
-    if (isNaN(w) || w < 3 || w > 45) {
-      errs.weightKg = 'Weight must be between 3.0 kg and 45.0 kg.';
+    if (isNaN(w) || w < 2 || w > 45) {
+      errs.weightKg = 'Weight must be between 2.0 kg and 45.0 kg.';
     }
     return errs;
   };
@@ -163,6 +297,15 @@ export function HealthMonitoringView({ onNavigate }) {
         fullName: 'Enrolled Child',
       };
 
+      const calcRes = computeNutritionalStatus({
+        weightKg: formData.weightKg,
+        heightCm: formData.heightCm,
+        birthDate: child.birthDate,
+        sex: child.sex || 'Female',
+        measurementDate: formData.date || getPhilippinesDate(),
+      });
+      const nutStatus = calcRes.status;
+
       await healthMonitoringService.recordChildHealth(selectedChildId, {
         childName: child.fullName,
         barangay: child.barangay,
@@ -170,27 +313,27 @@ export function HealthMonitoringView({ onNavigate }) {
         date: formData.date,
         heightCm: formData.heightCm,
         weightKg: formData.weightKg,
-        nutritionalStatus: formData.nutritionalStatus,
+        nutritionalStatus: nutStatus,
         recordedBy: formData.recordedBy,
         notes: formData.notes,
       });
 
       // Auto-trigger urgent follow-up if Underweight or Severely Underweight
-      if (formData.nutritionalStatus === 'Underweight' || formData.nutritionalStatus === 'Severely Underweight') {
+      if (nutStatus === 'Underweight' || nutStatus === 'Severely Underweight') {
         try {
           await followUpService.createFollowUp({
             childId: selectedChildId,
             childName: child.fullName,
             barangay: child.barangay || 'City of San Fernando',
             dayCareCenter: child.dayCareCenter || 'Child Development Center',
-            reason: `Nutritional Alert: Child flagged as ${formData.nutritionalStatus} during OPT Plus.`,
+            reason: `Nutritional Alert: Child flagged as ${nutStatus} during OPT Plus.`,
             priority: 'Urgent',
             status: 'Needs Attention',
             category: 'Needs Attention',
             actionType: 'Monitoring',
             assignedWorker: formData.recordedBy || 'Maria Santos, CDW I',
             dueDate: addDaysPHT(14),
-            notes: `Urgent nutritional intervention required. Recorded: ${formData.weightKg} kg, ${formData.heightCm} cm. Status: ${formData.nutritionalStatus}.`,
+            notes: `Urgent nutritional intervention required. Recorded: ${formData.weightKg} kg, ${formData.heightCm} cm. Status: ${nutStatus}. WHO Z-Score: ${calcRes.zScore} SD.`,
           });
         } catch (err) {
           console.warn('Failed to dispatch nutritional follow-up:', err);
@@ -198,7 +341,7 @@ export function HealthMonitoringView({ onNavigate }) {
       }
 
       setSaveSuccessMsg(
-        `Measurement recorded successfully for ${child.fullName} (${child.childId}). Child 360° health status updated to Up to Date and timeline logged.`
+        `Measurement recorded successfully for ${child.fullName} (${child.childId}). Auto-computed status: ${nutStatus}. Health status updated to Up to Date.`
       );
       setFormData({
         date: getPhilippinesDate(),
@@ -231,13 +374,21 @@ export function HealthMonitoringView({ onNavigate }) {
     const h = parseFloat(quickRecordChild.inputHeight);
     const w = parseFloat(quickRecordChild.inputWeight);
 
-    if (isNaN(h) || h < 40 || isNaN(w) || w < 3) {
+    if (isNaN(h) || h < 40 || isNaN(w) || w < 2) {
       alert('Please enter valid numeric height (cm) and weight (kg).');
       return;
     }
 
     try {
-      const nutStatus = quickRecordChild.inputNutritionalStatus || 'Normal';
+      const calcRes = computeNutritionalStatus({
+        weightKg: w,
+        heightCm: h,
+        birthDate: quickRecordChild.birthDate,
+        sex: quickRecordChild.sex || 'Female',
+        measurementDate: quickRecordChild.inputDate || getPhilippinesDate(),
+      });
+      const nutStatus = calcRes.status;
+
       await healthMonitoringService.recordChildHealth(quickRecordChild.childId, {
         childName: quickRecordChild.fullName,
         barangay: quickRecordChild.barangay,
@@ -265,7 +416,7 @@ export function HealthMonitoringView({ onNavigate }) {
             actionType: 'Monitoring',
             assignedWorker: quickRecordChild.inputWorker || 'CSWDO CDW',
             dueDate: addDaysPHT(14),
-            notes: `Urgent nutritional intervention required. Recorded: ${w} kg, ${h} cm. Status: ${nutStatus}.`,
+            notes: `Urgent nutritional intervention required. Recorded: ${w} kg, ${h} cm. Status: ${nutStatus}. WHO Z-Score: ${calcRes.zScore} SD.`,
           });
         } catch (err) {
           console.warn('Failed to dispatch nutritional follow-up:', err);
@@ -283,14 +434,11 @@ export function HealthMonitoringView({ onNavigate }) {
   return (
     <div className="health-module-container">
       {/* Page Header */}
-      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
         <div>
           <h1 className="text-h1" style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
             Child Health &amp; Nutrition Monitoring
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', margin: 'var(--space-1) 0 0 0' }}>
-            Monthly Operation Timbang (OPT Plus) height and weight surveillance
-          </p>
         </div>
       </div>
 
@@ -300,63 +448,32 @@ export function HealthMonitoringView({ onNavigate }) {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: 'var(--space-3)',
-          marginBottom: 'var(--space-4)',
+          marginBottom: 'var(--space-3)',
         }}
       >
         <div
+          className={`bento-stat-card card-warning ${statusFilter === 'due' ? 'is-active' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'due' ? 'all' : 'due')}
-          style={{
-            background: statusFilter === 'due' ? 'var(--color-primary-50)' : 'var(--surface-primary)',
-            border: statusFilter === 'due' ? '1.5px solid var(--color-primary-500)' : '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-xs)',
-            cursor: 'pointer',
-          }}
           title="Filter children due for monthly check"
         >
           <div>
             <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Monitoring Due
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-warning-600)', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-warning-600)', marginTop: '2px' }}>
               {monitoringData.counts.monitoringDue}
             </div>
           </div>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-warning-50)',
-              color: 'var(--color-warning-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="stat-icon-wrap">
             <CalendarClock size={18} />
           </div>
         </div>
 
         <div
+          className="bento-stat-card card-success"
           onClick={() => {
             setStatusFilter('all');
             setSearchQuery('');
-          }}
-          style={{
-            background: 'var(--surface-primary)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-xs)',
-            cursor: 'pointer',
           }}
           title="Children monitored this calendar month"
         >
@@ -364,100 +481,47 @@ export function HealthMonitoringView({ onNavigate }) {
             <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Completed (Month)
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-success-600)', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-success-600)', marginTop: '2px' }}>
               {monitoringData.counts.completedThisMonth}
             </div>
           </div>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-success-50)',
-              color: 'var(--color-success-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="stat-icon-wrap">
             <CheckCircle2 size={18} />
           </div>
         </div>
 
         <div
+          className={`bento-stat-card card-danger ${statusFilter === 'overdue' ? 'is-active' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'overdue' ? 'all' : 'overdue')}
-          style={{
-            background: statusFilter === 'overdue' ? '#fef2f2' : 'var(--surface-primary)',
-            border: statusFilter === 'overdue' ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-xs)',
-            cursor: 'pointer',
-          }}
           title="Filter children overdue for monthly check"
         >
           <div>
             <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Overdue (&gt;45d)
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#dc2626', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#dc2626', marginTop: '2px' }}>
               {monitoringData.counts.overdue}
             </div>
           </div>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              background: 'rgba(239, 68, 68, 0.1)',
-              color: '#dc2626',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="stat-icon-wrap">
             <AlertTriangle size={18} />
           </div>
         </div>
 
         <div
+          className={`bento-stat-card card-primary ${statusFilter === 'up to date' ? 'is-active' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'up to date' ? 'all' : 'up to date')}
-          style={{
-            background: statusFilter === 'up to date' ? 'var(--color-primary-50)' : 'var(--surface-primary)',
-            border: statusFilter === 'up to date' ? '1.5px solid var(--color-primary-500)' : '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-xs)',
-            cursor: 'pointer',
-          }}
           title="Filter children with up-to-date measurements"
         >
           <div>
             <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Up to Date
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-primary-600)', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-primary-800)', marginTop: '2px' }}>
               {monitoringData.counts.upToDate}
             </div>
           </div>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-primary-50)',
-              color: 'var(--color-primary-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="stat-icon-wrap">
             <HeartPulse size={18} />
           </div>
         </div>
@@ -575,155 +639,221 @@ export function HealthMonitoringView({ onNavigate }) {
           </div>
 
           {/* Monitoring Table */}
-          <div className="health-table-card mobile-table-to-cards">
-            <table className="health-table">
-              <thead>
-                <tr>
-                  <th>Child</th>
-                  <th>ECCD ID</th>
-                  <th>Barangay</th>
-                  <th>Day Care Center</th>
-                  <th>Last Measurement</th>
-                  <th>Height &amp; Weight</th>
-                  <th>Nutritional Status</th>
-                  <th>Monitoring Status</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="table-container mobile-table-to-cards">
+            <table className="table health-registry-table">
+              <TableHead>
+                <TableRow>
+                  <TableHeader className="health-col-child">Child</TableHeader>
+                  <TableHeader className="health-col-id">ECCD ID</TableHeader>
+                  <TableHeader className="health-col-brgy">Barangay</TableHeader>
+                  <TableHeader className="health-col-center">Day Care Center</TableHeader>
+                  <TableHeader className="health-col-measurement">Last Measurement</TableHeader>
+                  <TableHeader className="health-col-metrics">Height &amp; Weight</TableHeader>
+                  <TableHeader className="health-col-nutritional">Nutritional Status</TableHeader>
+                  <TableHeader className="health-col-status">Monitoring Status</TableHeader>
+                  <TableHeader className="health-col-actions" style={{ textAlign: 'right' }}>Actions</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', padding: '2.5rem' }}>
-                      <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 0.5rem' }} />
-                      <p style={{ color: '#64748b', margin: 0 }}>Loading health monitoring records...</p>
-                    </td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={9} style={{ textAlign: 'center', padding: '2.5rem' }}>
+                      <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 0.5rem', color: 'var(--color-primary-800)' }} />
+                      <p style={{ color: 'var(--text-muted)', margin: 0 }}>Loading health monitoring records...</p>
+                    </TableCell>
+                  </TableRow>
                 ) : monitoringData.children.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', padding: '2.5rem' }}>
-                      <p style={{ color: '#64748b', fontSize: '0.9375rem', margin: 0 }}>
+                  <TableRow>
+                    <TableCell colSpan={9} style={{ textAlign: 'center', padding: '2.5rem' }}>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem', margin: 0 }}>
                         No children match the selected health monitoring filters.
                       </p>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   monitoringData.children.map((child) => {
-                    const badgeClass =
-                      child.status === 'Up to Date'
-                        ? 'uptodate'
-                        : child.status === 'Overdue'
-                        ? 'overdue'
-                        : 'due';
-
-                    const nutStatus = child.nutritionalStatus || 'Normal Weight';
-                    const nutBadgeClass =
-                      nutStatus.includes('Severely')
-                        ? 'overdue'
-                        : nutStatus.includes('Underweight')
-                        ? 'overdue'
-                        : nutStatus.includes('Overweight')
-                        ? 'due'
-                        : 'uptodate';
+                    const initials = getInitials(child.fullName, child.firstName, child.lastName);
+                    const formattedName = formatChildName(child.fullName);
 
                     return (
-                      <tr key={child.childId}>
-                        <td>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontWeight: 600, color: '#0f172a' }}>
-                              {child.fullName}
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                              {child.ageDisplay} • {child.sex}
-                            </span>
+                      <TableRow key={child.childId}>
+                        {/* Child Name & Avatar */}
+                        <TableCell className="health-col-child">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                            <div style={{
+                              width: '2.25rem',
+                              height: '2.25rem',
+                              borderRadius: 'var(--radius-full)',
+                              backgroundColor: 'var(--color-primary-100)',
+                              color: 'var(--color-primary-900)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: '700',
+                              fontSize: 'var(--font-size-xs)',
+                              flexShrink: 0
+                            }}>
+                              {initials}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                                {formattedName}
+                              </div>
+                              {[child.ageDisplay, child.sex].filter(Boolean).filter((v) => v !== '—').length > 0 && (
+                                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                                  {[child.ageDisplay, child.sex].filter(Boolean).filter((v) => v !== '—').join(' • ')}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </td>
-                        <td>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0f2744' }}>
+                        </TableCell>
+
+                        {/* ECCD ID */}
+                        <TableCell className="health-col-id">
+                          <code style={{
+                            fontSize: 'var(--font-size-xs)',
+                            backgroundColor: 'var(--color-neutral-100)',
+                            color: 'var(--color-primary-900)',
+                            padding: '3px 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            fontWeight: 600,
+                            letterSpacing: '0.02em',
+                            whiteSpace: 'nowrap'
+                          }}>
                             {child.childId}
+                          </code>
+                        </TableCell>
+
+                        {/* Barangay */}
+                        <TableCell className="health-col-brgy">
+                          <span style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{child.barangay}</span>
+                        </TableCell>
+
+                        {/* Day Care Center */}
+                        <TableCell className="health-col-center">
+                          <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
+                            {child.dayCareCenter}
                           </span>
-                        </td>
-                        <td>{child.barangay}</td>
-                        <td>
-                          <span style={{ fontSize: '0.8125rem' }}>{child.dayCareCenter}</span>
-                        </td>
-                        <td>
+                        </TableCell>
+
+                        {/* Last Measurement */}
+                        <TableCell className="health-col-measurement">
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontWeight: 500 }}>
+                            <span style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
                               {child.lastMeasurementDate || 'None recorded'}
                             </span>
-                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                            <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                               {child.daysSinceLastCheck !== undefined
                                 ? `${child.daysSinceLastCheck} days ago`
                                 : ''}
                             </span>
                           </div>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 600, color: '#0284c7' }}>
+                        </TableCell>
+
+                        {/* Height & Weight */}
+                        <TableCell className="health-col-metrics">
+                          <div style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontWeight: 600, color: 'var(--color-primary-800, #ba1607)' }}>
                               {child.lastHeightCm ? `${child.lastHeightCm} cm` : '—'}
                             </span>
-                            <span style={{ color: '#cbd5e1' }}>/</span>
+                            <span style={{ color: 'var(--text-muted, #cbd5e1)' }}>/</span>
                             <span style={{ fontWeight: 600, color: '#0d9488' }}>
                               {child.lastWeightKg ? `${child.lastWeightKg} kg` : '—'}
                             </span>
                           </div>
-                        </td>
-                        <td>
-                          <span className={`health-status-badge ${nutBadgeClass}`}>
-                            {nutStatus}
+                        </TableCell>
+
+                        {/* Nutritional Status Badge */}
+                        <TableCell className="health-col-nutritional">
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '3px 10px',
+                              borderRadius: '9999px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              ...getNutritionalBadgeStyle(child.nutritionalStatus),
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                backgroundColor: getNutritionalBadgeStyle(child.nutritionalStatus).dotColor,
+                              }}
+                            />
+                            {child.nutritionalStatus || 'Normal'}
                           </span>
-                        </td>
-                        <td>
-                          <span className={`health-status-badge ${badgeClass}`}>
-                            {child.status === 'Up to Date' && <CheckCircle2 size={12} />}
-                            {child.status === 'Due' && <Clock size={12} />}
-                            {child.status === 'Overdue' && <AlertTriangle size={12} />}
+                        </TableCell>
+
+                        {/* Monitoring Status Badge */}
+                        <TableCell className="health-col-status">
+                          <Badge
+                            variant={getMonitoringBadgeVariant(child.status)}
+                            icon={getMonitoringIcon(child.status)}
+                            dot={!getMonitoringIcon(child.status)}
+                            size="sm"
+                          >
                             {child.status}
-                          </span>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.375rem' }}>
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-sm"
-                              style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="health-col-actions" style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', justifyContent: 'flex-end', gap: 'var(--space-2)', whiteSpace: 'nowrap' }}>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              icon={TrendingUp}
                               onClick={() => {
                                 setTrendModalChild(child);
                                 loadChildDetails(child.childId);
                               }}
                               title="View Growth Trend & History"
                             >
-                              <TrendingUp size={16} style={{ marginRight: '0.25rem' }} />
                               Trend
-                            </button>
+                            </Button>
 
-                            <button
-                              type="button"
-                              className="btn btn-primary btn-sm"
-                              style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              icon={Scale}
                               onClick={() => {
+                                const initDate = getPhilippinesDate();
+                                const initH = child.lastHeightCm || '';
+                                const initW = child.lastWeightKg || '';
+                                const initCalc = computeNutritionalStatus({
+                                  weightKg: initW,
+                                  heightCm: initH,
+                                  birthDate: child.birthDate,
+                                  sex: child.sex || 'Female',
+                                  measurementDate: initDate,
+                                });
                                 setQuickRecordChild({
                                   ...child,
-                                  inputDate: getPhilippinesDate(),
-                                  inputHeight: child.lastHeightCm || '',
-                                  inputWeight: child.lastWeightKg || '',
-                                  inputNutritionalStatus: child.nutritionalStatus || 'Normal',
+                                  inputDate: initDate,
+                                  inputHeight: initH,
+                                  inputWeight: initW,
+                                  inputNutritionalStatus: initCalc.status,
                                   inputWorker: 'Maria Santos, CDW I',
                                   inputNotes: '',
                                 });
                               }}
+                              title="Quick Record Measurement"
                             >
-                              <Scale size={16} style={{ marginRight: '0.25rem' }} />
                               Weigh
-                            </button>
+                            </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })
                 )}
-              </tbody>
+              </TableBody>
             </table>
           </div>
         </div>
@@ -810,7 +940,13 @@ export function HealthMonitoringView({ onNavigate }) {
                     {currentChildProfile.status}
                   </span>
                   <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>
-                    Last: {currentChildProfile.lastHeightCm || '—'} cm / {currentChildProfile.lastWeightKg || '—'} kg
+                    Last: {currentChildProfile.lastHeightCm && currentChildProfile.lastWeightKg
+                      ? `${currentChildProfile.lastHeightCm} cm / ${currentChildProfile.lastWeightKg} kg`
+                      : currentChildProfile.lastHeightCm
+                      ? `${currentChildProfile.lastHeightCm} cm`
+                      : currentChildProfile.lastWeightKg
+                      ? `${currentChildProfile.lastWeightKg} kg`
+                      : 'None recorded'}
                   </div>
                 </div>
               </div>
@@ -901,22 +1037,86 @@ export function HealthMonitoringView({ onNavigate }) {
                   )}
                 </div>
 
-                {/* Nutritional Status Selector */}
+                {/* Auto-calculated Real-Time Nutritional Status */}
                 <div className="health-form-group">
-                  <label className="health-form-label">
-                    Nutritional Status (OPT Plus) <span style={{ color: '#dc2626' }}>*</span>
+                  <label className="health-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Nutritional Status (OPT Plus — WHO Standards)</span>
+                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '500' }}>
+                      Auto-calculated in real time
+                    </span>
                   </label>
-                  <select
-                    className="health-input"
-                    value={formData.nutritionalStatus}
-                    onChange={(e) => setFormData({ ...formData, nutritionalStatus: e.target.value })}
+
+                  <div
+                    style={{
+                      padding: '0.875rem 1rem',
+                      borderRadius: '8px',
+                      backgroundColor: formCalc?.style?.backgroundColor || '#f8fafc',
+                      border: `1.5px solid ${formCalc?.style?.borderColor || '#cbd5e1'}`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem',
+                      transition: 'all 0.2s ease',
+                    }}
                   >
-                    <option value="Normal">Normal</option>
-                    <option value="Underweight">Underweight</option>
-                    <option value="Severely Underweight">Severely Underweight</option>
-                    <option value="Stunted">Stunted</option>
-                    <option value="Overweight">Overweight</option>
-                  </select>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            backgroundColor: formCalc?.style?.dotColor || '#94a3b8',
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontSize: '1rem',
+                            fontWeight: '700',
+                            color: formCalc?.style?.color || '#0f172a',
+                          }}
+                        >
+                          {formCalc?.status || 'Enter weight & height'}
+                        </span>
+                      </div>
+
+                      {formCalc?.bmi && (
+                        <span
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: formCalc?.style?.color || '#475569',
+                            backgroundColor: 'rgba(255, 255, 255, 0.75)',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            border: `1px solid ${formCalc?.style?.borderColor || '#cbd5e1'}`,
+                          }}
+                        >
+                          BMI: {formCalc.bmi} kg/m²
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '12px', color: '#475569', flexWrap: 'wrap' }}>
+                      <span>
+                        Age at check: <strong>{formCalc?.ageMonths !== null ? `${formCalc?.ageMonths} mos` : '—'}</strong>
+                      </span>
+                      <span>•</span>
+                      <span>
+                        WHO Z-Score: <strong>{formCalc?.zScore !== undefined ? `${formCalc?.zScore > 0 ? '+' : ''}${formCalc?.zScore} SD` : '—'}</strong>
+                      </span>
+                      <span>•</span>
+                      <span style={{ color: formCalc?.status === 'Severely Underweight' || formCalc?.status === 'Underweight' ? '#b91c1c' : '#047857', fontWeight: '600' }}>
+                        {formCalc?.status === 'Severely Underweight'
+                          ? '⚠ Critically low for age & height (Automatic Alert)'
+                          : formCalc?.status === 'Underweight'
+                          ? '⚠ Below -2 SD standard threshold (Automatic Alert)'
+                          : formCalc?.status === 'Overweight'
+                          ? 'Above +2 SD standard threshold'
+                          : '✓ Normal standard range (-2 to +2 SD)'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1148,7 +1348,7 @@ export function HealthMonitoringView({ onNavigate }) {
                     <tr key={record.id}>
                       <td style={{ fontWeight: 600, color: '#0f172a' }}>{record.date}</td>
                       <td>
-                        <span style={{ fontWeight: 700, color: '#0284c7' }}>{record.heightCm} cm</span>
+                        <span style={{ fontWeight: 700, color: '#ba1607' }}>{record.heightCm} cm</span>
                       </td>
                       <td>
                         <span
@@ -1199,10 +1399,10 @@ export function HealthMonitoringView({ onNavigate }) {
           ========================================================================= */}
       {quickRecordChild && (
         <div className="modal-backdrop" onClick={() => setQuickRecordChild(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Scale size={20} style={{ color: '#0f2744' }} />
+                <Scale size={20} style={{ color: '#7e191b' }} />
                 <h3 className="modal-title">Record Monthly Measurement</h3>
               </div>
               <button
@@ -1275,23 +1475,86 @@ export function HealthMonitoringView({ onNavigate }) {
                   </div>
                 </div>
 
+                {/* Auto-calculated Real-Time Nutritional Status (OPT Plus) */}
                 <div className="health-form-group">
-                  <label className="health-form-label">
-                    Nutritional Status (OPT Plus) <span style={{ color: '#dc2626' }}>*</span>
+                  <label className="health-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Nutritional Status (OPT Plus — WHO Standards)</span>
+                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '500' }}>
+                      Auto-calculated in real time
+                    </span>
                   </label>
-                  <select
-                    className="health-input"
-                    value={quickRecordChild.inputNutritionalStatus || 'Normal'}
-                    onChange={(e) =>
-                      setQuickRecordChild({ ...quickRecordChild, inputNutritionalStatus: e.target.value })
-                    }
+
+                  <div
+                    style={{
+                      padding: '0.875rem 1rem',
+                      borderRadius: '8px',
+                      backgroundColor: modalCalc?.style?.backgroundColor || '#f8fafc',
+                      border: `1.5px solid ${modalCalc?.style?.borderColor || '#cbd5e1'}`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem',
+                      transition: 'all 0.2s ease',
+                    }}
                   >
-                    <option value="Normal">Normal</option>
-                    <option value="Underweight">Underweight</option>
-                    <option value="Severely Underweight">Severely Underweight</option>
-                    <option value="Stunted">Stunted</option>
-                    <option value="Overweight">Overweight</option>
-                  </select>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            backgroundColor: modalCalc?.style?.dotColor || '#94a3b8',
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontSize: '1rem',
+                            fontWeight: '700',
+                            color: modalCalc?.style?.color || '#0f172a',
+                          }}
+                        >
+                          {modalCalc?.status || 'Enter weight & height'}
+                        </span>
+                      </div>
+
+                      {modalCalc?.bmi && (
+                        <span
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: modalCalc?.style?.color || '#475569',
+                            backgroundColor: 'rgba(255, 255, 255, 0.75)',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            border: `1px solid ${modalCalc?.style?.borderColor || '#cbd5e1'}`,
+                          }}
+                        >
+                          BMI: {modalCalc.bmi} kg/m²
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '12px', color: '#475569', flexWrap: 'wrap' }}>
+                      <span>
+                        Age at check: <strong>{modalCalc?.ageMonths !== null ? `${modalCalc?.ageMonths} mos` : '—'}</strong>
+                      </span>
+                      <span>•</span>
+                      <span>
+                        WHO Z-Score: <strong>{modalCalc?.zScore !== undefined ? `${modalCalc?.zScore > 0 ? '+' : ''}${modalCalc?.zScore} SD` : '—'}</strong>
+                      </span>
+                      <span>•</span>
+                      <span style={{ color: modalCalc?.status === 'Severely Underweight' || modalCalc?.status === 'Underweight' ? '#b91c1c' : '#047857', fontWeight: '600' }}>
+                        {modalCalc?.status === 'Severely Underweight'
+                          ? '⚠ Critically low for age & height (Automatic Nutritional Alert)'
+                          : modalCalc?.status === 'Underweight'
+                          ? '⚠ Below -2 SD standard threshold (Automatic Alert)'
+                          : modalCalc?.status === 'Overweight'
+                          ? 'Above +2 SD standard threshold'
+                          : '✓ Normal standard range (-2 to +2 SD)'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="health-form-group">
@@ -1341,11 +1604,11 @@ export function HealthMonitoringView({ onNavigate }) {
           <div
             className="modal-content"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}
+            style={{ maxWidth: '960px', width: '94vw' }}
           >
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <TrendingUp size={20} style={{ color: '#0f2744' }} />
+                <TrendingUp size={20} style={{ color: '#7e191b' }} />
                 <div>
                   <h3 className="modal-title" style={{ margin: 0 }}>
                     Growth Trend &amp; History: {trendModalChild.fullName}
@@ -1393,7 +1656,7 @@ export function HealthMonitoringView({ onNavigate }) {
                         <tr key={r.id}>
                           <td style={{ fontWeight: 600 }}>{r.date}</td>
                           <td>
-                            <span style={{ color: '#0284c7', fontWeight: 600 }}>{r.heightCm} cm</span>
+                            <span style={{ color: '#ba1607', fontWeight: 600 }}>{r.heightCm} cm</span>
                             {r.deltaHeight && (
                               <span style={{ fontSize: '0.6875rem', marginLeft: '0.25rem', color: '#64748b' }}>
                                 ({r.deltaHeight})
@@ -1544,7 +1807,7 @@ function SimpleTrendChart({ data, mode = 'combined' }) {
             <path
               d={heightPath}
               fill="none"
-              stroke="#0284c7"
+              stroke="#ba1607"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -1554,12 +1817,12 @@ function SimpleTrendChart({ data, mode = 'combined' }) {
               const y = getYHeight(d.heightCm);
               return (
                 <g key={`h-${i}`}>
-                  <circle cx={x} cy={y} r="5" fill="#0284c7" stroke="#ffffff" strokeWidth="2" />
+                  <circle cx={x} cy={y} r="5" fill="#ba1607" stroke="#ffffff" strokeWidth="2" />
                   <text
                     x={x}
                     y={y - 9}
                     textAnchor="middle"
-                    fill="#0284c7"
+                    fill="#ba1607"
                     fontSize="11"
                     fontWeight="700"
                   >

@@ -222,7 +222,7 @@ export const communityMappingService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newActivity),
       });
-    } catch (e) {}
+    } catch (e) { }
 
     return newActivity;
   },
@@ -311,7 +311,7 @@ export const communityMappingService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newHousehold),
       });
-    } catch (e) {}
+    } catch (e) { }
 
     return newHousehold;
   },
@@ -377,7 +377,7 @@ export const communityMappingService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newChild),
       });
-    } catch (e) {}
+    } catch (e) { }
 
     return {
       child: newChild,
@@ -402,14 +402,14 @@ export const communityMappingService = {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_DRAFT);
       if (raw) return JSON.parse(raw);
-    } catch (e) {}
+    } catch (e) { }
     return null;
   },
 
   clearDraft() {
     try {
       localStorage.removeItem(STORAGE_KEY_DRAFT);
-    } catch (e) {}
+    } catch (e) { }
   },
 };
 

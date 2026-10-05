@@ -212,18 +212,19 @@ export function OfficialEccdChecklistModal({
       onClose={onClose}
       title=""
       size="xl"
+      className="official-form-modal"
     >
-      <div className="official-form-modal" style={{ maxHeight: '86vh', overflowY: 'auto', padding: '0.25rem' }}>
+      <div style={{ padding: '0.25rem' }}>
         {/* =========================================================================
             HEADER: OFFICIAL ECCD CHECKLIST IDENTIFICATION
             ========================================================================= */}
-        <div className="official-form-header" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '14px' }}>
+        <div className="official-form-header" style={{ borderBottom: '2px solid #7e191b', paddingBottom: '12px', marginBottom: '14px', paddingRight: '40px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#0369a1' }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#ba1607' }}>
                 Early Childhood Care and Development Council • DepEd • DSWD • DOH • UNICEF
               </div>
-              <h1 style={{ margin: '4px 0 2px 0', fontSize: '18px', fontWeight: 900, color: '#0f172a' }}>
+              <h1 style={{ margin: '4px 0 2px 0', fontSize: '18px', fontWeight: 900, color: '#1e1112' }}>
                 Early Childhood Care and Development (ECCD) Checklist
               </h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
@@ -252,7 +253,7 @@ export function OfficialEccdChecklistModal({
                   fontSize: '11px',
                   fontWeight: 700,
                   cursor: 'pointer',
-                  background: recordTypeKey === 'record1' ? '#0284c7' : 'transparent',
+                  background: recordTypeKey === 'record1' ? '#7e191b' : 'transparent',
                   color: recordTypeKey === 'record1' ? '#fff' : '#334155',
                 }}
               >
@@ -268,7 +269,7 @@ export function OfficialEccdChecklistModal({
                   fontSize: '11px',
                   fontWeight: 700,
                   cursor: 'pointer',
-                  background: recordTypeKey === 'record2' ? '#0284c7' : 'transparent',
+                  background: recordTypeKey === 'record2' ? '#7e191b' : 'transparent',
                   color: recordTypeKey === 'record2' ? '#fff' : '#334155',
                 }}
               >
@@ -297,8 +298,8 @@ export function OfficialEccdChecklistModal({
                 style={{
                   padding: '6px 14px',
                   borderRadius: '6px',
-                  border: isActive ? '1px solid #0284c7' : '1px solid #cbd5e1',
-                  background: isActive ? '#0284c7' : '#f8fafc',
+                  border: isActive ? '1px solid #7e191b' : '1px solid #cbd5e1',
+                  background: isActive ? '#7e191b' : '#f8fafc',
                   color: isActive ? '#fff' : '#334155',
                   fontSize: '12px',
                   fontWeight: 700,
@@ -394,14 +395,14 @@ export function OfficialEccdChecklistModal({
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
                 <div style={{ background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  <div style={{ fontWeight: 700, color: '#0369a1', marginBottom: '4px' }}>Father's Information</div>
+                  <div style={{ fontWeight: 700, color: '#7e191b', marginBottom: '4px' }}>Father's Information</div>
                   <div><strong>Name:</strong> {child?.fatherName || 'Roberto M. Dela Cruz'}</div>
                   <div><strong>Age:</strong> 34</div>
                   <div><strong>Occupation:</strong> Electrician / Construction</div>
                   <div><strong>Education:</strong> High School Graduate</div>
                 </div>
                 <div style={{ background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  <div style={{ fontWeight: 700, color: '#0369a1', marginBottom: '4px' }}>Mother's Information</div>
+                  <div style={{ fontWeight: 700, color: '#7e191b', marginBottom: '4px' }}>Mother's Information</div>
                   <div><strong>Name:</strong> {child?.motherName || 'Elena S. Dela Cruz'}</div>
                   <div><strong>Age:</strong> 31</div>
                   <div><strong>Occupation:</strong> Homemaker</div>
@@ -427,11 +428,11 @@ export function OfficialEccdChecklistModal({
         {currentStep === 'guidelines' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', padding: '12px 14px', borderRadius: '8px' }}>
-                <div style={{ fontWeight: 800, color: '#0369a1', fontSize: '13px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ background: '#fdf8f8', border: '1px solid #fecaca', padding: '12px 14px', borderRadius: '8px' }}>
+                <div style={{ fontWeight: 800, color: '#7e191b', fontSize: '13px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <User size={15} /> Caregiver Briefing Protocol
                 </div>
-                <div style={{ fontSize: '12px', color: '#0c4a6e', lineHeight: 1.5 }}>
+                <div style={{ fontSize: '12px', color: '#4a1517', lineHeight: 1.5 }}>
                   Clarify to parent/guardian that this is a developmental screening tool, not a pass/fail exam. Emphasize that questions span ages up to 6, and asking parents not to coach the child.
                 </div>
               </div>
@@ -458,7 +459,7 @@ export function OfficialEccdChecklistModal({
                   <strong style={{ color: '#dc2626' }}>– Not Present:</strong> Child cannot demonstrate skill. Enter reason/observation in notes.
                 </div>
                 <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '8px 10px' }}>
-                  <strong style={{ color: '#0284c7' }}>Parental Report:</strong> Accept caregiver confirmation for items tagged with this allowance.
+                  <strong style={{ color: '#ba1607' }}>Parental Report:</strong> Accept caregiver confirmation for items tagged with this allowance.
                 </div>
               </div>
             </div>
@@ -500,14 +501,14 @@ export function OfficialEccdChecklistModal({
                       fontWeight: 700,
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
-                      background: isActive ? '#0f2744' : '#f1f5f9',
+                      background: isActive ? '#7e191b' : '#f1f5f9',
                       color: isActive ? '#fff' : '#334155',
                     }}
                   >
                     <span>{dom.name.replace(' Domain', '')}</span>
                     <span
                       style={{
-                        background: isActive ? '#0284c7' : '#cbd5e1',
+                        background: isActive ? '#ba1607' : '#cbd5e1',
                         color: isActive ? '#fff' : '#0f172a',
                         padding: '1px 5px',
                         borderRadius: '10px',
@@ -535,7 +536,7 @@ export function OfficialEccdChecklistModal({
                   fontWeight: 700,
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
-                  background: activeDomainId === 'qualitative' ? '#0f2744' : '#f1f5f9',
+                  background: activeDomainId === 'qualitative' ? '#7e191b' : '#f1f5f9',
                   color: activeDomainId === 'qualitative' ? '#fff' : '#334155',
                 }}
               >
@@ -557,13 +558,13 @@ export function OfficialEccdChecklistModal({
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <span style={{ fontSize: '11px', color: '#64748b' }}>Domain Raw Score: </span>
-                          <strong style={{ fontSize: '16px', color: '#0284c7' }}>{domainRawScores[dom.name] || 0}</strong>
+                          <strong style={{ fontSize: '16px', color: '#7e191b' }}>{domainRawScores[dom.name] || 0}</strong>
                         </div>
                       </div>
 
                       {dom.sections.map((sec, secIdx) => (
                         <div key={secIdx} style={{ marginBottom: '16px' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 700, color: '#0369a1', background: '#f0f9ff', border: '1px solid #e0f2fe', padding: '4px 10px', borderRadius: '6px', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 700, color: '#ba1607', background: '#fdf8f8', border: '1px solid #fecaca', padding: '4px 10px', borderRadius: '6px', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                             {sec.sectionName}
                           </div>
 
@@ -590,14 +591,14 @@ export function OfficialEccdChecklistModal({
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                                     <div style={{ flex: 1, minWidth: '240px' }}>
                                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
-                                        <span style={{ fontWeight: 800, color: '#0284c7', fontSize: '12px', fontFamily: 'monospace' }}>
+                                        <span style={{ fontWeight: 800, color: '#ba1607', fontSize: '12px', fontFamily: 'monospace' }}>
                                           #{item.itemNo}
                                         </span>
                                         <span style={{ fontWeight: 600, color: '#0f172a', fontSize: '13px', lineHeight: 1.4 }}>
                                           {item.indicator}
                                         </span>
                                         {item.parentalReportAllowed && (
-                                          <span style={{ fontSize: '10px', color: '#0284c7', background: '#e0f2fe', padding: '1px 6px', borderRadius: '10px', fontWeight: 600 }}>
+                                          <span style={{ fontSize: '10px', color: '#ba1607', background: '#fdf2f2', padding: '1px 6px', borderRadius: '10px', fontWeight: 600 }}>
                                             Parental report
                                           </span>
                                         )}
@@ -770,7 +771,7 @@ export function OfficialEccdChecklistModal({
             {/* Stepper Footer */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
               <div style={{ fontSize: '12px', color: '#475569' }}>
-                Total Demonstrated Items: <strong style={{ color: '#0284c7', fontSize: '14px' }}>{totalRawScore}</strong>
+                Total Demonstrated Items: <strong style={{ color: '#7e191b', fontSize: '14px' }}>{totalRawScore}</strong>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <Button variant="secondary" size="sm" onClick={() => setCurrentStep('guidelines')}>
@@ -848,7 +849,7 @@ export function OfficialEccdChecklistModal({
                       </div>
                       <div>
                         <span style={{ fontSize: '10px', color: '#64748b' }}>Scaled: </span>
-                        <strong style={{ fontSize: '16px', color: dom.alert ? '#dc2626' : '#0284c7' }}>{dom.scaledScore}</strong>
+                        <strong style={{ fontSize: '16px', color: dom.alert ? '#dc2626' : '#7e191b' }}>{dom.scaledScore}</strong>
                       </div>
                     </div>
                   </div>
@@ -866,16 +867,16 @@ export function OfficialEccdChecklistModal({
 
                 <div style={{ background: '#f1f5f9', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
                   <div style={{ fontSize: '11px', color: '#475569', fontWeight: 600 }}>Sum of Scaled Scores</div>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#0369a1', marginTop: '2px' }}>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#ba1607', marginTop: '2px' }}>
                     {scoringSummary.sumScaledScores} <span style={{ fontSize: '11px', fontWeight: 500, color: '#64748b' }}>/ 133</span>
                   </div>
                 </div>
 
-                <div style={{ background: scoringSummary.isDelayed ? '#fee2e2' : '#e0f2fe', padding: '10px 12px', borderRadius: '6px', border: scoringSummary.isDelayed ? '1px solid #f87171' : '1px solid #7dd3fc' }}>
-                  <div style={{ fontSize: '11px', color: scoringSummary.isDelayed ? '#991b1b' : '#0369a1', fontWeight: 700 }}>
+                <div style={{ background: scoringSummary.isDelayed ? '#fee2e2' : '#fdf2f2', padding: '10px 12px', borderRadius: '6px', border: scoringSummary.isDelayed ? '1px solid #f87171' : '1px solid #fecaca' }}>
+                  <div style={{ fontSize: '11px', color: scoringSummary.isDelayed ? '#991b1b' : '#7e191b', fontWeight: 700 }}>
                     Overall Standard Score
                   </div>
-                  <div style={{ fontSize: '20px', fontWeight: 900, color: scoringSummary.isDelayed ? '#b91c1c' : '#0369a1', marginTop: '2px' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 900, color: scoringSummary.isDelayed ? '#b91c1c' : '#7e191b', marginTop: '2px' }}>
                     {scoringSummary.standardScore} <span style={{ fontSize: '11px', fontWeight: 600 }}>(Mean 100, SD 15)</span>
                   </div>
                 </div>

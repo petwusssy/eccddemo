@@ -195,27 +195,28 @@ export function OfficialForm6WorkerProfileModal({
       onClose={onClose}
       title=""
       size="xl"
+      className="official-form-modal"
     >
-      <div className="official-form6-modal" style={{ maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="official-form6-modal" style={{ padding: '0.25rem' }}>
         {/* Government Header Banner */}
-        <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', fontWeight: 'bold' }}>
+        <div style={{ textAlign: 'center', borderBottom: '2px solid #7e191b', paddingBottom: '12px', marginBottom: '16px', paddingRight: '40px' }}>
+          <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#795d5f', fontWeight: 'bold' }}>
             Early Childhood Care and Development Council
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '4px 0' }}>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>April 2014</span>
-            <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+            <span style={{ fontSize: '11px', color: '#795d5f' }}>April 2014</span>
+            <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1112', margin: 0 }}>
               FORM 6 – CHILD DEVELOPMENT WORKER PROFILE
             </h2>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>Page {activeTab === 'personal' ? '1' : activeTab === 'work' ? '2' : '3'} of 3</span>
+            <span style={{ fontSize: '11px', color: '#795d5f' }}>Page {activeTab === 'personal' ? '1' : activeTab === 'work' ? '2' : '3'} of 3</span>
           </div>
-          <div style={{ fontSize: '11px', color: '#0284c7' }}>
+          <div style={{ fontSize: '11px', color: '#ba1607' }}>
             DSWD / CSWDO San Fernando Child Development Worker Official Accreditation Record
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }} className="no-print">
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid #f0e4e3', paddingBottom: '8px' }} className="no-print">
           <button
             type="button"
             className={`btn-tab ${activeTab === 'personal' ? 'active' : ''}`}
@@ -223,12 +224,13 @@ export function OfficialForm6WorkerProfileModal({
             style={{
               padding: '6px 14px',
               borderRadius: '6px',
-              border: 'none',
-              background: activeTab === 'personal' ? '#0f2744' : '#f1f5f9',
-              color: activeTab === 'personal' ? '#fff' : '#475569',
+              border: activeTab === 'personal' ? '1px solid #7e191b' : '1px solid #dfcecd',
+              background: activeTab === 'personal' ? 'linear-gradient(135deg, #7e191b, #ba1607)' : '#f8f2f2',
+              color: activeTab === 'personal' ? '#fff' : '#4a3436',
               fontWeight: 600,
               fontSize: '12px',
               cursor: 'pointer',
+              boxShadow: activeTab === 'personal' ? '0 2px 6px rgba(126, 25, 27, 0.25)' : 'none',
             }}
           >
             I. Personal Information
@@ -240,12 +242,13 @@ export function OfficialForm6WorkerProfileModal({
             style={{
               padding: '6px 14px',
               borderRadius: '6px',
-              border: 'none',
-              background: activeTab === 'work' ? '#0f2744' : '#f1f5f9',
-              color: activeTab === 'work' ? '#fff' : '#475569',
+              border: activeTab === 'work' ? '1px solid #7e191b' : '1px solid #dfcecd',
+              background: activeTab === 'work' ? 'linear-gradient(135deg, #7e191b, #ba1607)' : '#f8f2f2',
+              color: activeTab === 'work' ? '#fff' : '#4a3436',
               fontWeight: 600,
               fontSize: '12px',
               cursor: 'pointer',
+              boxShadow: activeTab === 'work' ? '0 2px 6px rgba(126, 25, 27, 0.25)' : 'none',
             }}
           >
             II. Work-Related Information
@@ -257,26 +260,27 @@ export function OfficialForm6WorkerProfileModal({
             style={{
               padding: '6px 14px',
               borderRadius: '6px',
-              border: 'none',
-              background: activeTab === 'conditions' ? '#0f2744' : '#f1f5f9',
-              color: activeTab === 'conditions' ? '#fff' : '#475569',
+              border: activeTab === 'conditions' ? '1px solid #7e191b' : '1px solid #dfcecd',
+              background: activeTab === 'conditions' ? 'linear-gradient(135deg, #7e191b, #ba1607)' : '#f8f2f2',
+              color: activeTab === 'conditions' ? '#fff' : '#4a3436',
               fontWeight: 600,
               fontSize: '12px',
               cursor: 'pointer',
+              boxShadow: activeTab === 'conditions' ? '0 2px 6px rgba(126, 25, 27, 0.25)' : 'none',
             }}
           >
             III. Working Conditions
           </button>
         </div>
 
-        {/* Form Body Scroll Area */}
-        <div style={{ overflowY: 'auto', flex: 1, paddingRight: '6px' }}>
+        {/* Form Body Content Area */}
+        <div style={{ paddingRight: '6px' }}>
           {/* =========================================================================
               TAB 1: PERSONAL INFORMATION (Page 1)
               ========================================================================= */}
           {activeTab === 'personal' && (
             <div>
-              <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a', marginBottom: '12px', borderLeft: '3px solid #0284c7', paddingLeft: '8px' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a', marginBottom: '12px', borderLeft: '3px solid #7e191b', paddingLeft: '8px' }}>
                 I. Child Development Worker Personal Information
               </div>
 
@@ -507,7 +511,7 @@ export function OfficialForm6WorkerProfileModal({
               ========================================================================= */}
           {activeTab === 'work' && (
             <div>
-              <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a', marginBottom: '12px', borderLeft: '3px solid #0284c7', paddingLeft: '8px' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a', marginBottom: '12px', borderLeft: '3px solid #7e191b', paddingLeft: '8px' }}>
                 II. Work-Related Information
               </div>
 
@@ -733,7 +737,7 @@ export function OfficialForm6WorkerProfileModal({
               ========================================================================= */}
           {activeTab === 'conditions' && (
             <div>
-              <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a', marginBottom: '12px', borderLeft: '3px solid #0284c7', paddingLeft: '8px' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a', marginBottom: '12px', borderLeft: '3px solid #7e191b', paddingLeft: '8px' }}>
                 III. Working Conditions
               </div>
 

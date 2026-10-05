@@ -83,3 +83,104 @@
   background-color: var(--bg-surface);
   margin-bottom: var(--space-2);
 }
+
+/* Enrollment Directory & Mapped Tables Column Rules (Consistent with Dashboard & Children) */
+.enrollment-registry-table {
+  width: 100%;
+  min-width: 1240px;
+}
+
+.enrollment-registry-table th,
+.enrollment-registry-table td {
+  padding: 0.875rem 1.125rem;
+  vertical-align: middle;
+}
+
+.enr-col-child {
+  min-width: 250px;
+}
+
+.enr-col-id {
+  min-width: 145px;
+  white-space: nowrap;
+}
+
+.enr-col-brgy {
+  min-width: 125px;
+  white-space: nowrap;
+}
+
+.enr-col-center {
+  min-width: 180px;
+}
+
+.enr-col-sy {
+  min-width: 130px;
+  white-space: nowrap;
+}
+
+.enr-col-date {
+  min-width: 125px;
+  white-space: nowrap;
+}
+
+.enr-col-status {
+  min-width: 120px;
+  white-space: nowrap;
+}
+
+.enr-col-action {
+  min-width: 120px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.not-enrolled-table {
+  width: 100%;
+  min-width: 1280px;
+}
+
+.not-enrolled-table th,
+.not-enrolled-table td {
+  padding: 0.875rem 1.125rem;
+  vertical-align: middle;
+}
+
+.notenr-col-child {
+  min-width: 260px;
+}
+
+.notenr-col-id {
+  min-width: 145px;
+  white-space: nowrap;
+}
+
+.notenr-col-age {
+  min-width: 125px;
+  white-space: nowrap;
+}
+
+.notenr-col-brgy {
+  min-width: 130px;
+  white-space: nowrap;
+}
+
+.notenr-col-date {
+  min-width: 120px;
+  white-space: nowrap;
+}
+
+.notenr-col-priority {
+  min-width: 155px;
+  white-space: nowrap;
+}
+
+.notenr-col-center {
+  min-width: 185px;
+}
+
+.notenr-col-action {
+  min-width: 120px;
+  text-align: right;
+  white-space: nowrap;
+}

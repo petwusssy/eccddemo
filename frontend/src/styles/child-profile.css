@@ -33,7 +33,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-4);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 
 .child-avatar-badge {
@@ -52,6 +52,10 @@
   flex-shrink: 0;
 }
 
+.child-360-hero-banner h1 {
+  color: #ffffff !important;
+}
+
 .child-id-pill {
   display: inline-flex;
   align-items: center;
@@ -61,9 +65,9 @@
   font-weight: var(--font-weight-bold);
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-full);
-  background-color: rgba(255, 255, 255, 0.15);
-  color: var(--color-accent-200);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .child-demographics-strip {
@@ -72,7 +76,7 @@
   flex-wrap: wrap;
   gap: var(--space-4);
   font-size: var(--font-size-sm);
-  color: var(--color-primary-100);
+  color: #f1f5f9;
   margin-top: var(--space-2);
 }
 
@@ -80,6 +84,12 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  color: #ffffff;
+}
+
+.child-demo-item svg {
+  color: #93c5fd;
+  flex-shrink: 0;
 }
 
 /* 5 Core Status Indicator Pillars */
@@ -106,7 +116,7 @@
 
 .pillar-card {
   background-color: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-lg);
   padding: var(--space-3);
   backdrop-filter: blur(8px);
@@ -114,7 +124,7 @@
 }
 
 .pillar-card:hover {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.14);
 }
 
 .pillar-label {
@@ -122,23 +132,23 @@
   font-weight: var(--font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-primary-200);
-  margin-bottom: 2px;
+  color: #ffded8;
+  margin-bottom: 4px;
 }
 
 .pillar-val {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-white);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #ffffff !important;
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 
 .pillar-sub {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.7);
-  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -284,3 +294,62 @@
   font-weight: var(--font-weight-bold);
   color: var(--color-primary-950);
 }
+
+/* Child Directory Table Styles (Robust Spacing & Readability) */
+.child-registry-table {
+  min-width: 1220px;
+  width: 100%;
+}
+
+.child-registry-table th,
+.child-registry-table td {
+  padding: 0.875rem 1.125rem;
+  vertical-align: middle;
+}
+
+.child-col-name {
+  min-width: 260px;
+  width: 22%;
+}
+
+.child-col-id {
+  min-width: 145px;
+  white-space: nowrap;
+}
+
+.child-col-age {
+  min-width: 110px;
+  white-space: nowrap;
+}
+
+.child-col-brgy {
+  min-width: 135px;
+  white-space: nowrap;
+}
+
+.child-col-enrollment {
+  min-width: 125px;
+  white-space: nowrap;
+}
+
+.child-col-health {
+  min-width: 160px;
+  white-space: nowrap;
+}
+
+.child-col-dev {
+  min-width: 200px;
+  white-space: nowrap;
+}
+
+.child-col-fup {
+  min-width: 130px;
+  white-space: nowrap;
+}
+
+.child-col-action {
+  min-width: 110px;
+  text-align: right;
+  white-space: nowrap;
+}
+

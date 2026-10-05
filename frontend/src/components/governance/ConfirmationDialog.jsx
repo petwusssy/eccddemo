@@ -18,7 +18,7 @@ export function ConfirmationDialog({
     <div className="res-modal-overlay" onClick={onCancel}>
       <div className="res-modal-card" style={{ maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
         <div className="res-modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, color: variant === 'danger' ? '#be123c' : '#0f2744' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, color: variant === 'danger' ? '#be123c' : '#7e191b' }}>
             <AlertTriangle size={20} />
             <span>{title}</span>
           </div>

@@ -13,6 +13,8 @@ export function Input({
   onChange,
   onClear,
   icon: Icon,
+  leftIcon,
+  rightIcon,
   required = false,
   error,
   helper,
@@ -22,8 +24,9 @@ export function Input({
   ...props
 }) {
   const inputId = id || (label ? `input-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined);
-  const hasLeftIcon = Boolean(Icon);
-  const hasRightIcon = Boolean(onClear && value);
+  const resolvedLeftIcon = leftIcon || (Icon ? <Icon size={16} /> : null);
+  const hasLeftIcon = Boolean(resolvedLeftIcon);
+  const hasRightIcon = Boolean((onClear && value) || rightIcon);
 
   return (
     <div className={`form-group ${wrapperClassName}`}>
@@ -35,9 +38,9 @@ export function Input({
       )}
 
       <div className="form-control-wrapper">
-        {Icon && (
+        {resolvedLeftIcon && (
           <span className="input-icon-left">
-            <Icon size={16} />
+            {resolvedLeftIcon}
           </span>
         )}
 

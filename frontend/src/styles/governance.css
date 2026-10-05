@@ -15,7 +15,7 @@
 .gov-disclaimer {
   background: #f8fafc;
   border: 1px solid #cbd5e1;
-  border-left: 4px solid #0f2744;
+  border-left: 4px solid #7e191b;
   border-radius: var(--radius-lg, 10px);
   padding: 1rem 1.25rem;
   display: flex;
@@ -28,7 +28,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #0f2744;
+  color: #7e191b;
 }
 
 .gov-disclaimer-desc {
@@ -57,7 +57,7 @@
   gap: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #0f2744;
+  color: #7e191b;
 }
 
 .gov-sim-buttons {
@@ -81,13 +81,13 @@
 
 .gov-sim-btn:hover {
   background: #e2e8f0;
-  color: #0f2744;
+  color: #7e191b;
 }
 
 .gov-sim-btn.is-active {
-  background: #0f2744;
+  background: #7e191b;
   color: #ffffff;
-  border-color: #0f2744;
+  border-color: #7e191b;
 }
 
 /* --- Audit Log Filter Toolbar --- */
@@ -129,8 +129,8 @@
 }
 
 .gov-search-input:focus {
-  border-color: #0284c7;
-  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+  border-color: #ba1607;
+  box-shadow: 0 0 0 2px rgba(186, 22, 7, 0.15);
 }
 
 .gov-filter-selects {
@@ -264,7 +264,7 @@
 .unauth-title {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #0f2744;
+  color: #7e191b;
 }
 
 .unauth-desc {

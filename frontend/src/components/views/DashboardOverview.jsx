@@ -113,11 +113,17 @@ export function DashboardOverview({ onNavigate }) {
   const filteredAttentionItems = useMemo(() => {
     if (!attentionData?.items) return [];
     return attentionData.items.filter((item) => {
+      const childName = (item.childName || '').toLowerCase();
+      const id = (item.id || '').toLowerCase();
+      const barangay = (item.barangay || '').toLowerCase();
+      const issue = (item.issue || item.reason || '').toLowerCase();
+      const query = (attentionSearch || '').toLowerCase();
+
       const matchesSearch =
-        item.childName.toLowerCase().includes(attentionSearch.toLowerCase()) ||
-        item.id.toLowerCase().includes(attentionSearch.toLowerCase()) ||
-        item.barangay.toLowerCase().includes(attentionSearch.toLowerCase()) ||
-        item.issue.toLowerCase().includes(attentionSearch.toLowerCase());
+        childName.includes(query) ||
+        id.includes(query) ||
+        barangay.includes(query) ||
+        issue.includes(query);
 
       let matchesFilter = true;
       if (attentionFilter === 'urgent') {
@@ -147,16 +153,15 @@ export function DashboardOverview({ onNavigate }) {
     try {
       const res = await dashboardService.updateAttentionItemStatus(selectedCase.id, newStatus);
       if (res.ok) {
-        setSelectedCase(res.item);
         // Refresh local list
         const updated = await dashboardService.getAttention();
         setAttentionData(updated);
 
         // Also record in activity stream
         await dashboardService.recordQuickAction('Case Status Updated', {
-          description: `Action on ${selectedCase.childName} (${selectedCase.id}) marked as "${newStatus}"`,
+          description: `Action on ${selectedCase.childName || 'Child'} (${selectedCase.id}) marked as "${newStatus}"`,
           type: 'assessment',
-          barangay: selectedCase.barangay,
+          barangay: selectedCase.barangay || 'San Isidro',
           childId: selectedCase.id,
           worker: 'CSWDO Administrator',
           tag: 'Status Update',
@@ -167,6 +172,9 @@ export function DashboardOverview({ onNavigate }) {
 
         addToast(`Case ${selectedCase.id} updated to ${newStatus}`, 'success');
         setIsCaseModalOpen(false);
+        setSelectedCase(null);
+      } else {
+        addToast(res.error || 'Failed to update case status', 'error');
       }
     } catch (error) {
       addToast('Failed to update case status', 'error');
@@ -193,7 +201,7 @@ export function DashboardOverview({ onNavigate }) {
       barangay: quickActionForm.barangay,
       childId: quickActionForm.childId || `ECCD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
       worker: 'CSWDO Administrator',
-      tag: activeQuickAction.toUpperCase(),
+      tag: (activeQuickAction || 'Action').toUpperCase(),
       tagVariant: 'primary',
     });
 
@@ -240,133 +248,12 @@ export function DashboardOverview({ onNavigate }) {
 
   return (
     <div className="dashboard-page" style={{ paddingBottom: 'var(--space-8)' }}>
-      {/* Page Header */}
-      <div className="page-header" style={{ marginBottom: 'var(--space-4)' }}>
-        <div className="page-title-group">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <h1 className="page-title">CSWDO Operations Dashboard</h1>
-            <Badge variant="primary" size="sm">City Level</Badge>
-          </div>
-          <p className="page-subtitle">
-            City Social Welfare and Development Office • City of San Fernando ({summary?.reportingSchoolYear || 'SY 2026–2027'})
-          </p>
-        </div>
-
-        <div className="page-actions" style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={loadDashboardData}
-            disabled={loading}
-            aria-label="Refresh dashboard data"
-          >
-            <RefreshCw size={16} className={loading ? 'spin' : ''} />
-            Refresh Data
-          </Button>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          OPERATIONAL DECISION STRIP: CSWDO EXECUTIVE BRIEFING
-          ========================================================================= */}
-      <section className="dash-decision-strip" aria-label="Operational Executive Briefing">
-        <div className="dash-decision-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <span className="dash-decision-badge">
-              <Sparkles size={14} />
-              Executive Briefing
-            </span>
-            <span style={{ fontSize: 'var(--font-size-xs)', color: 'rgba(255,255,255,0.85)' }}>
-              City-level operational indicators
-            </span>
-          </div>
-          <span className="dash-decision-timestamp">
-            {summary ? formatPHTDate(summary.lastUpdated) : 'Live'}
-          </span>
-        </div>
-
-        <div className="dash-decision-grid">
-          <div className="dash-decision-item">
-            <div className="dash-decision-num">1</div>
-            <div>
-              <div className="dash-decision-question">Identified Cohort</div>
-              <div className="dash-decision-answer">
-                <strong>{summary?.totalChildren !== undefined ? summary.totalChildren.toLocaleString() : '0'}</strong> children ({summary?.mappedPercentage ?? 0}% mapped)
-              </div>
-            </div>
-          </div>
-
-          <div className="dash-decision-item">
-            <div className="dash-decision-num">2</div>
-            <div>
-              <div className="dash-decision-question">CDC / SNP Enrollment</div>
-              <div className="dash-decision-answer">
-                <span style={{ color: 'var(--color-success-light)' }}>
-                  <strong>{summary?.enrolledChildren !== undefined ? summary.enrolledChildren.toLocaleString() : '0'} enrolled</strong>
-                </span> ({summary?.enrolledPercentage ?? 0}% coverage)
-              </div>
-            </div>
-          </div>
-
-          <div className="dash-decision-item">
-            <div className="dash-decision-num">3</div>
-            <div>
-              <div className="dash-decision-question">Unenrolled Target</div>
-              <div className="dash-decision-answer">
-                <span style={{ color: '#fca5a5' }}>
-                  <strong>{summary?.notEnrolledChildren !== undefined ? summary.notEnrolledChildren.toLocaleString() : '0'} children</strong>
-                </span> ({summary?.notEnrolledPercentage ?? 0}%)
-              </div>
-            </div>
-          </div>
-
-          <div className="dash-decision-item">
-            <div className="dash-decision-num">4</div>
-            <div>
-              <div className="dash-decision-question">Health Monitoring Due</div>
-              <div className="dash-decision-answer">
-                <span style={{ color: '#fde047' }}>
-                  <strong>{summary?.healthMonitoringDue ?? 0} pending</strong>
-                </span> for OPT Plus
-              </div>
-            </div>
-          </div>
-
-          <div className="dash-decision-item">
-            <div className="dash-decision-num">5</div>
-            <div>
-              <div className="dash-decision-question">Development Alerts</div>
-              <div className="dash-decision-answer">
-                <span style={{ color: '#fca5a5' }}>
-                  <strong>{summary?.developmentFollowups ?? 0} flagged</strong>
-                </span> for domain support
-              </div>
-            </div>
-          </div>
-
-          <div className="dash-decision-item">
-            <div className="dash-decision-num">6</div>
-            <div>
-              <div className="dash-decision-question">Priority Barangays</div>
-              <div className="dash-decision-answer">
-                <span style={{ color: '#fde047' }}>
-                  <strong>{summary?.barangaysNeedingAttention ?? 0} priority areas</strong>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          TOP KPI CARDS (6 CARDS WITH REALISTIC SYNTHETIC METRICS)
-          ========================================================================= */}
       {/* =========================================================================
           TOP KPI CARDS (BENTO GRID METRICS)
           ========================================================================= */}
       <section className="dash-kpis-grid" aria-label="Key Metrics Bento Grid">
         {/* Total Children */}
-        <div className="kpi-card" onClick={() => onNavigate('children')} style={{ cursor: 'pointer' }} title="View Children Master Registry">
+        <div className="kpi-card card-primary" onClick={() => onNavigate('children')} style={{ cursor: 'pointer' }} title="View Children Master Registry">
           <div className="kpi-top">
             <span className="kpi-title">Total Cohort</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-primary-50)', color: 'var(--color-primary-800)' }}>
@@ -380,7 +267,7 @@ export function DashboardOverview({ onNavigate }) {
         </div>
 
         {/* Mapped */}
-        <div className="kpi-card" onClick={() => onNavigate('community-mapping')} style={{ cursor: 'pointer' }} title="View Community Mapping Module">
+        <div className="kpi-card card-info" onClick={() => onNavigate('community-mapping')} style={{ cursor: 'pointer' }} title="View Community Mapping Module">
           <div className="kpi-top">
             <span className="kpi-title">Mapped</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-accent-50)', color: 'var(--color-accent-700)' }}>
@@ -394,7 +281,7 @@ export function DashboardOverview({ onNavigate }) {
         </div>
 
         {/* Enrolled */}
-        <div className="kpi-card" onClick={() => onNavigate('enrollment')} style={{ cursor: 'pointer' }} title="View Enrollment Tracking Directory">
+        <div className="kpi-card card-success" onClick={() => onNavigate('enrollment')} style={{ cursor: 'pointer' }} title="View Enrollment Tracking Directory">
           <div className="kpi-top">
             <span className="kpi-title">Enrolled</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success-primary)' }}>
@@ -410,7 +297,7 @@ export function DashboardOverview({ onNavigate }) {
         </div>
 
         {/* Not Enrolled */}
-        <div className="kpi-card" onClick={() => onNavigate('enrollment')} style={{ cursor: 'pointer' }} title="View Mapped but Not Enrolled Operational View">
+        <div className="kpi-card card-danger" onClick={() => onNavigate('enrollment')} style={{ cursor: 'pointer' }} title="View Mapped but Not Enrolled Operational View">
           <div className="kpi-top">
             <span className="kpi-title">Not Enrolled</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger-primary)' }}>
@@ -426,7 +313,7 @@ export function DashboardOverview({ onNavigate }) {
         </div>
 
         {/* Health Monitoring Due */}
-        <div className="kpi-card" onClick={() => onNavigate('health-monitoring')} style={{ cursor: 'pointer' }} title="View Health Monitoring Due List">
+        <div className="kpi-card card-warning" onClick={() => onNavigate('health-monitoring')} style={{ cursor: 'pointer' }} title="View Health Monitoring Due List">
           <div className="kpi-top">
             <span className="kpi-title">Health Due</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-warning-bg)', color: 'var(--color-warning-primary)' }}>
@@ -442,7 +329,7 @@ export function DashboardOverview({ onNavigate }) {
         </div>
 
         {/* Development Follow-ups */}
-        <div className="kpi-card" onClick={() => onNavigate('follow-ups')} style={{ cursor: 'pointer' }} title="View Follow-Up & Early Support Queue">
+        <div className="kpi-card card-danger" onClick={() => onNavigate('follow-ups')} style={{ cursor: 'pointer' }} title="View Follow-Up & Early Support Queue">
           <div className="kpi-top">
             <span className="kpi-title">Dev Follow-ups</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#dc2626' }}>
@@ -578,17 +465,17 @@ export function DashboardOverview({ onNavigate }) {
 
         {/* Operational Table */}
         <div className="table-container mobile-table-to-cards" style={{ border: 'none', borderRadius: 0 }}>
-          <Table>
+          <table className="table attention-table">
             <TableHead>
               <TableRow>
-                <TableHeader>Child</TableHeader>
-                <TableHeader>Child ID</TableHeader>
-                <TableHeader>Barangay</TableHeader>
-                <TableHeader>Issue & Diagnosis</TableHeader>
-                <TableHeader>Assigned Worker</TableHeader>
-                <TableHeader>Due Date</TableHeader>
-                <TableHeader>Status</TableHeader>
-                <TableHeader style={{ textAlign: 'right' }}>Action</TableHeader>
+                <TableHeader className="attention-col-child">Child</TableHeader>
+                <TableHeader className="attention-col-id">Child ID</TableHeader>
+                <TableHeader className="attention-col-brgy">Barangay</TableHeader>
+                <TableHeader className="attention-col-issue">Issue &amp; Diagnosis</TableHeader>
+                <TableHeader className="attention-col-worker">Assigned Worker</TableHeader>
+                <TableHeader className="attention-col-due">Due Date</TableHeader>
+                <TableHeader className="attention-col-status">Status</TableHeader>
+                <TableHeader className="attention-col-action">Action</TableHeader>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -605,50 +492,75 @@ export function DashboardOverview({ onNavigate }) {
                     className={item.priority === 'Urgent' ? 'attention-row-urgent' : ''}
                   >
                     {/* Child Name & Details */}
-                    <TableCell>
-                      <div>
-                        <div style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
-                          {item.childName}
+                    <TableCell className="attention-col-child">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                        <div style={{
+                          width: '2.25rem',
+                          height: '2.25rem',
+                          borderRadius: 'var(--radius-full)',
+                          backgroundColor: 'var(--color-primary-100)',
+                          color: 'var(--color-primary-900)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: '700',
+                          fontSize: 'var(--font-size-xs)',
+                          flexShrink: 0
+                        }}>
+                          {item.childName?.trim().split(' ').map((n) => n[0]).filter(Boolean).slice(0, 2).join('') || 'C'}
                         </div>
-                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-                          {item.age} • {item.sex}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                            {item.childName}
+                          </div>
+                          {[item.age, item.sex].filter(Boolean).filter((v) => v !== '—').length > 0 && (
+                            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                              {[item.age, item.sex].filter(Boolean).filter((v) => v !== '—').join(' • ')}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </TableCell>
 
                     {/* Child ID */}
-                    <TableCell>
-                      <code style={{ fontSize: 'var(--font-size-xs)', backgroundColor: 'var(--color-neutral-100)', padding: '2px 6px', borderRadius: 'var(--radius-sm)' }}>
+                    <TableCell className="attention-col-id">
+                      <code style={{ fontSize: 'var(--font-size-xs)', backgroundColor: 'var(--color-neutral-100)', padding: '3px 8px', borderRadius: 'var(--radius-sm)', fontWeight: 600, letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
                         {item.id}
                       </code>
                     </TableCell>
 
                     {/* Barangay */}
-                    <TableCell>
-                      <span style={{ fontWeight: 'var(--font-weight-medium)' }}>{item.barangay}</span>
-                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>{item.purok}</div>
+                    <TableCell className="attention-col-brgy">
+                      <span style={{ fontWeight: 'var(--font-weight-medium)', whiteSpace: 'nowrap' }}>{item.barangay}</span>
+                      {item.purok && <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{item.purok}</div>}
                     </TableCell>
 
                     {/* Issue */}
-                    <TableCell style={{ maxWidth: '300px' }}>
+                    <TableCell className="attention-col-issue">
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-2)' }}>
                         {item.priority === 'Urgent' && (
                           <AlertCircle size={15} style={{ color: 'var(--color-danger-primary)', flexShrink: 0, marginTop: '2px' }} />
                         )}
-                        <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-primary)', lineHeight: 1.35 }}>
+                        <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-primary)', lineHeight: 1.4 }}>
                           {item.issue}
                         </span>
                       </div>
                     </TableCell>
 
                     {/* Assigned Worker */}
-                    <TableCell>
-                      <div style={{ fontSize: 'var(--font-size-sm)' }}>{item.assignedWorker}</div>
-                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>{item.workerContact}</div>
+                    <TableCell className="attention-col-worker">
+                      <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', whiteSpace: 'nowrap' }}>
+                        {item.assignedWorker}
+                      </div>
+                      {item.workerContact && (
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                          {item.workerContact}
+                        </div>
+                      )}
                     </TableCell>
 
                     {/* Due Date */}
-                    <TableCell>
+                    <TableCell className="attention-col-due">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'var(--font-size-xs)', whiteSpace: 'nowrap' }}>
                         <Calendar size={13} style={{ color: item.status === 'Overdue' ? 'var(--color-danger-primary)' : 'var(--text-muted)' }} />
                         <span style={{ fontWeight: item.status === 'Overdue' ? 'bold' : 'normal', color: item.status === 'Overdue' ? 'var(--color-danger-primary)' : 'var(--text-secondary)' }}>
@@ -658,12 +570,12 @@ export function DashboardOverview({ onNavigate }) {
                     </TableCell>
 
                     {/* Status */}
-                    <TableCell>
+                    <TableCell className="attention-col-status">
                       {getStatusBadge(item.status)}
                     </TableCell>
 
                     {/* Action */}
-                    <TableCell style={{ textAlign: 'right' }}>
+                    <TableCell className="attention-col-action">
                       <Button
                         variant="secondary"
                         size="sm"
@@ -672,7 +584,7 @@ export function DashboardOverview({ onNavigate }) {
                           setIsCaseModalOpen(true);
                         }}
                       >
-                        <Eye size={16} />
+                        <Eye size={15} />
                         Review
                       </Button>
                     </TableCell>
@@ -680,7 +592,7 @@ export function DashboardOverview({ onNavigate }) {
                 ))
               )}
             </TableBody>
-          </Table>
+          </table>
         </div>
       </section>
 
@@ -694,7 +606,7 @@ export function DashboardOverview({ onNavigate }) {
           <CardHeader>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
               <div>
-                <CardTitle subtitle="Distribution of 0–4 age cohort across early childhood education modalities">
+                <CardTitle>
                   A. Enrollment Overview
                 </CardTitle>
               </div>
@@ -819,7 +731,7 @@ export function DashboardOverview({ onNavigate }) {
           <CardHeader>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
               <div>
-                <CardTitle subtitle="Health (immunization / growth) & ECCD development assessment status">
+                <CardTitle>
                   C. Monitoring Status
                 </CardTitle>
               </div>
@@ -918,24 +830,20 @@ export function DashboardOverview({ onNavigate }) {
             </div>
 
             {/* Critical Flagged Domains Alert List */}
-            <div style={{ marginTop: 'var(--space-3)', borderTop: '1px dashed var(--border-subtle)', paddingTop: 'var(--space-3)' }}>
-              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
-                Priority Intervention Hotspots (Flagged Domains):
-              </span>
-              <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginTop: 'var(--space-2)' }}>
-                {(!monitoring?.criticalAlerts || monitoring.criticalAlerts.length === 0) ? (
-                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-                    No active critical alerts or domain delays flagged.
-                  </span>
-                ) : (
-                  monitoring.criticalAlerts.map((alert, idx) => (
+            {monitoring?.criticalAlerts && monitoring.criticalAlerts.length > 0 && (
+              <div style={{ marginTop: 'var(--space-3)', borderTop: '1px dashed var(--border-subtle)', paddingTop: 'var(--space-3)' }}>
+                <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                  Priority Intervention Hotspots (Flagged Domains):
+                </span>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginTop: 'var(--space-2)' }}>
+                  {monitoring.criticalAlerts.map((alert, idx) => (
                     <Badge key={idx} variant={alert.severity === 'Critical' ? 'danger' : 'warning'} size="sm">
                       {alert.domain}: {alert.flagged}
                     </Badge>
-                  ))
-                )}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </CardBody>
         </Card>
       </div>
@@ -950,7 +858,7 @@ export function DashboardOverview({ onNavigate }) {
           <CardHeader>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
               <div>
-                <CardTitle subtitle="Ranked by priority operational attention needed">
+                <CardTitle>
                   B. Children by Barangay
                 </CardTitle>
               </div>
@@ -1061,7 +969,7 @@ export function DashboardOverview({ onNavigate }) {
           <CardHeader>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
               <div>
-                <CardTitle subtitle="Real-time multi-stream log of community mapping, enrollments, and clinical assessments">
+                <CardTitle>
                   E. Recent Activity
                 </CardTitle>
               </div>
@@ -1141,16 +1049,25 @@ export function DashboardOverview({ onNavigate }) {
       {selectedCase && (
         <Modal
           isOpen={isCaseModalOpen}
-          onClose={() => setIsCaseModalOpen(false)}
-          title={`Operational Case Review: ${selectedCase.childName}`}
-          subtitle={`Child ID: ${selectedCase.id} • ${selectedCase.barangay} (${selectedCase.purok})`}
+          onClose={() => {
+            setIsCaseModalOpen(false);
+            setSelectedCase(null);
+          }}
+          title={`Operational Case Review: ${selectedCase.childName || 'Child'}`}
+          subtitle={[
+            selectedCase.id && `Child ID: ${selectedCase.id}`,
+            selectedCase.barangay && `${selectedCase.barangay}${selectedCase.purok ? ` (${selectedCase.purok})` : ''}`
+          ].filter(Boolean).join(' • ') || undefined}
           size="lg"
           footer={
             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setIsCaseModalOpen(false)}
+                onClick={() => {
+                  setIsCaseModalOpen(false);
+                  setSelectedCase(null);
+                }}
               >
                 Close
               </Button>
@@ -1196,10 +1113,10 @@ export function DashboardOverview({ onNavigate }) {
               <AlertTriangle size={20} style={{ color: selectedCase.priority === 'Urgent' ? 'var(--color-danger-primary)' : 'var(--color-warning-primary)', flexShrink: 0, marginTop: '2px' }} />
               <div>
                 <strong style={{ color: selectedCase.priority === 'Urgent' ? 'var(--color-danger-primary)' : 'var(--color-warning-primary)', fontSize: 'var(--font-size-sm)' }}>
-                  {selectedCase.priority} Priority Case: {selectedCase.issueCategory.toUpperCase()} INTERVENTION
+                  {selectedCase.priority || 'Standard'} Priority Case: {(selectedCase.issueCategory || selectedCase.sourceModule || 'general').toUpperCase()} INTERVENTION
                 </strong>
                 <p style={{ margin: '2px 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--text-primary)' }}>
-                  {selectedCase.issue}
+                  {selectedCase.issue || selectedCase.reason || 'Operational intervention required'}
                 </p>
               </div>
             </div>
@@ -1208,19 +1125,21 @@ export function DashboardOverview({ onNavigate }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-3)', backgroundColor: 'var(--bg-canvas)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)' }}>
               <div>
                 <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Age & Sex:</span>
-                <div style={{ fontWeight: '500' }}>{selectedCase.age} • {selectedCase.sex}</div>
+                <div style={{ fontWeight: '500' }}>
+                  {[selectedCase.age, selectedCase.sex].filter(Boolean).filter((v) => v !== '—').join(' • ') || '—'}
+                </div>
               </div>
               <div>
                 <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Parent / Guardian:</span>
-                <div style={{ fontWeight: '500' }}>{selectedCase.guardianName}</div>
+                <div style={{ fontWeight: '500' }}>{selectedCase.guardianName || '—'}</div>
               </div>
               <div>
                 <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Assigned Day Care Center:</span>
-                <div style={{ fontWeight: '500' }}>{selectedCase.center}</div>
+                <div style={{ fontWeight: '500' }}>{selectedCase.center || selectedCase.dayCareCenter || 'Community CDC'}</div>
               </div>
               <div>
                 <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Assigned Worker & Contact:</span>
-                <div style={{ fontWeight: '500' }}>{selectedCase.assignedWorker} ({selectedCase.workerContact})</div>
+                <div style={{ fontWeight: '500' }}>{selectedCase.assignedWorker || selectedCase.assignedWorkerName || 'Assigned CDW'} {selectedCase.workerContact ? `(${selectedCase.workerContact})` : ''}</div>
               </div>
             </div>
 
@@ -1230,13 +1149,13 @@ export function DashboardOverview({ onNavigate }) {
                 Recommended CSWDO Protocol Action:
               </div>
               <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--text-primary)' }}>
-                {selectedCase.actionRequired}
+                {selectedCase.actionRequired || selectedCase.actionPlan || 'Conduct home visit and coordinate with barangay CDW.'}
               </p>
             </div>
 
             {/* Due date and current status */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
-              <span>Follow-up Target Due Date: <strong>{selectedCase.dueDate}</strong></span>
+              <span>Follow-up Target Due Date: <strong>{selectedCase.dueDate || selectedCase.scheduledDate || 'Pending'}</strong></span>
               <span>Current Status: {getStatusBadge(selectedCase.status)}</span>
             </div>
           </div>
@@ -1261,7 +1180,6 @@ export function DashboardOverview({ onNavigate }) {
               ? '+ Start ECCD Development Assessment'
               : '+ Log Community Mapping Activity'
           }
-          subtitle="Direct operational entry into the ECCD CARE central repository"
           size="md"
         >
           <form onSubmit={handleQuickActionSubmit}>

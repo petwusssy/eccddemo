@@ -8,7 +8,7 @@
 .comm-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   width: 100%;
 }
 
@@ -45,12 +45,12 @@
 }
 
 .comm-tab-btn:hover {
-  color: var(--color-primary, #0f2744);
+  color: var(--color-primary, #7e191b);
   background: #f1f5f9;
 }
 
 .comm-tab-btn.is-active {
-  color: var(--color-primary, #0f2744);
+  color: var(--color-primary, #7e191b);
   background: #ffffff;
   border-color: #cbd5e1;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -66,7 +66,7 @@
 }
 
 .comm-tab-btn.is-active .comm-tab-badge {
-  background: #0f2744;
+  background: #7e191b;
   color: #ffffff;
 }
 
@@ -130,7 +130,7 @@
 .comm-stat-value {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #0f2744;
+  color: #7e191b;
   line-height: 1.2;
 }
 
@@ -203,13 +203,13 @@
 
 .comm-chip-btn:hover {
   background: #e2e8f0;
-  color: #0f2744;
+  color: #7e191b;
 }
 
 .comm-chip-btn.is-active {
-  background: #0f2744;
+  background: #7e191b;
   color: #ffffff;
-  border-color: #0f2744;
+  border-color: #7e191b;
 }
 
 /* --- Barangays Table / View --- */
@@ -307,7 +307,7 @@
 .comm-center-title {
   font-size: 1.0625rem;
   font-weight: 700;
-  color: #0f2744;
+  color: #7e191b;
   line-height: 1.3;
 }
 
@@ -406,7 +406,7 @@
   gap: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 800;
-  color: #0f2744;
+  color: #7e191b;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -415,11 +415,11 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #0369a1;
-  background: #e0f2fe;
+  color: #ba1607;
+  background: #fdf2f2;
   padding: 0.5rem 0.75rem;
   border-radius: 4px;
-  border: 1px solid #bae6fd;
+  border: 1px solid #fecaca;
 }
 
 .comm-integration-note {
@@ -474,8 +474,8 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #e0f2fe;
-  color: #0369a1;
+  background: #fdf2f2;
+  color: #ba1607;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -491,7 +491,7 @@
 .comm-worker-name {
   font-size: 1rem;
   font-weight: 700;
-  color: #0f2744;
+  color: #7e191b;
   line-height: 1.3;
 }
 
@@ -590,7 +590,7 @@
 .comm-modal-title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #0f2744;
+  color: #7e191b;
 }
 
 .comm-modal-body {

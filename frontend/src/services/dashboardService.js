@@ -230,24 +230,27 @@ export const dashboardService = {
     const followUps = centralDataStore.getFollowUps() || [];
     const urgentCount = followUps.filter((f) => f.priority === 'High' || f.priority === 'Urgent').length;
 
-    const items = followUps.map((f) => ({
-      id: f.id,
-      childName: f.childName || 'Child Record',
-      age: f.age || '—',
-      sex: f.sex || '—',
-      barangay: f.barangay || 'San Isidro',
-      purok: f.purok || '',
-      issue: f.reason || f.title || f.issue,
-      issueCategory: f.sourceModule?.toLowerCase() || 'development',
-      assignedWorker: f.assignedWorkerName || f.assignedWorker || 'CDW',
-      workerContact: '',
-      dueDate: f.scheduledDate || f.dueDate || 'Pending',
-      status: f.status,
-      priority: f.priority,
-      guardianName: '',
-      center: '',
-      actionRequired: f.actionPlan || f.plan || '',
-    }));
+    const items = followUps.map((f) => {
+      const child = f.childId ? centralDataStore.getChildById(f.childId) : null;
+      return {
+        id: f.id,
+        childName: f.childName || child?.fullName || 'Child Record',
+        age: f.age && f.age !== '—' ? f.age : (child?.ageDisplay || ''),
+        sex: f.sex && f.sex !== '—' ? f.sex : (child?.sex || ''),
+        barangay: f.barangay || child?.barangay || 'San Isidro',
+        purok: f.purok || child?.purok || '',
+        issue: f.reason || f.title || f.issue,
+        issueCategory: f.sourceModule?.toLowerCase() || 'development',
+        assignedWorker: f.assignedWorkerName || f.assignedWorker || child?.assignedWorker || 'CDW',
+        workerContact: child?.workerContact || '',
+        dueDate: f.scheduledDate || f.dueDate || 'Pending',
+        status: f.status,
+        priority: f.priority,
+        guardianName: f.guardianName || child?.parentGuardian || '',
+        center: f.center || f.dayCareCenter || child?.dayCareCenter || '',
+        actionRequired: f.actionPlan || f.plan || '',
+      };
+    });
 
     return {
       totalNeedingAttention: items.length,
@@ -288,8 +291,30 @@ export const dashboardService = {
     const item = followUps.find((f) => f.id === id);
     if (item) {
       item.status = newStatus;
+      item.category = newStatus;
       centralDataStore.save();
-      return { ok: true, item };
+
+      const child = item.childId ? centralDataStore.getChildById(item.childId) : null;
+      const formattedItem = {
+        id: item.id,
+        childName: item.childName || child?.fullName || 'Child Record',
+        age: item.age && item.age !== '—' ? item.age : (child?.ageDisplay || ''),
+        sex: item.sex && item.sex !== '—' ? item.sex : (child?.sex || ''),
+        barangay: item.barangay || child?.barangay || 'San Isidro',
+        purok: item.purok || child?.purok || '',
+        issue: item.reason || item.title || item.issue || 'Operational monitoring required',
+        issueCategory: (item.sourceModule || item.issueCategory || item.category || 'development').toLowerCase(),
+        assignedWorker: item.assignedWorkerName || item.assignedWorker || child?.assignedWorker || 'CDW Assigned',
+        workerContact: item.workerContact || child?.workerContact || '',
+        dueDate: item.scheduledDate || item.dueDate || 'Pending',
+        status: item.status,
+        priority: item.priority || 'Normal',
+        guardianName: item.guardianName || child?.parentGuardian || '',
+        center: item.center || item.dayCareCenter || child?.dayCareCenter || '',
+        actionRequired: item.actionPlan || item.plan || item.actionRequired || '',
+      };
+
+      return { ok: true, item: formattedItem };
     }
     return { ok: false, error: 'Item not found' };
   },

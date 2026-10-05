@@ -258,6 +258,35 @@ class CentralDataStore {
       console.warn('CentralDataStore: Migration notice:', migErr);
     }
 
+    // Consolidate follow-up cases by childId (1 case per child, merging timeline history)
+    if (Array.isArray(initialData.followUps)) {
+      const casesByChild = new Map();
+      const sorted = [...initialData.followUps].sort((a, b) => {
+        const aActive = a.status !== 'Completed' && a.status !== 'Resolved' && a.category !== 'Completed';
+        const bActive = b.status !== 'Completed' && b.status !== 'Resolved' && b.category !== 'Completed';
+        if (aActive && !bActive) return -1;
+        if (!aActive && bActive) return 1;
+        return (b.createdAt || '').localeCompare(a.createdAt || '');
+      });
+
+      sorted.forEach((f) => {
+        const childKey = f.childId || f.id;
+        if (!casesByChild.has(childKey)) {
+          casesByChild.set(childKey, { ...f, history: [...(f.history || [])] });
+        } else {
+          const canonical = casesByChild.get(childKey);
+          if (Array.isArray(f.history)) {
+            f.history.forEach((h) => {
+              if (!canonical.history.some((ch) => ch.date === h.date && ch.action === h.action)) {
+                canonical.history.push(h);
+              }
+            });
+          }
+        }
+      });
+      initialData.followUps = Array.from(casesByChild.values());
+    }
+
     return initialData;
   }
 
@@ -310,13 +339,49 @@ class CentralDataStore {
   getEnrollments() { return this.data.enrollments; }
   getHealthMonitorings() { return this.data.healthMonitorings; }
   getDevelopmentAssessments() { return this.data.developmentAssessments; }
-  getFollowUps() { return this.data.followUps; }
+  getFollowUps() {
+    if (!Array.isArray(this.data.followUps)) return [];
+    const casesByChild = new Map();
+    const sorted = [...this.data.followUps].sort((a, b) => {
+      const aActive = a.status !== 'Completed' && a.status !== 'Resolved' && a.category !== 'Completed';
+      const bActive = b.status !== 'Completed' && b.status !== 'Resolved' && b.category !== 'Completed';
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
+
+    sorted.forEach((f) => {
+      const childKey = f.childId || f.id;
+      if (!casesByChild.has(childKey)) {
+        casesByChild.set(childKey, { ...f, history: [...(f.history || [])] });
+      } else {
+        const canonical = casesByChild.get(childKey);
+        if (Array.isArray(f.history)) {
+          f.history.forEach((h) => {
+            if (!canonical.history.some((ch) => ch.date === h.date && ch.action === h.action)) {
+              canonical.history.push(h);
+            }
+          });
+        }
+      }
+    });
+
+    const consolidated = Array.from(casesByChild.values());
+    if (consolidated.length !== this.data.followUps.length) {
+      this.data.followUps = consolidated;
+      this.save();
+    }
+    return this.data.followUps;
+  }
   getAuditLogs() { return this.data.auditLogs; }
   getResources() { return this.data.resources; }
 
   // Individual Entity Getters
   getChildById(childId) {
     return this.data.children.find((c) => c.id === childId) || null;
+  }
+  getChild(childId) {
+    return this.getChildById(childId);
   }
   getHouseholdById(householdId) {
     return this.data.households.find((h) => h.id === householdId) || null;
@@ -373,6 +438,31 @@ class CentralDataStore {
     if (!child) return null;
 
     const household = this.data.households.find((h) => h.id === child.householdId) || null;
+    let familyHousehold = household ? { ...household } : null;
+    if (familyHousehold) {
+      if (!Array.isArray(familyHousehold.coResidentChildren)) {
+        const otherKids = this.data.children.filter((c) => c.householdId === child.householdId && c.id !== childId);
+        familyHousehold.coResidentChildren = otherKids.map((k) => ({
+          name: k.fullName || `${k.firstName || ''} ${k.lastName || ''}`.trim() || 'Sibling',
+          age: k.ageDisplay || `${k.ageYears || 0} yrs`,
+          relation: 'Sibling / Co-resident',
+          status: k.enrollmentStatus || 'Active',
+          school: k.dayCareCenterName || 'Home',
+        }));
+      }
+    } else {
+      familyHousehold = {
+        householdId: child.householdId || `HH-${child.id}`,
+        parentGuardian: child.parentGuardian || 'Parent / Guardian',
+        guardianRelationship: child.guardianRelationship || 'Guardian',
+        contactNumber: child.contactNumber || child.guardianContact || '—',
+        address: `${child.barangay || 'San Fernando'}${child.purok ? ` (${child.purok})` : ''}`,
+        is4PsBeneficiary: child.is4PsBeneficiary || false,
+        monthlyIncomeClass: child.monthlyIncomeClass || '—',
+        coResidentChildren: [],
+      };
+    }
+
     const enrollments = this.data.enrollments.filter((e) => e.childId === childId);
     const healthRecords = this.data.healthMonitorings
       .filter((h) => h.childId === childId)
@@ -465,8 +555,8 @@ class CentralDataStore {
 
     return {
       ...child,
-      household,
-      familyHousehold: household,
+      household: familyHousehold,
+      familyHousehold: familyHousehold,
       enrollments,
       healthRecords,
       assessments,
@@ -734,11 +824,55 @@ class CentralDataStore {
       throw new Error(`Child with ECCD ID ${followUpPayload.childId} not found in central registry.`);
     }
 
+    // Root-cause guard: 1 case per child in the Follow-up registry
+    const existing = this.data.followUps.find((f) => f.childId === followUpPayload.childId);
+
+    if (existing) {
+      existing.reason = followUpPayload.reason || existing.reason;
+      existing.actionType = followUpPayload.actionType || existing.actionType;
+      existing.status = followUpPayload.status || 'Needs Attention';
+      existing.category = followUpPayload.category || 'Needs Attention';
+      existing.priority = followUpPayload.priority || existing.priority || 'Medium';
+      existing.dueDate = followUpPayload.dueDate || existing.dueDate || addDaysPHT(14);
+      existing.assignedWorker = followUpPayload.assignedWorker || existing.assignedWorker;
+      existing.workerContact = followUpPayload.workerContact || existing.workerContact;
+      existing.updatedAt = getPhilippinesDateTime();
+
+      if (!Array.isArray(existing.history)) existing.history = [];
+      existing.history.unshift({
+        date: getPhilippinesDate(),
+        action: followUpPayload.actionType ? `${followUpPayload.actionType} Updated` : 'Follow-up Case Updated',
+        worker: followUpPayload.assignedWorker || 'CDW Worker',
+        notes: followUpPayload.notes || followUpPayload.reason || 'Case updated.',
+      });
+
+      child.hasOpenFollowUp = true;
+      if (!child.statusPillars) child.statusPillars = {};
+      child.statusPillars.followUp = {
+        status: existing.status || 'Active Case',
+        variant: 'danger',
+        issue: existing.reason || 'Needs Attention',
+        dueDate: existing.dueDate || getPhilippinesDate(),
+      };
+      child.updatedAt = getPhilippinesDateTime();
+
+      this.save();
+      return existing;
+    }
+
     const newFollowUp = {
       id: `FLW-2026-${String(this.data.followUps.length + 1).padStart(4, '0')}`,
       ...followUpPayload,
       status: followUpPayload.status || 'Needs Attention',
       createdAt: getPhilippinesDateTime(),
+      history: followUpPayload.history || [
+        {
+          date: getPhilippinesDate(),
+          action: 'Case Created',
+          worker: followUpPayload.assignedWorker || 'CDW Worker',
+          notes: followUpPayload.notes || followUpPayload.reason || 'Follow-up initiated.',
+        },
+      ],
     };
 
     this.data.followUps.push(newFollowUp);

@@ -4,50 +4,59 @@
    ========================================================================== */
 
 :root {
-  /* --- Primary: Deep Navy / Blue (Philippine Government Authority) --- */
-  --color-primary-950: #0a1628;
-  --color-primary-900: #0f2240;
-  --color-primary-850: #122b52;
-  --color-primary-800: #15325b;
-  --color-primary-700: #1a4277;
-  --color-primary-600: #20579e;
-  --color-primary-500: #2870c9;
-  --color-primary-400: #4a8ee0;
-  --color-primary-200: #bfdbfe;
-  --color-primary-100: #dbeafe;
-  --color-primary-50:  #eff6ff;
+  --color-white: #ffffff;
+  --color-success-light: #4ade80;
 
-  /* --- Secondary: Deep Teal / Cyan Accent (Care, Health & Early Development) --- */
-  --color-accent-800: #115e59;
-  --color-accent-700: #0f766e;
-  --color-accent-600: #0d9488;
-  --color-accent-500: #0891b2;
-  --color-accent-400: #06b6d4;
-  --color-accent-200: #a5f3fc;
-  --color-accent-100: #cffafe;
-  --color-accent-50:  #f0fdfa;
+  /* --- Primary: Imperial Crimson Wine (Main: #7e191b | Cardinal: #ba1607 | Accent: #ff2800) --- */
+  --color-primary: #7e191b;
+  --color-primary-950: #38080a; /* Midnight Black-Cherry */
+  --color-primary-900: #540f11; /* Imperial Deep Maroon */
+  --color-primary-850: #6b1416; /* Deep Crimson Wine */
+  --color-primary-800: #7e191b; /* ★ MAIN COLOR: CSWDO Imperial Garnet ★ */
+  --color-primary-750: #941517; /* Rich Garnet */
+  --color-primary-700: #a71613; /* Deep Cardinal */
+  --color-primary-600: #ba1607; /* ★ SECONDARY / HOVER / ACTIVE COLOR ★ */
+  --color-primary-500: #d61e06; /* Vivid Ruby Crimson */
+  --color-primary-400: #ff2800; /* ★ VIBRANT SCARLET ACCENT ★ */
+  --color-primary-300: #ff5c3b; /* Coral Flame */
+  --color-primary-200: #ffb8aa; /* Warm Rose Quartz */
+  --color-primary-100: #ffded8; /* Delicate Velvet Blush */
+  --color-primary-50:  #fff5f4; /* Ultra-soft Rose Cream */
 
-  /* --- Neutral & Surfaces --- */
-  --bg-canvas: #f8fafc;
+  /* --- Accent Palette (Vermilion / Scarlet Flame & Warm Coral Highlights) --- */
+  --color-accent: #ff2800;
+  --color-accent-900: #7e191b;
+  --color-accent-800: #941517;
+  --color-accent-700: #ba1607;
+  --color-accent-600: #d61e06;
+  --color-accent-500: #ff2800; /* Vibrant Flame Accent */
+  --color-accent-400: #ff471a;
+  --color-accent-300: #ff6e4a;
+  --color-accent-200: #ffb5a3;
+  --color-accent-100: #ffdfd8;
+  --color-accent-50:  #fff4f2;
+
+  /* --- Neutral & Surfaces (Warm, Velvet, High-End) --- */
+  --bg-canvas: #fcf9f9;
   --bg-surface: #ffffff;
-  --bg-subtle: #f1f5f9;
-  --bg-muted: #e2e8f0;
-  --bg-dark: #0f172a;
+  --bg-subtle: #f8f2f2;
+  --bg-muted: #eee4e3;
+  --bg-dark: #22090b;
 
-  /* --- Borders (Clean, Subtle, Crisp) --- */
-  --border-subtle: #e2e8f0;
-  --border-default: #cbd5e1;
-  --border-strong: #94a3b8;
-  --border-focus: #1a4277;
+  /* --- Borders (Polished Warm Rose-Gray) --- */
+  --border-subtle: #f0e4e3;
+  --border-default: #dfcecd;
+  --border-strong: #bda6a5;
+  --border-focus: #ba1607;
 
-  /* --- Text & Content (Dark Charcoal) --- */
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --text-subtle: #94a3b8;
+  /* --- Text & Content (Warm Obsidian High Contrast) --- */
+  --text-primary: #1e1112;
+  --text-secondary: #4a3436;
+  --text-muted: #795d5f;
+  --text-subtle: #a48a8c;
   --text-inverse: #ffffff;
-  --text-link: #1a4277;
-  --text-link-hover: #0f2240;
+  --text-link: #ba1607;
+  --text-link-hover: #7e191b;
 
   /* --- Functional Status: Green (Completed / Normal / On Track) --- */
   --color-success-bg: #f0fdf4;
@@ -63,18 +72,18 @@
   --color-warning-primary: #b45309;
   --color-warning-hover: #92400e;
 
-  /* --- Functional Status: Red (Urgent / Error / Severe / Delayed) --- */
-  --color-danger-bg: #fef2f2;
-  --color-danger-border: #fecaca;
-  --color-danger-text: #991b1b;
-  --color-danger-primary: #b91c1c;
-  --color-danger-hover: #991b1b;
+  /* --- Functional Status: Danger / Severe Delays --- */
+  --color-danger-bg: #fff1f0;
+  --color-danger-border: #ffccc7;
+  --color-danger-text: #820014;
+  --color-danger-primary: #ba1607;
+  --color-danger-hover: #7e191b;
 
-  /* --- Functional Status: Info (Enrolled / Scheduled / Informational) --- */
-  --color-info-bg: #eff6ff;
-  --color-info-border: #bfdbfe;
-  --color-info-text: #1e40af;
-  --color-info-primary: #1d4ed8;
+  /* --- Functional Status: Info (Enrolled / Scheduled) --- */
+  --color-info-bg: #fff5f4;
+  --color-info-border: #ffded8;
+  --color-info-text: #7e191b;
+  --color-info-primary: #ba1607;
 
   /* --- Typography Scale --- */
   --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -125,8 +134,8 @@
   --shadow-modal: 0 20px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
 
   /* --- Focus Rings (WCAG AA Compliant) --- */
-  --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #1a4277;
-  --focus-ring-danger: 0 0 0 2px #ffffff, 0 0 0 4px #b91c1c;
+  --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #ba1607;
+  --focus-ring-danger: 0 0 0 2px #ffffff, 0 0 0 4px #ff2800;
 
   /* --- Transitions --- */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);

@@ -187,12 +187,6 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
             <span className="comm-tab-badge">{workers.length}</span>
           </button>
         </div>
-
-        {/* Global Summary Note */}
-        <div style={{ fontSize: '0.8125rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <MapPin size={14} color="#0284c7" />
-          <span>City of San Fernando, Pampanga • CSWDO Community Administration</span>
-        </div>
       </div>
 
       {/* =========================================================================
@@ -287,7 +281,7 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
                   filteredBarangays.map(b => (
                     <tr key={b.id}>
                       <td>
-                        <div style={{ fontWeight: 700, color: '#0f2744' }}>{b.name}</div>
+                        <div style={{ fontWeight: 700, color: '#7e191b' }}>{b.name}</div>
                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                           {b.centersCount} Centers • {b.workersCount} Workers
                         </div>
@@ -448,7 +442,7 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
                     <div className="comm-workers-tags">
                       {center.assignedWorkers.map((w, idx) => (
                         <span key={idx} className="comm-worker-tag">
-                          <UserCheck size={12} color="#0284c7" />
+                          <UserCheck size={12} color="#ba1607" />
                           <span>{w}</span>
                         </span>
                       ))}
@@ -477,7 +471,7 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
                       </button>
                       <button
                         type="button"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', padding: '4px 8px', borderRadius: '4px', border: 'none', background: '#0284c7', color: '#ffffff', fontWeight: 600, cursor: 'pointer' }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', padding: '4px 8px', borderRadius: '4px', border: 'none', background: '#7e191b', color: '#ffffff', fontWeight: 600, cursor: 'pointer' }}
                         onClick={() => setIsForm9Open(true)}
                       >
                         <Layers size={12} />
@@ -641,7 +635,7 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
                         </button>
                         <button
                           type="button"
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', padding: '4px 8px', borderRadius: '4px', border: 'none', background: '#0284c7', color: '#ffffff', fontWeight: 600, cursor: 'pointer' }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', padding: '4px 8px', borderRadius: '4px', border: 'none', background: '#7e191b', color: '#ffffff', fontWeight: 600, cursor: 'pointer' }}
                           onClick={() => setIsForm8Open(true)}
                         >
                           <Layers size={12} />
@@ -677,7 +671,7 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
           <div className="comm-modal-card" onClick={e => e.stopPropagation()}>
             <div className="comm-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                <Building2 size={20} color="#0f2744" />
+                <Building2 size={20} color="#7e191b" />
                 <span className="comm-modal-title">Barangay {selectedBarangay.name} Profile</span>
               </div>
               <button
@@ -693,26 +687,26 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
                 <div>
                   <div style={{ fontSize: '0.8125rem', color: '#64748b' }}>Barangay ID</div>
-                  <div style={{ fontWeight: 700, color: '#0f2744' }}>{selectedBarangay.id}</div>
+                  <div style={{ fontWeight: 700, color: '#7e191b' }}>{selectedBarangay.id}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8125rem', color: '#64748b' }}>District</div>
-                  <div style={{ fontWeight: 700, color: '#0f2744' }}>{selectedBarangay.district}</div>
+                  <div style={{ fontWeight: 700, color: '#1e1112' }}>{selectedBarangay.district}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8125rem', color: '#64748b' }}>Primary CDW</div>
-                  <div style={{ fontWeight: 700, color: '#0284c7' }}>{selectedBarangay.primaryWorker}</div>
+                  <div style={{ fontWeight: 700, color: '#ba1607' }}>{selectedBarangay.primaryWorker}</div>
                 </div>
               </div>
 
               {/* Breakdown Grid */}
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f2744', margin: 0 }}>
+              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#7e191b', margin: 0 }}>
                 ECCD Demographic & Monitoring Metrics
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
                 <div style={{ background: '#f1f5f9', padding: '0.75rem', borderRadius: '6px' }}>
                   <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Children 0–4</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f2744' }}>{selectedBarangay.totalChildren}</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#7e191b' }}>{selectedBarangay.totalChildren}</div>
                 </div>
                 <div style={{ background: '#eff6ff', padding: '0.75rem', borderRadius: '6px' }}>
                   <div style={{ fontSize: '0.75rem', color: '#1e40af' }}>Mapped</div>
@@ -738,13 +732,13 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
 
               {/* Day Care Centers in Barangay */}
               <div>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f2744', marginBottom: '0.5rem' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#7e191b', marginBottom: '0.5rem' }}>
                   Accredited Centers in Barangay ({selectedBarangay.centers.length})
                 </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {selectedBarangay.centers.map((cName, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.5rem 0.75rem', borderRadius: '6px', fontSize: '0.8125rem' }}>
-                      <School size={14} color="#0284c7" />
+                      <School size={14} color="#ba1607" />
                       <span>{cName}</span>
                     </div>
                   ))}
@@ -781,7 +775,7 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
           <div className="comm-modal-card" onClick={e => e.stopPropagation()}>
             <div className="comm-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                <School size={20} color="#0f2744" />
+                <School size={20} color="#7e191b" />
                 <span className="comm-modal-title">{selectedCenter.name}</span>
               </div>
               <button
@@ -797,7 +791,7 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Barangay</div>
-                  <div style={{ fontWeight: 700, color: '#0f2744' }}>{selectedCenter.barangay}</div>
+                  <div style={{ fontWeight: 700, color: '#7e191b' }}>{selectedCenter.barangay}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Status</div>
@@ -805,11 +799,11 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
                 </div>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Enrolled Children</div>
-                  <div style={{ fontWeight: 700, color: '#0f2744' }}>{selectedCenter.enrolledChildren} / {selectedCenter.capacity} Capacity</div>
+                  <div style={{ fontWeight: 700, color: '#7e191b' }}>{selectedCenter.enrolledChildren} / {selectedCenter.capacity} Capacity</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Accreditation Validity</div>
-                  <div style={{ fontWeight: 700, color: '#0f2744' }}>{selectedCenter.accreditationValidUntil}</div>
+                  <div style={{ fontWeight: 700, color: '#7e191b' }}>{selectedCenter.accreditationValidUntil}</div>
                 </div>
               </div>
 
@@ -823,7 +817,7 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
                 <div className="comm-workers-tags">
                   {selectedCenter.assignedWorkers.map((w, idx) => (
                     <span key={idx} className="comm-worker-tag">
-                      <UserCheck size={12} color="#0284c7" />
+                      <UserCheck size={12} color="#ba1607" />
                       <span>{w}</span>
                     </span>
                   ))}
@@ -879,7 +873,7 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
           <div className="comm-modal-card" onClick={e => e.stopPropagation()}>
             <div className="comm-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                <UserCheck size={20} color="#0f2744" />
+                <UserCheck size={20} color="#7e191b" />
                 <span className="comm-modal-title">Worker Profile: {selectedWorker.name}</span>
               </div>
               <button
@@ -895,19 +889,19 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Role</div>
-                  <div style={{ fontWeight: 700, color: '#0f2744' }}>{selectedWorker.role}</div>
+                  <div style={{ fontWeight: 700, color: '#7e191b' }}>{selectedWorker.role}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Designation</div>
-                  <div style={{ fontWeight: 700, color: '#0f2744' }}>{selectedWorker.designation}</div>
+                  <div style={{ fontWeight: 700, color: '#1e1112' }}>{selectedWorker.designation}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Assigned Barangay</div>
-                  <div style={{ fontWeight: 700, color: '#0f2744' }}>{selectedWorker.assignedBarangay}</div>
+                  <div style={{ fontWeight: 700, color: '#7e191b' }}>{selectedWorker.assignedBarangay}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Years of Service</div>
-                  <div style={{ fontWeight: 700, color: '#0f2744' }}>{selectedWorker.yearsOfService} Years</div>
+                  <div style={{ fontWeight: 700, color: '#1e1112' }}>{selectedWorker.yearsOfService} Years</div>
                 </div>
               </div>
 
@@ -975,8 +969,9 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
           onClose={() => setIsForm8Open(false)}
           title=""
           size="xl"
+          className="official-form-modal"
         >
-          <div style={{ maxHeight: '82vh', overflowY: 'auto' }}>
+          <div>
             <OfficialForm8ConsolidatedReport />
           </div>
         </Modal>
@@ -989,8 +984,9 @@ export function CommunityView({ initialTab = 'barangays', onNavigate }) {
           onClose={() => setIsForm9Open(false)}
           title=""
           size="xl"
+          className="official-form-modal"
         >
-          <div style={{ maxHeight: '82vh', overflowY: 'auto' }}>
+          <div>
             <OfficialForm9ConsolidatedReport />
           </div>
         </Modal>

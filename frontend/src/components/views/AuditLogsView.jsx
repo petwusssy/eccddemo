@@ -83,9 +83,6 @@ export function AuditLogsView({
           <h1 className="text-h1" style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
             Audit Logs &amp; System Governance
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', margin: 'var(--space-1) 0 0 0' }}>
-            Role-based boundary enforcement, security logs, and operational audit trail
-          </p>
         </div>
       </div>
 
@@ -98,7 +95,7 @@ export function AuditLogsView({
           ========================================================================= */}
       <div className="gov-sim-bar">
         <div className="gov-sim-info">
-          <UserCheck size={16} color="#0284c7" />
+          <UserCheck size={16} color="#ba1607" />
           <span>Role-Based Access Testing Simulator:</span>
         </div>
 
@@ -298,7 +295,7 @@ export function AuditLogsView({
                       <span className="gov-timestamp">{log.timestamp}</span>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 700, color: '#0f2744' }}>{log.user}</div>
+                      <div style={{ fontWeight: 700, color: '#1e1112' }}>{log.user}</div>
                     </td>
                     <td>
                       <span style={{ fontSize: '0.75rem', color: '#475569' }}>{log.role}</span>
@@ -317,7 +314,7 @@ export function AuditLogsView({
                       </span>
                     </td>
                     <td>
-                      <span style={{ fontWeight: 600, color: '#0284c7' }}>{log.record}</span>
+                      <span style={{ fontWeight: 600, color: '#7e191b' }}>{log.record}</span>
                     </td>
                     <td>
                       <span className={`gov-status-badge ${isSuccess ? 'success' : isUnauthorized ? 'danger' : 'warning'}`}>

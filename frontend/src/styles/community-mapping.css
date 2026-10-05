@@ -105,10 +105,10 @@
 }
 
 .stepper-step.active {
-  background-color: var(--color-primary-950, #0f2744);
-  border-color: var(--color-primary-950, #0f2744);
+  background-color: var(--color-primary, #7e191b);
+  border-color: var(--color-primary, #7e191b);
   color: #ffffff;
-  box-shadow: 0 1px 3px rgba(15, 39, 68, 0.2);
+  box-shadow: 0 1px 3px rgba(126, 25, 27, 0.25);
 }
 
 .stepper-step.completed {
@@ -163,8 +163,8 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  background-color: #f8fafc;
-  border: 1.5px dashed #0284c7;
+  background-color: var(--bg-subtle, #f8f2f2);
+  border: 1.5px dashed var(--color-primary-600, #ba1607);
   border-radius: var(--radius-md);
   margin-bottom: var(--space-4);
 }
@@ -173,8 +173,8 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: var(--radius-md);
-  background-color: #e0f2fe;
-  color: #0369a1;
+  background-color: #fdf2f2;
+  color: #ba1607;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -188,7 +188,7 @@
 .eccd-official-marker-title {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
-  color: #0369a1;
+  color: #ba1607;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }

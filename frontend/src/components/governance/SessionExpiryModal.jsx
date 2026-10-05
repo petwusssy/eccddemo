@@ -29,7 +29,7 @@ export function SessionExpiryModal({
         </div>
 
         <div>
-          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f2744' }}>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#7e191b' }}>
             Session Expired
           </div>
           <div style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '0.25rem' }}>
@@ -38,7 +38,7 @@ export function SessionExpiryModal({
         </div>
 
         <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.875rem', width: '100%' }}>
-          <div style={{ fontWeight: 700, color: '#0f2744' }}>{user?.name || 'Authorized Staff'}</div>
+          <div style={{ fontWeight: 700, color: '#1e1112' }}>{user?.name || 'Authorized Staff'}</div>
           <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{roleLabel || user?.role}</div>
         </div>
 

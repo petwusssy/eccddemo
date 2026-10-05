@@ -487,7 +487,7 @@ export function MobileFieldWorker({ onNavigate }) {
       {/* 2. SUB-VIEW SELECTOR: FIELD WORKFLOW vs TOUCH CARDS */}
       <div className="field-mode-toggle-bar">
         <div className="field-mode-label">
-          <Sparkles size={16} color="#0284c7" />
+          <Sparkles size={16} color="#ba1607" />
           <span>Mobile Field Tool</span>
         </div>
 
@@ -547,7 +547,7 @@ export function MobileFieldWorker({ onNavigate }) {
 
           <div className="assignment-stat-item">
             <span className="assignment-stat-label">Children Identified</span>
-            <span className="assignment-stat-val" style={{ color: '#0284c7' }}>
+            <span className="assignment-stat-val" style={{ color: '#7e191b' }}>
               {assignmentData.childrenIdentified}
             </span>
             <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Ages 0–4 years</span>
@@ -571,7 +571,7 @@ export function MobileFieldWorker({ onNavigate }) {
           className="quick-action-btn"
           onClick={handleQuickAddChild}
         >
-          <Baby size={20} color="#0284c7" />
+          <Baby size={20} color="#ba1607" />
           <span>+ Add Child</span>
         </button>
 
@@ -627,7 +627,7 @@ export function MobileFieldWorker({ onNavigate }) {
           {flowStep === 1 && (
             <div className="mobile-form-card">
               <h3 className="mobile-form-title">
-                <MapPin size={20} color="#0284c7" />
+                <MapPin size={20} color="#7e191b" />
                 Step 1: Mapping Assignment
               </h3>
 
@@ -690,7 +690,7 @@ export function MobileFieldWorker({ onNavigate }) {
           {flowStep === 2 && (
             <div className="mobile-form-card">
               <h3 className="mobile-form-title">
-                <Home size={20} color="#0284c7" />
+                <Home size={20} color="#7e191b" />
                 Step 2: Household Profile
               </h3>
 
@@ -769,7 +769,7 @@ export function MobileFieldWorker({ onNavigate }) {
             <div className="mobile-form-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 className="mobile-form-title">
-                  <Baby size={20} color="#0284c7" />
+                  <Baby size={20} color="#7e191b" />
                   Step 3: Children (Ages 0–4)
                 </h3>
                 <span className="assignment-badge">{childrenList.length} Added</span>
@@ -783,7 +783,7 @@ export function MobileFieldWorker({ onNavigate }) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div className="child-card-avatar">{c.firstName ? c.firstName[0] : 'C'}</div>
                         <div>
-                          <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#0f2744' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#1e1112' }}>
                             {c.firstName} {c.middleName} {c.lastName}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
@@ -840,7 +840,7 @@ export function MobileFieldWorker({ onNavigate }) {
                 <div
                   style={{
                     background: '#f8fafc',
-                    border: '1.5px solid #0284c7',
+                    border: '1.5px solid #ba1607',
                     borderRadius: '10px',
                     padding: '1rem',
                     display: 'flex',
@@ -849,7 +849,7 @@ export function MobileFieldWorker({ onNavigate }) {
                     marginTop: '0.5rem',
                   }}
                 >
-                  <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#0f2744' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#7e191b' }}>
                     New Child Information
                   </div>
 
@@ -953,13 +953,13 @@ export function MobileFieldWorker({ onNavigate }) {
           {flowStep === 4 && (
             <div className="mobile-form-card">
               <h3 className="mobile-form-title">
-                <Search size={20} color="#0284c7" />
+                <Search size={20} color="#7e191b" />
                 Step 4: Existing Record Check
               </h3>
 
               {isCheckingDuplicates ? (
                 <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
-                  <RefreshCw size={24} className="spin" color="#0284c7" style={{ margin: '0 auto' }} />
+                  <RefreshCw size={24} className="spin" color="#ba1607" style={{ margin: '0 auto' }} />
                   <p style={{ marginTop: '0.75rem', fontWeight: 600, fontSize: '0.875rem' }}>
                     Checking Central ECCD Registry...
                   </p>
@@ -979,7 +979,7 @@ export function MobileFieldWorker({ onNavigate }) {
                           ) : (
                             <CheckCircle2 size={20} color="#059669" />
                           )}
-                          <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#0f2744' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#1e1112' }}>
                             {item.child.firstName} {item.child.lastName}
                           </div>
                         </div>
@@ -1049,7 +1049,7 @@ export function MobileFieldWorker({ onNavigate }) {
           {flowStep === 5 && (
             <div className="mobile-form-card">
               <h3 className="mobile-form-title">
-                <FileCheck2 size={20} color="#0284c7" />
+                <FileCheck2 size={20} color="#7e191b" />
                 Step 5: Review Before Saving
               </h3>
 
@@ -1078,7 +1078,7 @@ export function MobileFieldWorker({ onNavigate }) {
                 </div>
               </div>
 
-              <div style={{ fontWeight: 800, fontSize: '0.875rem', color: '#0f2744', marginTop: '0.5rem' }}>
+              <div style={{ fontWeight: 800, fontSize: '0.875rem', color: '#7e191b', marginTop: '0.5rem' }}>
                 Children to be Saved ({childrenList.length}):
               </div>
 
@@ -1086,7 +1086,7 @@ export function MobileFieldWorker({ onNavigate }) {
                 {childrenList.map((c, i) => (
                   <div key={i} className="child-card-touch">
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: '0.875rem', color: '#0f2744' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.875rem', color: '#1e1112' }}>
                         {c.firstName} {c.lastName}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
@@ -1103,8 +1103,8 @@ export function MobileFieldWorker({ onNavigate }) {
           {/* STEP 6: SAVING INDICATOR */}
           {flowStep === 6 && (
             <div className="mobile-form-card" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
-              <RefreshCw size={36} className="spin" color="#0284c7" style={{ margin: '0 auto' }} />
-              <h3 style={{ marginTop: '1rem', color: '#0f2744' }}>Saving Field Record...</h3>
+              <RefreshCw size={36} className="spin" color="#ba1607" style={{ margin: '0 auto' }} />
+              <h3 style={{ marginTop: '1rem', color: '#7e191b' }}>Saving Field Record...</h3>
               <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
                 Storing household & children in local storage queue.
               </p>
@@ -1115,7 +1115,7 @@ export function MobileFieldWorker({ onNavigate }) {
           {flowStep === 7 && savedHouseholdRecord && (
             <div className="completion-hero-card">
               <div className="completion-icon-ring">✓</div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f2744', margin: 0 }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#7e191b', margin: 0 }}>
                 Household Record Saved!
               </h2>
               <p style={{ fontSize: '0.875rem', color: '#64748b', margin: 0 }}>
@@ -1208,7 +1208,7 @@ export function MobileFieldWorker({ onNavigate }) {
         /* RECENT FIELD RECORDS (CARDS VIEW - AVOIDS DENSE TABLES) */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f2744', margin: 0 }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#7e191b', margin: 0 }}>
               Recent Mapped Households ({recentRecords.length})
             </h3>
             <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Touch cards</span>
@@ -1226,7 +1226,7 @@ export function MobileFieldWorker({ onNavigate }) {
               <div key={rec.id} className="touch-record-card">
                 <div className="touch-record-header">
                   <div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#0284c7' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#ba1607' }}>
                       {rec.id}
                     </span>
                     <div className="touch-record-title">{rec.parentGuardian}</div>
@@ -1260,7 +1260,7 @@ export function MobileFieldWorker({ onNavigate }) {
                     style={{
                       border: 'none',
                       background: 'none',
-                      color: '#0284c7',
+                      color: '#ba1607',
                       fontWeight: 700,
                       fontSize: '0.8125rem',
                       display: 'flex',

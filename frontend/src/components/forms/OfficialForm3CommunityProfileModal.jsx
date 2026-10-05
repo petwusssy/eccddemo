@@ -118,7 +118,7 @@ export function OfficialForm3CommunityProfileModal({
       isOpen={isOpen}
       onClose={onClose}
       title=""
-      size="lg"
+      size="xl"
       className="official-form-modal"
     >
       <div style={{ padding: 'var(--space-2)' }}>

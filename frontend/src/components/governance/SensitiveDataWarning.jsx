@@ -31,7 +31,7 @@ export function SensitiveDataWarning({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0.5rem 0.75rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
           <span style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>{label}</span>
-          <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0f2744', fontSize: '0.9rem' }}>
+          <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#7e191b', fontSize: '0.9rem' }}>
             {isRevealed ? actualValue : maskedValue}
           </span>
         </div>

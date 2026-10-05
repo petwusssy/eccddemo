@@ -41,6 +41,7 @@ import ModulePlaceholder from './components/views/ModulePlaceholder';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import { Button } from './components/ui/Button';
 import { Printer, Loader2 } from 'lucide-react';
+import anacLogo from './assets/anac-logo.png';
 
 const ROUTE_MAP = {
   dashboard: '/dashboard',
@@ -96,15 +97,13 @@ const ROLE_LANDING_ROUTE = {
 function AuthLoadingScreen() {
   return (
     <div className="auth-loading-screen">
-      <div className="auth-loading-seal">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-        </svg>
+      <div className="auth-loading-seal" style={{ background: '#ffffff', padding: '4px' }}>
+        <img src={anacLogo} alt="ANÁC Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </div>
-      <div className="auth-loading-text">Verifying session...</div>
+      <div className="auth-loading-text">Verifying ANÁC session...</div>
       <Loader2
         size={18}
-        style={{ animation: 'spin 1s linear infinite', color: 'var(--text-muted)' }}
+        style={{ animation: 'spin 1s linear infinite', color: '#ff2800' }}
       />
     </div>
   );
@@ -160,7 +159,6 @@ function AuthenticatedApp() {
       case 'dashboard':
         return {
           title: 'CSWDO ECCD Monitoring Dashboard',
-          subtitle: 'Centralized registry for children aged 0–4 • City Social Welfare & Development Office',
           breadcrumbs: [
             { label: 'ECCD CARE', onClick: () => navigate('/dashboard') },
             { label: 'Executive Dashboard' },
@@ -179,8 +177,6 @@ function AuthenticatedApp() {
 
       case 'children':
         return {
-          title: 'Children Demographic Registry (0–4)',
-          subtitle: 'Masterlist of children registered with PSA Civil Registry and PhilSys linkage',
           breadcrumbs: [
             { label: 'Child Management', onClick: () => navigate('/children') },
             { label: 'Children Masterlist' },
@@ -189,9 +185,8 @@ function AuthenticatedApp() {
 
       case 'households':
       case 'community-mapping':
+      case 'mapping':
         return {
-          title: 'Community Mapping',
-          subtitle: 'Purok and Sitio-level visual spot mapping of 0–4 age cohorts',
           breadcrumbs: [
             { label: 'Child Management' },
             { label: 'Community Mapping' },
@@ -200,8 +195,6 @@ function AuthenticatedApp() {
 
       case 'enrollment':
         return {
-          title: 'Enrollment',
-          subtitle: 'Child Development Center admissions, capacity, and attendance records',
           breadcrumbs: [
             { label: 'Child Management' },
             { label: 'Enrollment' },
@@ -210,8 +203,6 @@ function AuthenticatedApp() {
 
       case 'health-monitoring':
         return {
-          title: 'Health Monitoring',
-          subtitle: 'Monthly height, weight, and nutritional status tracking',
           breadcrumbs: [
             { label: 'Monitoring' },
             { label: 'Health Monitoring' },
@@ -219,9 +210,8 @@ function AuthenticatedApp() {
         };
 
       case 'eccd-checklist':
+      case 'development-assessment':
         return {
-          title: 'Development Assessment',
-          subtitle: 'Standardized 7 developmental domains assessment framework for Filipino children',
           breadcrumbs: [
             { label: 'Monitoring' },
             { label: 'Development Assessment' },
@@ -230,8 +220,6 @@ function AuthenticatedApp() {
 
       case 'follow-ups':
         return {
-          title: 'Follow-ups',
-          subtitle: 'Specialized interventions, home visits, and early support referrals',
           breadcrumbs: [
             { label: 'Monitoring' },
             { label: 'Follow-ups' },
@@ -244,7 +232,6 @@ function AuthenticatedApp() {
       case 'community-network':
         return {
           title: 'Community Network',
-          subtitle: 'ECCD Barangay coverage (Form 3), accredited Day Care Centers (Form 7), and Workers (Form 6)',
           breadcrumbs: [
             { label: 'Community', onClick: () => navigate('/community-network') },
             { label: 'Community Network' },
@@ -254,7 +241,6 @@ function AuthenticatedApp() {
       case 'reports':
         return {
           title: 'ECCD Reports & DSWD Consolidated Submissions',
-          subtitle: 'Standard Form 1, Form 2, nutritional summaries, and executive reports',
           breadcrumbs: [
             { label: 'Reports' },
             { label: 'Consolidated Reports' },
@@ -264,7 +250,6 @@ function AuthenticatedApp() {
       case 'resources':
         return {
           title: 'Resources, Policies & Toolkits',
-          subtitle: 'ECCD manuals, standardized rating scales, and parent orientation guides',
           breadcrumbs: [
             { label: 'Resources' },
             { label: 'ECCD Guidelines' },
@@ -273,8 +258,6 @@ function AuthenticatedApp() {
 
       case 'audit-logs':
         return {
-          title: 'System Security & Audit Trail',
-          subtitle: 'Immutable record of system operations in compliance with RA 10173',
           breadcrumbs: [
             { label: 'System' },
             { label: 'Audit Logs' },
@@ -284,7 +267,6 @@ function AuthenticatedApp() {
       case 'settings':
         return {
           title: 'System Configuration & Settings',
-          subtitle: 'LGU details, active school years, and administrative user controls',
           breadcrumbs: [
             { label: 'System' },
             { label: 'Settings' },
@@ -293,9 +275,8 @@ function AuthenticatedApp() {
 
       default:
         return {
-          title: 'ECCD CARE System',
-          subtitle: 'City Social Welfare and Development Office',
-          breadcrumbs: [{ label: 'ECCD CARE', onClick: () => navigate('/dashboard') }],
+          title: 'ANÁC System',
+          breadcrumbs: [{ label: 'ANÁC', onClick: () => navigate('/dashboard') }],
         };
     }
   };

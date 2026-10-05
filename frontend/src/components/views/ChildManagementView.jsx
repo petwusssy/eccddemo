@@ -10,7 +10,6 @@ import {
   HeartPulse,
   Brain,
   AlertTriangle,
-  CheckCircle2,
   Clock,
   Plus,
   Phone,
@@ -385,15 +384,12 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
       {viewMode === 'directory' && (
         <div>
           {/* Header */}
-          <div className="page-header" style={{ marginBottom: 'var(--space-4)' }}>
+          <div className="page-header" style={{ marginBottom: 'var(--space-3)' }}>
             <div className="page-title-group">
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 <h1 className="page-title">Children Master Registry</h1>
                 <Badge variant="primary" size="sm">0–4 Cohort</Badge>
               </div>
-              <p className="page-subtitle">
-                Central registry for child profiles, admissions, health records, and ECCD milestones.
-              </p>
             </div>
             <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
               <Button
@@ -421,156 +417,68 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: 'var(--space-3)',
-              marginBottom: 'var(--space-4)',
+              marginBottom: 'var(--space-3)',
             }}
           >
-            <div
-              style={{
-                background: 'var(--surface-primary)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                boxShadow: 'var(--shadow-xs)',
-              }}
-            >
+            <div className="bento-stat-card card-primary">
               <div>
                 <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Total Registered
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', marginTop: '2px' }}>
+                <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--text-primary)', marginTop: '2px' }}>
                   {childrenList.length}
                 </div>
               </div>
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--color-primary-50)',
-                  color: 'var(--color-primary-600)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
+              <div className="stat-icon-wrap">
                 <Baby size={18} />
               </div>
             </div>
 
-            <div
-              style={{
-                background: 'var(--surface-primary)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                boxShadow: 'var(--shadow-xs)',
-              }}
-            >
+            <div className="bento-stat-card card-success">
               <div>
                 <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Enrolled in CDC
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-success-600)', marginTop: '2px' }}>
+                <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-success-600)', marginTop: '2px' }}>
                   {childrenList.filter(isChildEnrolled).length}
                 </div>
               </div>
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--color-success-50)',
-                  color: 'var(--color-success-600)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
+              <div className="stat-icon-wrap">
                 <School size={18} />
               </div>
             </div>
 
-            <div
-              style={{
-                background: 'var(--surface-primary)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                boxShadow: 'var(--shadow-xs)',
-              }}
-            >
+            <div className="bento-stat-card card-warning">
               <div>
                 <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Unenrolled Target
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-warning-600)', marginTop: '2px' }}>
+                <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-warning-600)', marginTop: '2px' }}>
                   {childrenList.filter((c) => !isChildEnrolled(c)).length}
                 </div>
               </div>
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--color-warning-50)',
-                  color: 'var(--color-warning-600)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
+              <div className="stat-icon-wrap">
                 <Users size={18} />
               </div>
             </div>
 
-            <div
-              style={{
-                background: 'var(--surface-primary)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                boxShadow: 'var(--shadow-xs)',
-              }}
-            >
+            <div className="bento-stat-card card-danger">
               <div>
                 <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Active Follow-ups
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-danger-600)', marginTop: '2px' }}>
+                <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-danger-600)', marginTop: '2px' }}>
                   {childrenList.filter((c) => c?.hasOpenFollowUp || c?.statusPillars?.followUp?.status === 'Active' || c?.statusPillars?.followUp?.variant === 'danger' || c?.statusPillars?.followUp?.variant === 'warning').length}
                 </div>
               </div>
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--color-danger-50)',
-                  color: 'var(--color-danger-600)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
+              <div className="stat-icon-wrap">
                 <AlertTriangle size={18} />
               </div>
             </div>
           </div>
 
           {/* Search & Multi-field Filters Card */}
-          <Card style={{ marginBottom: 'var(--space-4)' }}>
+          <Card style={{ marginBottom: 'var(--space-3)' }}>
             <CardBody style={{ padding: 'var(--space-4)' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                 {/* Search Bar */}
@@ -697,18 +605,18 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
 
           {/* Directory Table */}
           <div className="table-container mobile-table-to-cards">
-            <Table>
+            <table className="table child-registry-table">
               <TableHead>
                 <TableRow>
-                  <TableHeader>Child</TableHeader>
-                  <TableHeader>ECCD ID</TableHeader>
-                  <TableHeader>Age</TableHeader>
-                  <TableHeader>Barangay</TableHeader>
-                  <TableHeader>Enrollment</TableHeader>
-                  <TableHeader>Health</TableHeader>
-                  <TableHeader>Development</TableHeader>
-                  <TableHeader>Follow-up</TableHeader>
-                  <TableHeader style={{ textAlign: 'right' }}>Action</TableHeader>
+                  <TableHeader className="child-col-name">Child</TableHeader>
+                  <TableHeader className="child-col-id">ECCD ID</TableHeader>
+                  <TableHeader className="child-col-age">Age</TableHeader>
+                  <TableHeader className="child-col-brgy">Barangay</TableHeader>
+                  <TableHeader className="child-col-enrollment">Enrollment</TableHeader>
+                  <TableHeader className="child-col-health">Health</TableHeader>
+                  <TableHeader className="child-col-dev">Development</TableHeader>
+                  <TableHeader className="child-col-fup">Follow-up</TableHeader>
+                  <TableHeader className="child-col-action">Action</TableHeader>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -721,68 +629,80 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                 ) : (
                   childrenList.map((child) => (
                     <TableRow key={child.id}>
-                      <TableCell>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                          <div style={{ width: '2rem', height: '2rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-900)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 'var(--font-size-xs)' }}>
-                            {child.firstName[0]}{child.lastName[0]}
+                      <TableCell className="child-col-name">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                          <div style={{
+                            width: '2.25rem',
+                            height: '2.25rem',
+                            borderRadius: 'var(--radius-full)',
+                            backgroundColor: 'var(--color-primary-100)',
+                            color: 'var(--color-primary-900)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: '700',
+                            fontSize: 'var(--font-size-xs)',
+                            flexShrink: 0
+                          }}>
+                            {child.firstName?.[0] || ''}{child.lastName?.[0] || ''}
                           </div>
-                          <div>
-                            <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: '600', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                               {child.fullName}
                             </div>
-                            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-                              {child.sex} • Guardian: {child.parentGuardian}
+                            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                              {[child.sex, child.parentGuardian && `Guardian: ${child.parentGuardian}`].filter(Boolean).join(' • ') || '—'}
                             </div>
                           </div>
                         </div>
                       </TableCell>
 
-                      <TableCell>
-                        <code style={{ fontSize: 'var(--font-size-xs)', backgroundColor: 'var(--color-neutral-100)', padding: '2px 6px', borderRadius: 'var(--radius-sm)' }}>
+                      <TableCell className="child-col-id">
+                        <code style={{ fontSize: 'var(--font-size-xs)', backgroundColor: 'var(--color-neutral-100)', padding: '3px 8px', borderRadius: 'var(--radius-sm)', fontWeight: 600, letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
                           {child.id}
                         </code>
                       </TableCell>
 
-                      <TableCell>
-                        <span style={{ fontWeight: '500' }}>{child.ageDisplay}</span>
+                      <TableCell className="child-col-age">
+                        <span style={{ fontWeight: '500', whiteSpace: 'nowrap' }}>{child.ageDisplay}</span>
                       </TableCell>
 
-                      <TableCell>
-                        <div>{child.barangay}</div>
-                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>{child.purok}</div>
+                      <TableCell className="child-col-brgy">
+                        <div style={{ fontWeight: '500', whiteSpace: 'nowrap' }}>{child.barangay}</div>
+                        {child.purok && <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{child.purok}</div>}
                       </TableCell>
 
-                      <TableCell>
+                      <TableCell className="child-col-enrollment">
                         <Badge variant={getChildEnrollmentVariant(child)} size="sm">
                            {getChildEnrollmentStatus(child)}
                         </Badge>
                       </TableCell>
 
-                      <TableCell>
+                      <TableCell className="child-col-health">
                         <Badge variant={child?.statusPillars?.health?.variant || 'warning'} size="sm">
                           {child?.statusPillars?.health?.status || child?.healthStatus || 'Due for Monitoring'}
                         </Badge>
                       </TableCell>
 
-                      <TableCell>
+                      <TableCell className="child-col-dev">
                         <Badge variant={child?.statusPillars?.development?.variant || 'neutral'} size="sm">
                           {child?.statusPillars?.development?.status || child?.developmentStatus || 'Pending Initial Assessment'}
                         </Badge>
                       </TableCell>
 
-                      <TableCell>
+                      <TableCell className="child-col-fup">
                         <Badge variant={child?.statusPillars?.followUp?.variant || 'neutral'} size="sm">
                           {child?.statusPillars?.followUp?.status || (child?.hasOpenFollowUp ? 'Active Case' : 'None')}
                         </Badge>
                       </TableCell>
 
-                      <TableCell style={{ textAlign: 'right' }}>
+                      <TableCell className="child-col-action">
                         <Button
                           variant="secondary"
                           size="sm"
                           onClick={() => handleOpenProfile(child.id)}
                         >
-                          <Eye size={16} />
+                          <Eye size={15} />
                           Profile
                         </Button>
                       </TableCell>
@@ -790,7 +710,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                   ))
                 )}
               </TableBody>
-            </Table>
+            </table>
           </div>
         </div>
       )}
@@ -869,10 +789,10 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
 
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', margin: 0, letterSpacing: '-0.02em', color: 'var(--color-white)' }}>
+                    <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
                       {childProfile.fullName}
                     </h1>
-                    <span className="child-id-pill">
+                    <span className="child-id-pill" style={{ color: '#ffffff' }}>
                       <ShieldCheck size={16} />
                       {childProfile.id}
                     </span>
@@ -887,22 +807,23 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                   <div className="child-demographics-strip">
                     <span className="child-demo-item">
                       <Baby size={16} />
-                      {childProfile.ageDisplay} ({childProfile.sex})
+                      {childProfile.ageDisplay}{childProfile.sex ? ` (${childProfile.sex})` : ''}
                     </span>
                     <span>•</span>
                     <span className="child-demo-item">
                       <Calendar size={16} />
-                      DOB: {childProfile.birthDate}
+                      DOB: {childProfile.birthDate || 'N/A'}
                     </span>
                     <span>•</span>
                     <span className="child-demo-item">
                       <MapPin size={16} />
-                      {childProfile.barangay} ({childProfile.purok})
+                      {childProfile.barangay || 'San Fernando'}{childProfile.purok ? ` (${childProfile.purok})` : ''}
                     </span>
                     <span>•</span>
                     <span className="child-demo-item">
                       <Users size={16} />
-                      Guardian: {childProfile.parentGuardian} ({childProfile.guardianRelationship})
+                      Guardian: {childProfile.parentGuardian || 'N/A'}
+                      {(childProfile.guardianRelationship || childProfile.guardianContact || childProfile.contactNumber) ? ` (${childProfile.guardianRelationship || childProfile.guardianContact || childProfile.contactNumber})` : ''}
                     </span>
                   </div>
                 </div>
@@ -920,11 +841,11 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
             </div>
 
             {/* =============================================================
-                GOLDEN PATH LIFECYCLE INDICATOR (5-STEP HORIZONTAL TRACKER)
+                5-STEP MILESTONE PROGRESS TRACKER
                 ============================================================= */}
             <div
               style={{
-                margin: '14px 0 16px 0',
+                margin: '14px 0 0 0',
                 padding: '12px 16px',
                 background: 'rgba(15, 23, 42, 0.55)',
                 border: '1px solid rgba(255, 255, 255, 0.16)',
@@ -932,18 +853,6 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                 backdropFilter: 'blur(8px)',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#93c5fd' }}>
-                    Golden Path: [1. Mapping] → [2. CDW Admission] → [3. OPT Plus] → [4. ECCD Checklist] → [5. Kinder Ready]
-                  </span>
-                  <Badge variant="primary" size="xs">Live Handoff</Badge>
-                </div>
-                <div style={{ fontSize: '11px', color: '#cbd5e1' }}>
-                  Progress: <strong style={{ color: '#4ade80' }}>{goldenPath.filter(s => s.isCompleted).length} of 5 Completed</strong>
-                </div>
-              </div>
-
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
                 {goldenPath.map((stage, idx) => (
                   <React.Fragment key={stage.step}>
@@ -954,18 +863,18 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        background: stage.isCompleted ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                        border: stage.isCompleted ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.12)',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        background: stage.isCompleted ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                        border: stage.isCompleted ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.14)',
                         boxShadow: stage.isCompleted ? '0 0 12px rgba(16, 185, 129, 0.25)' : 'none',
                         transition: 'all 0.2s ease',
                       }}
                     >
                       <div
                         style={{
-                          width: '24px',
-                          height: '24px',
+                          width: '26px',
+                          height: '26px',
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
@@ -985,7 +894,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                           style={{
                             fontSize: '12px',
                             fontWeight: 700,
-                            color: stage.isCompleted ? '#4ade80' : '#e2e8f0',
+                            color: stage.isCompleted ? '#4ade80' : '#ffffff',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -996,7 +905,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                         <div
                           style={{
                             fontSize: '10px',
-                            color: stage.isCompleted ? '#bbf7d0' : '#94a3b8',
+                            color: stage.isCompleted ? '#bbf7d0' : '#cbd5e1',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -1011,76 +920,13 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                       <ChevronRight
                         size={16}
                         style={{
-                          color: stage.isCompleted && goldenPath[idx + 1].isCompleted ? '#34d399' : 'rgba(255, 255, 255, 0.25)',
+                          color: stage.isCompleted && goldenPath[idx + 1].isCompleted ? '#34d399' : 'rgba(255, 255, 255, 0.28)',
                           flexShrink: 0,
                         }}
                       />
                     )}
                   </React.Fragment>
                 ))}
-              </div>
-            </div>
-
-            {/* 5 Core Status Indicator Pillars */}
-            <div className="status-pillars-grid">
-              {/* Pillar 1: Mapped */}
-              <div className="pillar-card">
-                <div className="pillar-label">1. Mapped Status</div>
-                <div className="pillar-val">
-                  <CheckCircle2 size={16} style={{ color: 'var(--color-success-light)' }} />
-                  {childProfile.statusPillars?.mapped?.status || 'Mapped'}
-                </div>
-                <div className="pillar-sub">
-                  Date: {childProfile.statusPillars?.mapped?.date || childProfile.createdAt?.slice(0, 10) || 'Completed'}
-                </div>
-              </div>
-
-              {/* Pillar 2: Enrolled */}
-              <div className="pillar-card">
-                <div className="pillar-label">2. Enrollment Status</div>
-                <div className="pillar-val">
-                  <School size={16} style={{ color: isChildEnrolled(childProfile) ? 'var(--color-success-light)' : '#fca5a5' }} />
-                  {getChildEnrollmentStatus(childProfile)}
-                </div>
-                <div className="pillar-sub">
-                  {getChildEnrollmentCenter(childProfile)}
-                </div>
-              </div>
-
-              {/* Pillar 3: Health Monitoring */}
-              <div className="pillar-card">
-                <div className="pillar-label">3. Health Monitoring</div>
-                <div className="pillar-val">
-                  <HeartPulse size={16} style={{ color: childProfile.statusPillars?.health?.status === 'Up to date' ? 'var(--color-success-light)' : '#fca5a5' }} />
-                  {childProfile.statusPillars?.health?.status || childProfile.healthStatus || 'Due for Monitoring'}
-                </div>
-                <div className="pillar-sub">
-                  {childProfile.statusPillars?.health?.lastWeightKg ? `${childProfile.statusPillars.health.lastWeightKg} kg • ` : ''}{childProfile.statusPillars?.health?.nutritionalStatus || 'Pending OPT Plus'}
-                </div>
-              </div>
-
-              {/* Pillar 4: Development Assessment */}
-              <div className="pillar-card">
-                <div className="pillar-label">4. Development Status</div>
-                <div className="pillar-val">
-                  <Brain size={16} style={{ color: childProfile.statusPillars?.development?.status?.includes('Completed') ? 'var(--color-success-light)' : '#fca5a5' }} />
-                  {childProfile.statusPillars?.development?.status || childProfile.developmentStatus || 'Pending Assessment'}
-                </div>
-                <div className="pillar-sub">
-                  {childProfile.statusPillars?.development?.scaledScore ? `Score: ${childProfile.statusPillars.development.scaledScore}` : 'Evaluation pending'}
-                </div>
-              </div>
-
-              {/* Pillar 5: Follow-up Case */}
-              <div className="pillar-card">
-                <div className="pillar-label">5. Follow-up Needed?</div>
-                <div className="pillar-val">
-                  <AlertTriangle size={16} style={{ color: (childProfile.statusPillars?.followUp?.status && childProfile.statusPillars.followUp.status !== 'None') ? '#fde047' : 'var(--color-success-light)' }} />
-                  {childProfile.statusPillars?.followUp?.status || (childProfile.hasOpenFollowUp ? 'Active Case' : 'None')}
-                </div>
-                <div className="pillar-sub">
-                  {childProfile.statusPillars?.followUp?.dueDate ? `Due: ${childProfile.statusPillars.followUp.dueDate}` : 'No active alerts'}
-                </div>
               </div>
             </div>
           </div>
@@ -1258,7 +1104,13 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Weight & Height:</span>
                       <span style={{ fontWeight: '600' }}>
-                        {childProfile.statusPillars?.health?.lastWeightKg || '—'} kg • {childProfile.statusPillars?.health?.lastHeightCm || '—'} cm
+                        {childProfile.statusPillars?.health?.lastWeightKg && childProfile.statusPillars?.health?.lastHeightCm
+                          ? `${childProfile.statusPillars.health.lastWeightKg} kg • ${childProfile.statusPillars.health.lastHeightCm} cm`
+                          : childProfile.statusPillars?.health?.lastWeightKg
+                          ? `${childProfile.statusPillars.health.lastWeightKg} kg`
+                          : childProfile.statusPillars?.health?.lastHeightCm
+                          ? `${childProfile.statusPillars.health.lastHeightCm} cm`
+                          : '—'}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1385,7 +1237,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Live Cloud Storage:</span>
-                      <span style={{ fontSize: '11px', fontFamily: 'monospace', background: 'var(--color-bg-secondary)', padding: '2px 6px', borderRadius: '4px', color: '#0369a1' }}>
+                      <span style={{ fontSize: '11px', fontFamily: 'monospace', background: 'var(--color-bg-secondary)', padding: '2px 6px', borderRadius: '4px', color: '#ba1607', fontWeight: 600 }}>
                         s3://cgsfp-hackathon/eccd/
                       </span>
                     </div>
@@ -1502,76 +1354,117 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
           {/* -------------------------------------------------------------
               TAB CONTENT: FAMILY & HOUSEHOLD
               ------------------------------------------------------------- */}
-          {profileTab === 'family' && childProfile.familyHousehold && (
-            <Card>
-              <CardHeader>
-                <CardTitle subtitle="Household profile captured during community mapping and persistent linkage">
-                  Family & Household Roster
-                </CardTitle>
-              </CardHeader>
-              <CardBody>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
-                  <div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Household ID:</span>
-                    <div style={{ fontWeight: 'bold', fontSize: 'var(--font-size-md)' }}>{childProfile.familyHousehold.householdId}</div>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Primary Guardian:</span>
-                    <div style={{ fontWeight: '600' }}>{childProfile.familyHousehold.parentGuardian} ({childProfile.familyHousehold.guardianRelationship})</div>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Contact Number:</span>
-                    <div>{childProfile.familyHousehold.contactNumber}</div>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Physical Address:</span>
-                    <div>{childProfile.familyHousehold.address}</div>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>4Ps Beneficiary Tag:</span>
-                    <div>{childProfile.is4PsBeneficiary ? <Badge variant="success">Registered 4Ps Beneficiary</Badge> : <Badge variant="neutral">Non-4Ps</Badge>}</div>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Monthly Income Classification:</span>
-                    <div>{childProfile.monthlyIncomeClass}</div>
-                  </div>
-                </div>
+          {profileTab === 'family' && (() => {
+            const hh = childProfile.familyHousehold || childProfile.household;
+            const coResidents = Array.isArray(hh?.coResidentChildren) ? hh.coResidentChildren : [];
 
-                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-3)' }}>
-                  <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                    Co-Resident Siblings & Children in Household:
-                  </span>
-                  {childProfile.familyHousehold.coResidentChildren?.length === 0 ? (
-                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-muted)', marginTop: 'var(--space-2)' }}>
-                      No other minor children recorded in this household during mapping survey.
-                    </p>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
-                      {childProfile.familyHousehold.coResidentChildren.map((sib, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-2) var(--space-3)', backgroundColor: 'var(--bg-canvas)', borderRadius: 'var(--radius-md)' }}>
-                          <div>
-                            <strong>{sib.name}</strong> • {sib.age} ({sib.relation})
-                          </div>
-                          <Badge variant="neutral" size="sm">{sib.school || sib.status}</Badge>
-                        </div>
-                      ))}
+            if (!hh) {
+              return (
+                <Card>
+                  <CardHeader>
+                    <CardTitle subtitle="Household profile captured during community mapping and persistent linkage">
+                      Family & Household Roster
+                    </CardTitle>
+                  </CardHeader>
+                  <CardBody>
+                    <div style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      <Home size={32} style={{ margin: '0 auto var(--space-2)', opacity: 0.5 }} />
+                      <p style={{ margin: 0, fontWeight: 500 }}>No linked household record found for this child.</p>
+                      <p style={{ fontSize: 'var(--font-size-xs)', marginTop: '4px' }}>Child was registered or mapped directly without an attached Form 1 Home Profile.</p>
+                      <div style={{ marginTop: 'var(--space-4)' }}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setIsForm1ModalOpen(true)}
+                        >
+                          <Home size={14} />
+                          Open Official Form 1 (Home Profile)
+                        </Button>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </CardBody>
+                </Card>
+              );
+            }
 
-                <div style={{ marginTop: 'var(--space-4)', display: 'flex', gap: 'var(--space-2)' }}>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setIsForm1ModalOpen(true)}
-                  >
-                    <Home size={14} />
-                    View / Edit Official Form 1 (Home Profile)
-                  </Button>
-                </div>
-              </CardBody>
-            </Card>
-          )}
+            return (
+              <Card>
+                <CardHeader>
+                  <CardTitle subtitle="Household profile captured during community mapping and persistent linkage">
+                    Family & Household Roster
+                  </CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+                    <div>
+                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Household ID:</span>
+                      <div style={{ fontWeight: 'bold', fontSize: 'var(--font-size-md)' }}>
+                        {hh.householdId || hh.id || childProfile.householdId || 'N/A'}
+                      </div>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Primary Guardian:</span>
+                      <div style={{ fontWeight: '600' }}>
+                        {hh.parentGuardian || childProfile.parentGuardian || '—'}
+                        {(hh.guardianRelationship || childProfile.guardianRelationship) ? ` (${hh.guardianRelationship || childProfile.guardianRelationship})` : ''}
+                      </div>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Contact Number:</span>
+                      <div>{hh.contactNumber || childProfile.contactNumber || '—'}</div>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Physical Address:</span>
+                      <div>{hh.address || `${childProfile.barangay || 'San Fernando'}${childProfile.purok ? ` (${childProfile.purok})` : ''}` || '—'}</div>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>4Ps Beneficiary Tag:</span>
+                      <div>{(childProfile.is4PsBeneficiary || hh.is4PsBeneficiary) ? <Badge variant="success">Registered 4Ps Beneficiary</Badge> : <Badge variant="neutral">Non-4Ps</Badge>}</div>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Monthly Income Classification:</span>
+                      <div>{childProfile.monthlyIncomeClass || hh.monthlyIncomeClass || hh.incomeBracket || '—'}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-3)' }}>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                      Co-Resident Siblings & Children in Household:
+                    </span>
+                    {coResidents.length === 0 ? (
+                      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-muted)', marginTop: 'var(--space-2)' }}>
+                        No other minor children recorded in this household during mapping survey.
+                      </p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+                        {coResidents.map((sib, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-2) var(--space-3)', backgroundColor: 'var(--bg-canvas)', borderRadius: 'var(--radius-md)' }}>
+                            <div>
+                              <strong>{sib.name || sib.fullName || 'Sibling'}</strong>{sib.age ? ` • ${sib.age}` : ''}{sib.relation ? ` (${sib.relation})` : ''}
+                            </div>
+                            {(sib.school || sib.status) && (
+                              <Badge variant="neutral" size="sm">{sib.school || sib.status}</Badge>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ marginTop: 'var(--space-4)', display: 'flex', gap: 'var(--space-2)' }}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setIsForm1ModalOpen(true)}
+                    >
+                      <Home size={14} />
+                      View / Edit Official Form 1 (Home Profile)
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          })()}
 
           {/* -------------------------------------------------------------
               TAB CONTENT: OFFICIAL FORM 2 (CHILDREN'S PROFILE)
@@ -1702,14 +1595,14 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {childProfile.healthRecords?.length === 0 ? (
+                      {(!childProfile.healthRecords || childProfile.healthRecords.length === 0) ? (
                         <TableRow>
                           <TableCell colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
                             No health check entries recorded yet.
                           </TableCell>
                         </TableRow>
                       ) : (
-                        childProfile.healthRecords.map((rec, i) => (
+                        (childProfile.healthRecords || []).map((rec, i) => (
                           <TableRow key={i}>
                             <TableCell><strong>{rec.date}</strong></TableCell>
                             <TableCell>{rec.type}</TableCell>
@@ -1764,12 +1657,12 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                 </div>
               </CardHeader>
               <CardBody>
-                {childProfile.developmentAssessments?.length === 0 ? (
+                {(!childProfile.developmentAssessments || childProfile.developmentAssessments.length === 0) ? (
                   <div style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-muted)' }}>
                     No developmental assessment cycles recorded yet. Click "Start Official ECCD Checklist" to evaluate the child.
                   </div>
                 ) : (
-                  childProfile.developmentAssessments.map((ass, idx) => (
+                  (childProfile.developmentAssessments || []).map((ass, idx) => (
                     <div key={idx} style={{ marginBottom: 'var(--space-5)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
                         <div>
@@ -1800,7 +1693,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
 
                       {/* 7 Domains Matrix */}
                       <div className="domains-matrix-grid">
-                        {ass.domains.map((dom, dIdx) => (
+                        {(ass.domains || []).map((dom, dIdx) => (
                           <div key={dIdx} className={`domain-tile ${dom.alert ? 'alert' : ''}`}>
                             <div className="domain-header">
                               <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold' }}>{dom.name}</span>
@@ -1845,13 +1738,13 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                 </div>
               </CardHeader>
               <CardBody>
-                {childProfile.followUpCases?.length === 0 ? (
+                {(!childProfile.followUpCases || childProfile.followUpCases.length === 0) ? (
                   <div style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-muted)' }}>
                     No active or historical follow-up cases recorded. Child is in good standing.
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                    {childProfile.followUpCases.map((fup) => (
+                    {(childProfile.followUpCases || []).map((fup) => (
                       <div key={fup.id} style={{ padding: 'var(--space-4)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--bg-surface)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
@@ -2192,8 +2085,9 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
           onClose={() => setIsForm5ModalOpen(false)}
           title="Official ECCD Form 5 — Consolidated Children's Profile"
           size="xl"
+          className="official-form-modal"
         >
-          <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+          <div>
             <OfficialForm5ConsolidatedReport onClose={() => setIsForm5ModalOpen(false)} />
           </div>
         </Modal>

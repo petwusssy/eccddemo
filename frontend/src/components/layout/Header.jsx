@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { mockNotifications } from '../../data/mockData';
 import { ROLE_LABELS } from '../../services/authService';
+import anacLogo from '../../assets/anac-logo.png';
 
 /**
  * ECCD CARE — Application Header
@@ -95,11 +96,14 @@ export function Header({
           <Menu size={20} />
         </button>
 
+        <div className="header-brand-mini" title="ANÁC CSWDO System">
+          <img src={anacLogo} alt="ANÁC Logo" className="header-mini-logo" />
+          <span className="header-mini-title">ANÁC</span>
+        </div>
+
         <div className="header-location-badge">
           <MapPin size={13} style={{ color: 'var(--color-primary-700)' }} />
           <span>{displayUser.lgu}</span>
-          <span style={{ color: 'var(--border-strong)' }}>|</span>
-          <span style={{ color: 'var(--color-accent-700)', fontWeight: 600 }}>{displayUser.activeSchoolYear}</span>
         </div>
       </div>
 

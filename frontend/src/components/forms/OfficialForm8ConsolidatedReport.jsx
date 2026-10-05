@@ -181,7 +181,7 @@ export function OfficialForm8ConsolidatedReport() {
       </Card>
 
       {/* Official Form 8 Document Container (Exact Layout from April 2014 6-Page Form) */}
-      <div style={{ background: 'white', border: '1px solid #cbd5e1', borderRadius: 'var(--radius-lg)', padding: 'var(--space-6)', maxWidth: '960px', margin: '0 auto' }}>
+      <div style={{ background: 'white', border: '1px solid #cbd5e1', borderRadius: 'var(--radius-lg)', padding: 'var(--space-6)', maxWidth: '100%', margin: '0 auto' }}>
         {/* Header Block */}
         <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '16px' }}>
           <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', fontWeight: 'bold' }}>
@@ -194,7 +194,7 @@ export function OfficialForm8ConsolidatedReport() {
             </h1>
             <span style={{ fontSize: '11px', color: '#64748b' }}>Official LGU Masterlist</span>
           </div>
-          <div style={{ fontSize: '11px', color: '#0284c7' }}>
+          <div style={{ fontSize: '11px', color: '#ba1607', fontWeight: 600 }}>
             City Social Welfare and Development Office • City of San Fernando, Pampanga
           </div>
         </div>
@@ -226,7 +226,7 @@ export function OfficialForm8ConsolidatedReport() {
             <span style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a' }}>
               II. CHILD DEVELOPMENT WORKER PERSONAL INFORMATION
             </span>
-            <span style={{ fontSize: '12px', color: '#0284c7', fontWeight: 600 }}>
+            <span style={{ fontSize: '12px', color: '#ba1607', fontWeight: 600 }}>
               5. Total No. Respondents: {consolidation.totalRespondents}
             </span>
           </div>
@@ -272,7 +272,7 @@ export function OfficialForm8ConsolidatedReport() {
             <span style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a' }}>
               IV. WORKING CONDITIONS
             </span>
-            <span style={{ fontSize: '12px', color: '#0284c7', fontWeight: 600 }}>
+            <span style={{ fontSize: '12px', color: '#ba1607', fontWeight: 600 }}>
               25. Total Children Served in City: {consolidation.workingConditions.totalChildrenServedInMunicipality}
             </span>
           </div>

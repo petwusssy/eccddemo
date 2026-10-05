@@ -33,7 +33,7 @@ class FollowUpService
             $cat = $c['category'] ?? $c['status'];
             if ($cat === 'Needs Attention') {
                 $counts['needsAttention']++;
-            } elseif ($cat === 'Pending') {
+            } elseif ($cat === 'Pending' || $cat === 'In Progress') {
                 $counts['pending']++;
             } elseif ($cat === 'Scheduled') {
                 $counts['scheduled']++;

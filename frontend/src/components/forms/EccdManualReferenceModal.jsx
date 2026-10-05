@@ -33,24 +33,24 @@ export function EccdManualReferenceModal({ isOpen, onClose }) {
       title=""
       size="xl"
     >
-      <div style={{ maxHeight: '84vh', overflowY: 'auto', padding: '0.25rem' }}>
+      <div style={{ padding: '0.25rem' }}>
         {/* Header Banner */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '16px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: '#0284c7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '2px solid #7e191b', paddingBottom: '14px', marginBottom: '16px', paddingRight: '44px' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'linear-gradient(135deg, #7e191b 0%, #ba1607 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 8px rgba(126, 25, 27, 0.35)' }}>
             <BookOpen size={24} />
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
+            <h2 style={{ margin: 0, fontSize: '19px', fontWeight: 800, color: '#1e1112', letterSpacing: '-0.01em' }}>
               How to Use the Early Childhood Care and Development (ECCD) Checklist
             </h2>
-            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+            <div style={{ fontSize: '12px', color: '#795d5f', marginTop: '3px' }}>
               Official Administration Manual • ECCD Council • DSWD • DepEd • DOH • UNICEF
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div style={{ display: 'flex', gap: '6px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #f0e4e3', paddingBottom: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
           {[
             { id: 'overview', label: '1. Introduction & Purpose', icon: Info },
             { id: 'domains', label: '2. Seven Developmental Domains', icon: Layers },
@@ -68,18 +68,20 @@ export function EccdManualReferenceModal({ isOpen, onClose }) {
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
+                  gap: '8px',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  border: isActive ? '1px solid #0284c7' : '1px solid #cbd5e1',
-                  background: isActive ? '#0284c7' : '#f8fafc',
-                  color: isActive ? '#ffffff' : '#334155',
+                  transition: 'all 0.15s ease',
+                  border: isActive ? '1px solid #7e191b' : '1px solid #dfcecd',
+                  background: isActive ? 'linear-gradient(135deg, #7e191b 0%, #ba1607 100%)' : '#ffffff',
+                  color: isActive ? '#ffffff' : '#4a3436',
+                  boxShadow: isActive ? '0 2px 6px rgba(126, 25, 27, 0.3)' : 'none',
                 }}
               >
-                <Icon size={14} />
+                <Icon size={16} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -88,9 +90,9 @@ export function EccdManualReferenceModal({ isOpen, onClose }) {
 
         {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px', lineHeight: 1.6, color: '#1e293b' }}>
-            <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', padding: '14px', borderRadius: '8px' }}>
-              <div style={{ fontWeight: 800, color: '#0369a1', marginBottom: '6px', fontSize: '14px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px', lineHeight: 1.6, color: '#1e1112' }}>
+            <div style={{ background: '#fff5f4', border: '1px solid #ffded8', padding: '14px', borderRadius: '8px' }}>
+              <div style={{ fontWeight: 800, color: '#7e191b', marginBottom: '6px', fontSize: '14px' }}>
                 Purpose of the ECCD Checklist
               </div>
               <p style={{ margin: 0 }}>
@@ -117,7 +119,7 @@ export function EccdManualReferenceModal({ isOpen, onClose }) {
                 Recommended monitoring frequency:
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', borderLeft: '3px solid #0284c7' }}>
+                <div style={{ background: '#fcf9f9', padding: '10px', borderRadius: '6px', borderLeft: '3px solid #7e191b' }}>
                   <strong>Child's Record 1 (Ages 0 to 3.0 years):</strong>
                   <ul style={{ margin: '6px 0 0 0', paddingLeft: '18px', fontSize: '12px' }}>
                     <li>Ages 0 to 12 months: Every 4 months</li>
@@ -244,8 +246,8 @@ export function EccdManualReferenceModal({ isOpen, onClose }) {
                 { mo: '48 months (4 yrs)', motor: 'Draws human figure or house', self: 'Uses toilet with occasional accidents', lang: 'Asks "WHAT", "WHO", and "WHY"', cog: 'Arranges objects by size', soc: 'Plays organized group games fairly' },
                 { mo: '60 months (5 yrs)', motor: 'Throws ball overhead with direction', self: 'Bathes unassisted', lang: 'Recounts recent experiences in past tense', cog: 'Matches upper and lower case letters', soc: 'Uses cultural gestures (mano, bless)' },
               ].map((m, idx) => (
-                <div key={idx} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px' }}>
-                  <div style={{ fontWeight: 800, fontSize: '13px', color: '#0284c7', borderBottom: '1px solid #cbd5e1', paddingBottom: '4px', marginBottom: '6px' }}>
+                <div key={idx} style={{ background: '#fcf9f9', border: '1px solid #f0e4e3', borderRadius: '8px', padding: '10px' }}>
+                  <div style={{ fontWeight: 800, fontSize: '13px', color: '#ba1607', borderBottom: '1px solid #dfcecd', paddingBottom: '4px', marginBottom: '6px' }}>
                     {m.mo}
                   </div>
                   <div style={{ fontSize: '11px', color: '#334155', lineHeight: 1.4 }}>

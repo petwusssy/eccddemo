@@ -192,27 +192,28 @@ export function OfficialForm7CenterProfileModal({
       onClose={onClose}
       title=""
       size="xl"
+      className="official-form-modal"
     >
-      <div className="official-form7-modal" style={{ maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="official-form7-modal" style={{ padding: '0.25rem' }}>
         {/* Government Header Banner */}
-        <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', fontWeight: 'bold' }}>
+        <div style={{ textAlign: 'center', borderBottom: '2px solid #7e191b', paddingBottom: '12px', marginBottom: '16px', paddingRight: '40px' }}>
+          <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#795d5f', fontWeight: 'bold' }}>
             Early Childhood Care and Development Council
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '4px 0' }}>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>April 2014</span>
-            <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+            <span style={{ fontSize: '11px', color: '#795d5f' }}>April 2014</span>
+            <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1112', margin: 0 }}>
               FORM 7 – CHILD DEVELOPMENT CENTER PROFILE
             </h2>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>Page {activeTab === 'centerInfo' ? '1' : '2'} of 2</span>
+            <span style={{ fontSize: '11px', color: '#795d5f' }}>Page {activeTab === 'centerInfo' ? '1' : '2'} of 2</span>
           </div>
-          <div style={{ fontSize: '11px', color: '#0284c7' }}>
+          <div style={{ fontSize: '11px', color: '#ba1607' }}>
             DSWD / CSWDO San Fernando Child Development Center Accreditation & Facility Profile
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }} className="no-print">
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid #f0e4e3', paddingBottom: '8px' }} className="no-print">
           <button
             type="button"
             className={`btn-tab ${activeTab === 'centerInfo' ? 'active' : ''}`}
@@ -220,12 +221,13 @@ export function OfficialForm7CenterProfileModal({
             style={{
               padding: '6px 14px',
               borderRadius: '6px',
-              border: 'none',
-              background: activeTab === 'centerInfo' ? '#0f2744' : '#f1f5f9',
-              color: activeTab === 'centerInfo' ? '#fff' : '#475569',
+              border: activeTab === 'centerInfo' ? '1px solid #7e191b' : '1px solid #dfcecd',
+              background: activeTab === 'centerInfo' ? 'linear-gradient(135deg, #7e191b, #ba1607)' : '#f8f2f2',
+              color: activeTab === 'centerInfo' ? '#fff' : '#4a3436',
               fontWeight: 600,
               fontSize: '12px',
               cursor: 'pointer',
+              boxShadow: activeTab === 'centerInfo' ? '0 2px 6px rgba(126, 25, 27, 0.25)' : 'none',
             }}
           >
             1. Center Details & Accreditation
@@ -237,12 +239,13 @@ export function OfficialForm7CenterProfileModal({
             style={{
               padding: '6px 14px',
               borderRadius: '6px',
-              border: 'none',
-              background: activeTab === 'services' ? '#0f2744' : '#f1f5f9',
-              color: activeTab === 'services' ? '#fff' : '#475569',
+              border: activeTab === 'services' ? '1px solid #7e191b' : '1px solid #dfcecd',
+              background: activeTab === 'services' ? 'linear-gradient(135deg, #7e191b, #ba1607)' : '#f8f2f2',
+              color: activeTab === 'services' ? '#fff' : '#4a3436',
               fontWeight: 600,
               fontSize: '12px',
               cursor: 'pointer',
+              boxShadow: activeTab === 'services' ? '0 2px 6px rgba(126, 25, 27, 0.25)' : 'none',
             }}
           >
             2. Services & Facilities
@@ -254,20 +257,21 @@ export function OfficialForm7CenterProfileModal({
             style={{
               padding: '6px 14px',
               borderRadius: '6px',
-              border: 'none',
-              background: activeTab === 'facilities' ? '#0f2744' : '#f1f5f9',
-              color: activeTab === 'facilities' ? '#fff' : '#475569',
+              border: activeTab === 'facilities' ? '1px solid #7e191b' : '1px solid #dfcecd',
+              background: activeTab === 'facilities' ? 'linear-gradient(135deg, #7e191b, #ba1607)' : '#f8f2f2',
+              color: activeTab === 'facilities' ? '#fff' : '#4a3436',
               fontWeight: 600,
               fontSize: '12px',
               cursor: 'pointer',
+              boxShadow: activeTab === 'facilities' ? '0 2px 6px rgba(126, 25, 27, 0.25)' : 'none',
             }}
           >
             3. Utilities & Learning Materials
           </button>
         </div>
 
-        {/* Form Body Scroll Area */}
-        <div style={{ overflowY: 'auto', flex: 1, paddingRight: '6px' }}>
+        {/* Form Body Content Area */}
+        <div style={{ paddingRight: '6px' }}>
           {/* =========================================================================
               TAB 1: CENTER DETAILS & ACCREDITATION (Form 7 Page 1 Top)
               ========================================================================= */}

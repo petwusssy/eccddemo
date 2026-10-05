@@ -7,13 +7,13 @@
 .fup-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   width: 100%;
 }
 
 /* --- Key UX Pipeline Banner --- */
 .fup-pipeline-banner {
-  background: #0f2744;
+  background: #7e191b;
   color: #ffffff;
   border-radius: var(--radius-lg, 10px);
   padding: 1.25rem 1.5rem;
@@ -93,38 +93,99 @@
 }
 
 .fup-kpi-card {
-  background: #ffffff;
+  background: linear-gradient(145deg, #ffffff 0%, #faf8f8 100%);
   border: 1px solid var(--color-border, #e2e8f0);
   border-radius: var(--radius-lg, 10px);
   padding: 1.25rem;
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px -2px rgba(30, 17, 18, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s ease,
+              border-color 0.22s ease;
   cursor: pointer;
   position: relative;
   overflow: hidden;
 }
 
-.fup-kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
-}
-
-.fup-kpi-card.is-active {
-  border-color: var(--color-primary, #0f2744);
-  background: #f8fafc;
-}
-
-.fup-kpi-card.is-active::after {
+.fup-kpi-card::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
-  width: 4px;
-  height: 100%;
-  background: var(--color-primary, #0f2744);
+  right: 0;
+  height: 3px;
+  background: var(--color-primary, #7e191b);
+  opacity: 0.9;
+  transition: height 0.2s ease;
+}
+
+.fup-kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -4px rgba(30, 17, 18, 0.09), 0 4px 8px -2px rgba(0, 0, 0, 0.03);
+}
+
+.fup-kpi-card:hover::before {
+  height: 4px;
+}
+
+.fup-kpi-card:hover .fup-kpi-icon {
+  transform: scale(1.08);
+}
+
+.fup-kpi-card.is-active {
+  box-shadow: 0 0 0 2px var(--color-primary, #7e191b), 0 12px 24px -4px rgba(126, 25, 27, 0.16) !important;
+  border-color: var(--color-primary, #7e191b) !important;
+}
+
+/* Card Color Variants */
+.fup-kpi-card.card-danger {
+  background: linear-gradient(145deg, #ffffff 0%, #fff1f2 100%);
+  border-color: #fecdd3;
+}
+.fup-kpi-card.card-danger::before {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+.fup-kpi-card.card-danger:hover {
+  border-color: #fda4af;
+  box-shadow: 0 12px 24px -4px rgba(220, 38, 38, 0.14);
+}
+
+.fup-kpi-card.card-warning {
+  background: linear-gradient(145deg, #ffffff 0%, #fffbeb 100%);
+  border-color: #fde68a;
+}
+.fup-kpi-card.card-warning::before {
+  background: linear-gradient(90deg, #d97706, #f59e0b);
+}
+.fup-kpi-card.card-warning:hover {
+  border-color: #fcd34d;
+  box-shadow: 0 12px 24px -4px rgba(180, 83, 9, 0.14);
+}
+
+.fup-kpi-card.card-info {
+  background: linear-gradient(145deg, #ffffff 0%, #eff6ff 100%);
+  border-color: #bfdbfe;
+}
+.fup-kpi-card.card-info::before {
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+}
+.fup-kpi-card.card-info:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 12px 24px -4px rgba(37, 99, 235, 0.14);
+}
+
+.fup-kpi-card.card-success {
+  background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
+  border-color: #bbf7d0;
+}
+.fup-kpi-card.card-success::before {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+.fup-kpi-card.card-success:hover {
+  border-color: #86efac;
+  box-shadow: 0 12px 24px -4px rgba(22, 101, 52, 0.14);
 }
 
 .fup-kpi-icon {
@@ -274,6 +335,57 @@
   border: 1px solid #a7f3d0;
 }
 
+/* Follow-up Registry Table Styles (Consistent with Dashboard and Children) */
+.follow-up-table {
+  width: 100%;
+  min-width: 1260px;
+}
+
+.follow-up-table th,
+.follow-up-table td {
+  padding: 0.875rem 1.125rem;
+  vertical-align: middle;
+}
+
+.fup-col-case-id {
+  min-width: 140px;
+  white-space: nowrap;
+}
+
+.fup-col-child {
+  min-width: 250px;
+}
+
+.fup-col-type {
+  min-width: 130px;
+  white-space: nowrap;
+}
+
+.fup-col-reason {
+  min-width: 260px;
+}
+
+.fup-col-worker {
+  min-width: 180px;
+  white-space: nowrap;
+}
+
+.fup-col-due {
+  min-width: 125px;
+  white-space: nowrap;
+}
+
+.fup-col-status {
+  min-width: 160px;
+  white-space: nowrap;
+}
+
+.fup-col-actions {
+  min-width: 195px;
+  text-align: right;
+  white-space: nowrap;
+}
+
 /* --- Case Timeline Thread --- */
 .fup-timeline-list {
   display: flex;
@@ -312,7 +424,7 @@
   height: 24px;
   border-radius: 50%;
   background: #ffffff;
-  border: 2px solid var(--color-primary, #0f2744);
+  border: 2px solid var(--color-primary, #7e191b);
   display: flex;
   align-items: center;
   justify-content: center;

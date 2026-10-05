@@ -23,10 +23,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   Clock,
-  Users,
-  ClipboardCheck,
-  HeartPulse,
-  MapPin,
   ShieldAlert,
   Info,
   LogIn,
@@ -36,6 +32,7 @@ import { getDemoAccounts } from '../../services/authService';
 import { Button } from '../ui/Button';
 import { Checkbox } from '../ui/Checkbox';
 import '../../styles/login.css';
+import anacLogo from '../../assets/anac-logo.png';
 
 export function LoginPage() {
   const { login, forgotPassword, status, sessionExpiredMessage, clearExpiredState } = useAuth();
@@ -145,7 +142,14 @@ export function LoginPage() {
         {/* Right Form Panel */}
         <div className="login-right-panel">
           <div className="login-form-container">
-            <GovBannerInline />
+
+            <div className="login-form-brand-badge">
+              <img src={anacLogo} alt="ANÁC Logo" className="login-form-logo-img" />
+              <div className="login-form-brand-meta">
+                <span className="login-form-brand-title">ANÁC</span>
+                <span className="login-form-brand-sub">City Social Welfare &amp; Development Office</span>
+              </div>
+            </div>
 
             <button
               type="button"
@@ -236,7 +240,14 @@ export function LoginPage() {
       {/* Right Form Panel */}
       <div className="login-right-panel">
         <div className="login-form-container">
-          <GovBannerInline />
+
+          <div className="login-form-brand-badge">
+            <img src={anacLogo} alt="ANÁC Logo" className="login-form-logo-img" />
+            <div className="login-form-brand-meta">
+              <span className="login-form-brand-title">ANÁC</span>
+              <span className="login-form-brand-sub">City Social Welfare &amp; Development Office</span>
+            </div>
+          </div>
 
           {/* Session Expired Banner */}
           {status === AUTH_STATUS.EXPIRED && sessionExpiredMessage && (
@@ -249,11 +260,7 @@ export function LoginPage() {
             </div>
           )}
 
-          <h1 className="login-form-title">Sign In to ECCD CARE</h1>
-          <p className="login-form-subtitle">
-            Access the CSWDO Early Childhood Care and Development Information System.
-            Authorized personnel only.
-          </p>
+          <h1 className="login-form-title">Sign In to ANÁC</h1>
 
           {/* Credential Error Banner */}
           {formError && (
@@ -387,7 +394,7 @@ export function LoginPage() {
               disabled={isSubmitting}
               icon={LogIn}
             >
-              {isSubmitting ? 'Authenticating...' : 'Sign In to ECCD CARE'}
+              {isSubmitting ? 'Authenticating...' : 'Sign In to ANÁC'}
             </Button>
           </form>
 
@@ -431,56 +438,16 @@ export function LoginPage() {
 function LoginLeftPanel() {
   return (
     <div className="login-left-panel" aria-hidden="true">
-      <div className="login-left-seal">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          <path d="M12 8v4" />
-          <path d="M12 16h.01" />
-        </svg>
+      <div className="login-left-logo-card">
+        <img src={anacLogo} alt="ANÁC Logo" className="login-left-logo-img" />
       </div>
 
       <div className="login-left-wordmark">
-        ECCD <span className="login-left-wordmark-accent">CARE</span>
+        ANÁC
       </div>
 
       <div className="login-left-full-name">
-        Child Assessment, Registration &amp; Early-support System
-      </div>
-
-      <p className="login-left-tagline">
-        Centralized information system for monitoring Filipino children aged 0–4,
-        ensuring every child in the community receives comprehensive early childhood
-        care and development support.
-      </p>
-
-      <div className="login-left-features">
-        <div className="login-feature-item">
-          <div className="login-feature-icon">
-            <Users size={16} />
-          </div>
-          <span>Child demographic profiling &amp; PhilSys linkage</span>
-        </div>
-
-        <div className="login-feature-item">
-          <div className="login-feature-icon">
-            <MapPin size={16} />
-          </div>
-          <span>Community-level spot mapping &amp; household tracking</span>
-        </div>
-
-        <div className="login-feature-item">
-          <div className="login-feature-icon">
-            <ClipboardCheck size={16} />
-          </div>
-          <span>Standardized 7-domain ECCD Developmental Checklist</span>
-        </div>
-
-        <div className="login-feature-item">
-          <div className="login-feature-icon">
-            <HeartPulse size={16} />
-          </div>
-          <span>Nutrition monitoring &amp; supplemental feeding tracking</span>
-        </div>
+        Child Assessment, Registration &amp; Early-support System (ECCD CARE)
       </div>
 
       <div className="login-left-footer">
@@ -492,22 +459,6 @@ function LoginLeftPanel() {
           Data Privacy Act Compliant (RA 10173)
         </div>
       </div>
-    </div>
-  );
-}
-
-function GovBannerInline() {
-  return (
-    <div className="login-gov-banner-inline">
-      <span className="login-gov-banner-flag" aria-hidden="true">
-        <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-          <rect width="16" height="6" fill="#0038A8" />
-          <rect y="6" width="16" height="6" fill="#CE1126" />
-          <polygon points="0,0 7,6 0,12" fill="#FFFFFF" />
-          <circle cx="2.8" cy="6" r="1.2" fill="#FCD116" />
-        </svg>
-      </span>
-      <span>Republic of the Philippines — CSWDO Official System</span>
     </div>
   );
 }

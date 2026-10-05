@@ -29,6 +29,54 @@ import { centralDataStore } from '../../services/centralDataStore';
 import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
 import { getPhilippinesDate, addDaysPHT } from '../../utils/phTime';
 import Button from '../ui/Button';
+import { Badge } from '../ui/Badge';
+import { TableHead, TableBody, TableRow, TableHeader, TableCell } from '../ui/Table';
+
+const formatChildName = (name) => {
+  if (!name) return '—';
+  if (name === name.toUpperCase() && name.length > 2) {
+    return name
+      .toLowerCase()
+      .split(' ')
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+  return name;
+};
+
+const getInitials = (name) => {
+  if (!name) return 'C';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+  return parts[0]?.[0]?.toUpperCase() || 'C';
+};
+
+const getFollowUpCategoryVariant = (cat) => {
+  if (cat === 'Needs Attention') return 'danger';
+  if (cat === 'Pending' || cat === 'In Progress') return 'warning';
+  if (cat === 'Scheduled') return 'info';
+  if (cat === 'Completed' || cat === 'Resolved') return 'success';
+  return 'neutral';
+};
+
+const getFollowUpCategoryIcon = (cat) => {
+  if (cat === 'Needs Attention') return AlertTriangle;
+  if (cat === 'Pending' || cat === 'In Progress') return Clock;
+  if (cat === 'Scheduled') return Calendar;
+  if (cat === 'Completed' || cat === 'Resolved') return CheckCircle2;
+  return null;
+};
+
+const getActionTypeVariant = (type) => {
+  if (type === 'Monitoring') return 'info';
+  if (type === 'Follow-up') return 'primary';
+  if (type === 'Scheduled Visit') return 'warning';
+  if (type === 'Referral') return 'danger';
+  return 'neutral';
+};
 
 const ACTION_TYPES = [
   'Follow-up',
@@ -110,7 +158,22 @@ export function FollowUpView({ onNavigate }) {
         assignedWorker: workerFilter,
         search: searchQuery,
       });
-      setQueueData(data);
+      // Strict UI safeguard: guarantee exactly 1 row per childId in the follow-up queue
+      const uniqueCases = [];
+      const seenChildIds = new Set();
+      (data.cases || []).forEach((c) => {
+        const key = c.childId || c.id;
+        if (!seenChildIds.has(key)) {
+          seenChildIds.add(key);
+          uniqueCases.push(c);
+        }
+      });
+
+      setQueueData({
+        ...data,
+        cases: uniqueCases,
+        total: uniqueCases.length,
+      });
       const kids = centralDataStore.getChildren() || [];
       setRegisteredChildren(kids);
       if (data.cases && data.cases.length > 0) {
@@ -264,31 +327,11 @@ export function FollowUpView({ onNavigate }) {
 
   return (
     <div className="fup-container">
-      {/* 1. Key UX Message Pipeline Banner */}
-      <div className="fup-pipeline-banner">
-        <div className="fup-pipeline-title-group">
-          <span className="fup-pipeline-title">CSWDO Early Childhood Care Protocol</span>
-          <div className="fup-pipeline-steps">
-            <span className="fup-pipeline-step">Identify</span>
-            <span className="fup-pipeline-arrow">→</span>
-            <span className="fup-pipeline-step">Monitor</span>
-            <span className="fup-pipeline-arrow">→</span>
-            <span className="fup-pipeline-step">Detect Need</span>
-            <span className="fup-pipeline-arrow">→</span>
-            <span className="fup-pipeline-step">Follow Up</span>
-            <span className="fup-pipeline-arrow">→</span>
-            <span className="fup-pipeline-step" style={{ background: '#10b981', color: '#ffffff' }}>
-              Record Action
-            </span>
-          </div>
-        </div>
-        <div className="fup-pipeline-badge">Action-Oriented Case System</div>
-      </div>
 
       {/* 2. Top KPI Cards (Categories) */}
       <div className="fup-kpi-grid">
         <div
-          className={`fup-kpi-card ${categoryFilter === 'needs attention' ? 'is-active' : ''}`}
+          className={`fup-kpi-card card-danger ${categoryFilter === 'needs attention' ? 'is-active' : ''}`}
           onClick={() =>
             setCategoryFilter(categoryFilter === 'needs attention' ? 'all' : 'needs attention')
           }
@@ -299,13 +342,13 @@ export function FollowUpView({ onNavigate }) {
           </div>
           <div className="fup-kpi-body">
             <span className="fup-kpi-label">Needs Attention</span>
-            <span className="fup-kpi-value">{queueData.counts.needsAttention}</span>
+            <span className="fup-kpi-value" style={{ color: '#dc2626' }}>{queueData.counts.needsAttention}</span>
             <span className="fup-kpi-subtext">Immediate action required</span>
           </div>
         </div>
 
         <div
-          className={`fup-kpi-card ${categoryFilter === 'pending' ? 'is-active' : ''}`}
+          className={`fup-kpi-card card-warning ${categoryFilter === 'pending' ? 'is-active' : ''}`}
           onClick={() => setCategoryFilter(categoryFilter === 'pending' ? 'all' : 'pending')}
           title="Filter pending follow-ups"
         >
@@ -314,13 +357,13 @@ export function FollowUpView({ onNavigate }) {
           </div>
           <div className="fup-kpi-body">
             <span className="fup-kpi-label">Pending</span>
-            <span className="fup-kpi-value">{queueData.counts.pending}</span>
+            <span className="fup-kpi-value" style={{ color: 'var(--color-warning-600)' }}>{queueData.counts.pending}</span>
             <span className="fup-kpi-subtext">Awaiting intake / visit</span>
           </div>
         </div>
 
         <div
-          className={`fup-kpi-card ${categoryFilter === 'scheduled' ? 'is-active' : ''}`}
+          className={`fup-kpi-card card-info ${categoryFilter === 'scheduled' ? 'is-active' : ''}`}
           onClick={() => setCategoryFilter(categoryFilter === 'scheduled' ? 'all' : 'scheduled')}
           title="Filter scheduled appointments and visits"
         >
@@ -329,13 +372,13 @@ export function FollowUpView({ onNavigate }) {
           </div>
           <div className="fup-kpi-body">
             <span className="fup-kpi-label">Scheduled</span>
-            <span className="fup-kpi-value">{queueData.counts.scheduled}</span>
+            <span className="fup-kpi-value" style={{ color: 'var(--color-info-primary)' }}>{queueData.counts.scheduled}</span>
             <span className="fup-kpi-subtext">Appointment / visit set</span>
           </div>
         </div>
 
         <div
-          className={`fup-kpi-card ${categoryFilter === 'completed' ? 'is-active' : ''}`}
+          className={`fup-kpi-card card-success ${categoryFilter === 'completed' ? 'is-active' : ''}`}
           onClick={() => setCategoryFilter(categoryFilter === 'completed' ? 'all' : 'completed')}
           title="Filter resolved and completed cases"
         >
@@ -344,7 +387,7 @@ export function FollowUpView({ onNavigate }) {
           </div>
           <div className="fup-kpi-body">
             <span className="fup-kpi-label">Completed</span>
-            <span className="fup-kpi-value">{queueData.counts.completed}</span>
+            <span className="fup-kpi-value" style={{ color: 'var(--color-success-600)' }}>{queueData.counts.completed}</span>
             <span className="fup-kpi-subtext">Action taken &amp; documented</span>
           </div>
         </div>
@@ -463,118 +506,161 @@ export function FollowUpView({ onNavigate }) {
           </div>
 
           {/* Follow-Up Records Table */}
-          <div className="health-table-card mobile-table-to-cards">
-            <table className="health-table">
-              <thead>
-                <tr>
-                  <th>Case ID</th>
-                  <th>Child</th>
-                  <th>Action Type</th>
-                  <th>Reason &amp; Description</th>
-                  <th>Assigned Worker</th>
-                  <th>Due Date</th>
-                  <th>Category / Status</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="table-container mobile-table-to-cards">
+            <table className="table follow-up-table">
+              <TableHead>
+                <TableRow>
+                  <TableHeader className="fup-col-case-id">Case ID</TableHeader>
+                  <TableHeader className="fup-col-child">Child</TableHeader>
+                  <TableHeader className="fup-col-type">Action Type</TableHeader>
+                  <TableHeader className="fup-col-reason">Reason &amp; Description</TableHeader>
+                  <TableHeader className="fup-col-worker">Assigned Worker</TableHeader>
+                  <TableHeader className="fup-col-due">Due Date</TableHeader>
+                  <TableHeader className="fup-col-status">Category / Status</TableHeader>
+                  <TableHeader className="fup-col-actions" style={{ textAlign: 'right' }}>Actions</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem' }}>
-                      <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 0.5rem' }} />
-                      <p style={{ color: '#64748b', margin: 0 }}>Loading follow-up queue...</p>
-                    </td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={8} style={{ textAlign: 'center', padding: '2.5rem' }}>
+                      <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 0.5rem', color: 'var(--color-primary-800)' }} />
+                      <p style={{ color: 'var(--text-muted)', margin: 0 }}>Loading follow-up queue...</p>
+                    </TableCell>
+                  </TableRow>
                 ) : queueData.cases.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem' }}>
-                      <p style={{ color: '#64748b', fontSize: '0.9375rem', margin: 0 }}>
+                  <TableRow>
+                    <TableCell colSpan={8} style={{ textAlign: 'center', padding: '2.5rem' }}>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem', margin: 0 }}>
                         No follow-up cases match the current filter selection.
                       </p>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   queueData.cases.map((caseItem) => {
-                    const catClass = getCategoryClass(caseItem.category || caseItem.status);
-                    const chipClass = getActionChipClass(caseItem.actionType);
+                    const initials = getInitials(caseItem.childName);
+                    const formattedName = formatChildName(caseItem.childName);
 
                     return (
-                      <tr key={caseItem.id}>
-                        <td>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0f2744' }}>
+                      <TableRow key={caseItem.id}>
+                        {/* Case ID */}
+                        <TableCell className="fup-col-case-id">
+                          <code style={{
+                            fontSize: 'var(--font-size-xs)',
+                            backgroundColor: 'var(--color-neutral-100)',
+                            color: 'var(--color-primary-900)',
+                            padding: '3px 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            fontWeight: 600,
+                            letterSpacing: '0.02em',
+                            whiteSpace: 'nowrap'
+                          }}>
                             {caseItem.id}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontWeight: 600, color: '#0f172a' }}>
-                              {caseItem.childName}
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                              {caseItem.childId} • {caseItem.barangay}
-                            </span>
+                          </code>
+                        </TableCell>
+
+                        {/* Child with Avatar */}
+                        <TableCell className="fup-col-child">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                            <div style={{
+                              width: '2.25rem',
+                              height: '2.25rem',
+                              borderRadius: 'var(--radius-full)',
+                              backgroundColor: 'var(--color-primary-100)',
+                              color: 'var(--color-primary-900)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: '700',
+                              fontSize: 'var(--font-size-xs)',
+                              flexShrink: 0
+                            }}>
+                              {initials}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                                {formattedName}
+                              </div>
+                              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                                {[caseItem.childId, caseItem.barangay].filter(Boolean).filter((v) => v !== '—').join(' • ')}
+                              </div>
+                            </div>
                           </div>
-                        </td>
-                        <td>
-                          <span className={`fup-action-chip ${chipClass}`}>
+                        </TableCell>
+
+                        {/* Action Type */}
+                        <TableCell className="fup-col-type">
+                          <Badge variant={getActionTypeVariant(caseItem.actionType)} dot={false} size="sm">
                             {caseItem.actionType}
-                          </span>
-                        </td>
-                        <td style={{ maxWidth: '280px' }}>
-                          <div style={{ fontSize: '0.8125rem', color: '#1e293b', fontWeight: 500 }}>
+                          </Badge>
+                        </TableCell>
+
+                        {/* Reason & Description */}
+                        <TableCell className="fup-col-reason">
+                          <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.4 }}>
                             {caseItem.reason}
                           </div>
                           {caseItem.actionTaken && (
-                            <div style={{ fontSize: '0.75rem', color: '#047857', marginTop: '0.2rem' }}>
+                            <div style={{ fontSize: 'var(--font-size-xs)', color: '#047857', marginTop: '0.25rem', fontWeight: 500 }}>
                               ✓ Action: {caseItem.actionTaken}
                             </div>
                           )}
-                        </td>
-                        <td>
+                        </TableCell>
+
+                        {/* Assigned Worker */}
+                        <TableCell className="fup-col-worker">
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>
+                            <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                               {caseItem.assignedWorker}
                             </span>
-                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                              {caseItem.workerContact}
-                            </span>
+                            {caseItem.workerContact && (
+                              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                                {caseItem.workerContact}
+                              </span>
+                            )}
                           </div>
-                        </td>
-                        <td>
-                          <span style={{ fontWeight: 500, fontSize: '0.8125rem' }}>
+                        </TableCell>
+
+                        {/* Due Date */}
+                        <TableCell className="fup-col-due">
+                          <span style={{ fontWeight: 500, fontSize: 'var(--font-size-sm)', whiteSpace: 'nowrap' }}>
                             {caseItem.dueDate}
                           </span>
-                        </td>
-                        <td>
-                          <span className={`fup-category-badge ${catClass}`}>
-                            {caseItem.category === 'Needs Attention' && <AlertTriangle size={12} />}
-                            {caseItem.category === 'Pending' && <Clock size={12} />}
-                            {caseItem.category === 'Scheduled' && <Calendar size={12} />}
-                            {caseItem.category === 'Completed' && <CheckCircle2 size={12} />}
+                        </TableCell>
+
+                        {/* Category / Status */}
+                        <TableCell className="fup-col-status">
+                          <Badge
+                            variant={getFollowUpCategoryVariant(caseItem.category || caseItem.status)}
+                            icon={getFollowUpCategoryIcon(caseItem.category || caseItem.status)}
+                            dot={!getFollowUpCategoryIcon(caseItem.category || caseItem.status)}
+                            size="sm"
+                          >
                             {caseItem.category || caseItem.status}
-                          </span>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.375rem' }}>
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-sm"
-                              style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="fup-col-actions" style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', justifyContent: 'flex-end', gap: 'var(--space-2)', whiteSpace: 'nowrap' }}>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              icon={Eye}
                               onClick={() => {
                                 setSelectedCaseId(caseItem.id);
                                 setActiveTab('case-view');
                               }}
                               title="Inspect Full Child Case Timeline"
                             >
-                              <Eye size={13} style={{ marginRight: '0.25rem' }} />
                               Case View
-                            </button>
+                            </Button>
 
-                            {caseItem.category !== 'Completed' && (
-                              <button
-                                type="button"
-                                className="btn btn-primary btn-sm"
-                                style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
+                            {caseItem.category !== 'Completed' && caseItem.status !== 'Resolved' && (
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                icon={Check}
                                 onClick={() => {
                                   setResolvingCase(caseItem);
                                   setResolveForm({
@@ -584,18 +670,18 @@ export function FollowUpView({ onNavigate }) {
                                     status: 'Completed',
                                   });
                                 }}
+                                title="Resolve Follow-Up Case"
                               >
-                                <Check size={13} style={{ marginRight: '0.25rem' }} />
                                 Resolve
-                              </button>
+                              </Button>
                             )}
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })
                 )}
-              </tbody>
+              </TableBody>
             </table>
           </div>
         </div>
@@ -893,7 +979,7 @@ export function FollowUpView({ onNavigate }) {
               >
                 <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
                   <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Case Identifier</div>
-                  <h3 style={{ margin: '0.2rem 0', color: '#0f2744', fontSize: '1.25rem' }}>
+                  <h3 style={{ margin: '0.2rem 0', color: '#7e191b', fontSize: '1.25rem' }}>
                     {caseViewData.case.id}
                   </h3>
                   <span className={`fup-category-badge ${getCategoryClass(caseViewData.case.category)}`}>
@@ -907,7 +993,7 @@ export function FollowUpView({ onNavigate }) {
                     <div style={{ fontWeight: 700, color: '#0f172a' }}>
                       {caseViewData.case.childName}
                     </div>
-                    <div style={{ fontFamily: 'monospace', color: '#0369a1' }}>
+                    <div style={{ fontFamily: 'monospace', color: '#ba1607', fontWeight: 600 }}>
                       {caseViewData.case.childId}
                     </div>
                   </div>
@@ -995,7 +1081,7 @@ export function FollowUpView({ onNavigate }) {
                     return (
                       <div key={i} className="fup-timeline-node">
                         <div className="fup-timeline-marker">
-                          <IconComponent size={13} style={{ color: '#0f2744' }} />
+                          <IconComponent size={13} style={{ color: '#7e191b' }} />
                         </div>
                         <div className="fup-timeline-header">
                           <span className="fup-timeline-title">{node.title}</span>
@@ -1020,7 +1106,7 @@ export function FollowUpView({ onNavigate }) {
           ========================================================================= */}
       {resolvingCase && (
         <div className="modal-backdrop" onClick={() => setResolvingCase(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <CheckCircle2 size={20} style={{ color: '#059669' }} />
@@ -1049,7 +1135,10 @@ export function FollowUpView({ onNavigate }) {
                     {resolvingCase.id} — {resolvingCase.childName}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
-                    Assigned: {resolvingCase.assignedWorker} • Objective: {resolvingCase.reason}
+                    {[
+                      resolvingCase.assignedWorker && `Assigned: ${resolvingCase.assignedWorker}`,
+                      resolvingCase.reason && `Objective: ${resolvingCase.reason}`,
+                    ].filter(Boolean).join(' • ')}
                   </div>
                 </div>
 

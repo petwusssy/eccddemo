@@ -7,6 +7,7 @@
 
 import { centralDataStore } from './centralDataStore.js';
 import { getPhilippinesDate, addDaysPHT, getDaysAgoPHT } from '../utils/phTime.js';
+import { computeNutritionalStatus } from '../utils/whoGrowthStandards.js';
 
 export const healthMonitoringService = {
   /**
@@ -40,17 +41,37 @@ export const healthMonitoringService = {
         daysSinceLastCheck = 0;
       }
 
+      const lastHeightCm = latest?.heightCm ?? latest?.height ?? c.lastHeightCm ?? (c.statusPillars?.health?.lastHeightCm) ?? null;
+      const lastWeightKg = latest?.weightKg ?? latest?.weight ?? c.lastWeightKg ?? (c.statusPillars?.health?.lastWeightKg) ?? null;
+
+      let nutritionalStatus = latest?.nutritionalStatus || c.nutritionalStatus || (c.statusPillars?.health?.nutritionalStatus) || 'Normal';
+      if (lastWeightKg !== null && lastWeightKg !== undefined && lastHeightCm !== null && lastHeightCm !== undefined) {
+        const whoRes = computeNutritionalStatus({
+          weightKg: lastWeightKg,
+          heightCm: lastHeightCm,
+          birthDate: c.birthDate,
+          sex: c.sex || 'Female',
+          measurementDate: latest?.date || c.lastMeasurementDate || getPhilippinesDate(),
+        });
+        nutritionalStatus = whoRes.status;
+      }
+
       return {
         childId: c.id,
         fullName: c.fullName || `${c.firstName || ''} ${c.lastName || ''}`.trim(),
+        firstName: c.firstName,
+        lastName: c.lastName,
         sex: c.sex || 'Female',
+        birthDate: c.birthDate || null,
+        ageYears: c.ageYears || null,
+        ageMonths: c.ageMonths || null,
         ageDisplay: c.ageDisplay || `${c.ageYears || 3} yrs`,
         barangay: c.barangay || 'San Isidro',
         dayCareCenter: c.dayCareCenterName || 'San Isidro Child Development Center I',
         lastMeasurementDate: latest?.date || (hasRecord ? getPhilippinesDate() : (c.lastMeasurementDate || null)),
-        lastHeightCm: latest?.heightCm ?? latest?.height ?? c.lastHeightCm ?? (c.statusPillars?.health?.lastHeightCm) ?? null,
-        lastWeightKg: latest?.weightKg ?? latest?.weight ?? c.lastWeightKg ?? (c.statusPillars?.health?.lastWeightKg) ?? null,
-        nutritionalStatus: latest?.nutritionalStatus || c.nutritionalStatus || (c.statusPillars?.health?.nutritionalStatus) || 'Normal Weight',
+        lastHeightCm,
+        lastWeightKg,
+        nutritionalStatus,
         status,
         daysSinceLastCheck,
         dueDate: hasRecord

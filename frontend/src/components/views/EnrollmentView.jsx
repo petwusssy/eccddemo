@@ -51,6 +51,28 @@ const AVAILABLE_CENTERS = [
   'Sindalan Central CDC',
 ];
 
+const formatChildName = (name) => {
+  if (!name) return '—';
+  if (name === name.toUpperCase() && name.length > 2) {
+    return name
+      .toLowerCase()
+      .split(' ')
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+  return name;
+};
+
+const getInitials = (name) => {
+  if (!name) return 'C';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+  return parts[0]?.[0]?.toUpperCase() || 'C';
+};
+
 export function EnrollmentView({ onNavigate }) {
   const { addToast } = useToast();
   const { user } = useAuth();
@@ -210,9 +232,6 @@ export function EnrollmentView({ onNavigate }) {
             <h1 className="page-title">Day Care &amp; CDC Enrollment</h1>
             <Badge variant="primary" size="sm">SY 2026–2027</Badge>
           </div>
-          <p className="page-subtitle">
-            Community mapping to Day Care admission tracking and enrollment.
-          </p>
         </div>
 
         <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
@@ -240,185 +259,63 @@ export function EnrollmentView({ onNavigate }) {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: 'var(--space-3)',
-          marginBottom: 'var(--space-4)',
+          marginBottom: 'var(--space-3)',
         }}
       >
-        <div
-          style={{
-            background: 'var(--surface-primary)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-xs)',
-          }}
-        >
+        <div className="bento-stat-card card-success">
           <div>
             <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Active Enrollments
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-success-600)', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-success-600)', marginTop: '2px' }}>
               {enrollments.length}
             </div>
           </div>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-success-50)',
-              color: 'var(--color-success-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="stat-icon-wrap">
             <School size={18} />
           </div>
         </div>
 
-        <div
-          style={{
-            background: 'var(--surface-primary)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-xs)',
-          }}
-        >
+        <div className="bento-stat-card card-warning">
           <div>
             <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Not Enrolled Queue
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-warning-600)', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-warning-600)', marginTop: '2px' }}>
               {notEnrolledChildren.length}
             </div>
           </div>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-warning-50)',
-              color: 'var(--color-warning-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="stat-icon-wrap">
             <AlertTriangle size={18} />
           </div>
         </div>
 
-        <div
-          style={{
-            background: 'var(--surface-primary)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-xs)',
-          }}
-        >
+        <div className="bento-stat-card card-danger">
           <div>
             <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               4-Year-Old Priority
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-danger-600)', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-danger-600)', marginTop: '2px' }}>
               {notEnrolledChildren.filter((c) => c?.priorityTarget?.includes('4-Year-Old') || c?.ageYears >= 4).length}
             </div>
           </div>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-danger-50)',
-              color: 'var(--color-danger-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="stat-icon-wrap">
             <Baby size={18} />
           </div>
         </div>
 
-        <div
-          style={{
-            background: 'var(--surface-primary)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-xs)',
-          }}
-        >
+        <div className="bento-stat-card card-primary">
           <div>
             <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Enrollment Ratio
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-primary-600)', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-primary-800)', marginTop: '2px' }}>
               {Math.round((enrollments.length / ((enrollments.length + notEnrolledChildren.length) || 1)) * 100)}%
             </div>
           </div>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-primary-50)',
-              color: 'var(--color-primary-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="stat-icon-wrap">
             <UserCheck size={18} />
           </div>
-        </div>
-      </div>
-
-      {/* -------------------------------------------------------------
-          6. IMPORTANT UX: MAPPED → NOT ENROLLED → ENROLLED LIFECYCLE STRIP
-          ------------------------------------------------------------- */}
-      <div className="enrollment-lifecycle-strip" role="region" aria-label="ECCD Lifecycle Progression">
-        <div className="lifecycle-stage">
-          <span className="lifecycle-badge" style={{ backgroundColor: 'var(--color-neutral-100)', color: 'var(--text-primary)' }}>
-            1. Mapped
-          </span>
-          <span>Community Mapping</span>
-        </div>
-
-        <ArrowRight size={16} className="lifecycle-arrow" />
-
-        <div className="lifecycle-stage">
-          <span className="lifecycle-badge" style={{ backgroundColor: 'var(--color-warning-bg)', color: 'var(--color-warning-primary)', border: '1px solid var(--color-warning-border)' }}>
-            2. Not Enrolled
-          </span>
-          <span>Target for Admission ({notEnrolledChildren.length})</span>
-        </div>
-
-        <ArrowRight size={16} className="lifecycle-arrow" />
-
-        <div className="lifecycle-stage active">
-          <span className="lifecycle-badge" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success-primary)', border: '1px solid var(--color-success-border)' }}>
-            3. Enrolled
-          </span>
-          <span>Active in Day Care ({enrollments.length})</span>
-        </div>
-
-        <div style={{ marginLeft: 'auto', fontSize: 'var(--font-size-xs)', color: 'var(--color-primary-800)', fontWeight: 'bold' }}>
-          * ZERO DUPLICATE GUARANTEE: Persistent Child ID Reused
         </div>
       </div>
 
@@ -459,7 +356,7 @@ export function EnrollmentView({ onNavigate }) {
         <Card>
           <CardHeader>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-              <CardTitle subtitle="Master directory of admitted children for the current school year">
+              <CardTitle>
                 Active Enrollments ({enrollments.length})
               </CardTitle>
               <Badge variant="success" size="sm">
@@ -510,17 +407,17 @@ export function EnrollmentView({ onNavigate }) {
 
             {/* Enrollment Directory Table */}
             <div className="table-container mobile-table-to-cards">
-              <Table>
+              <table className="table enrollment-registry-table">
                 <TableHead>
                   <TableRow>
-                    <TableHeader>Child</TableHeader>
-                    <TableHeader>ECCD ID</TableHeader>
-                    <TableHeader>Barangay</TableHeader>
-                    <TableHeader>Day Care Center</TableHeader>
-                    <TableHeader>School Year</TableHeader>
-                    <TableHeader>Enrollment Date</TableHeader>
-                    <TableHeader>Status</TableHeader>
-                    <TableHeader style={{ textAlign: 'right' }}>Actions</TableHeader>
+                    <TableHeader className="enr-col-child">Child</TableHeader>
+                    <TableHeader className="enr-col-id">ECCD ID</TableHeader>
+                    <TableHeader className="enr-col-brgy">Barangay</TableHeader>
+                    <TableHeader className="enr-col-center">Day Care Center</TableHeader>
+                    <TableHeader className="enr-col-sy">School Year</TableHeader>
+                    <TableHeader className="enr-col-date">Enrollment Date</TableHeader>
+                    <TableHeader className="enr-col-status">Status</TableHeader>
+                    <TableHeader className="enr-col-action" style={{ textAlign: 'right' }}>Actions</TableHeader>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -531,59 +428,113 @@ export function EnrollmentView({ onNavigate }) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    enrollments.map((enr) => (
-                      <TableRow key={enr.id}>
-                        <TableCell>
-                          <strong>{enr.childName}</strong>
-                          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-                            {enr.ageDisplay} • {enr.sex}
-                          </div>
-                        </TableCell>
+                    enrollments.map((enr) => {
+                      const initials = getInitials(enr.childName);
+                      const formattedName = formatChildName(enr.childName);
 
-                        <TableCell>
-                          <code style={{ fontSize: 'var(--font-size-xs)', backgroundColor: 'var(--color-neutral-100)', padding: '2px 6px', borderRadius: 'var(--radius-sm)' }}>
-                            {enr.childId}
-                          </code>
-                        </TableCell>
+                      return (
+                        <TableRow key={enr.id}>
+                          {/* Child Column with Avatar */}
+                          <TableCell className="enr-col-child">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                              <div style={{
+                                width: '2.25rem',
+                                height: '2.25rem',
+                                borderRadius: 'var(--radius-full)',
+                                backgroundColor: 'var(--color-primary-100)',
+                                color: 'var(--color-primary-900)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: '700',
+                                fontSize: 'var(--font-size-xs)',
+                                flexShrink: 0
+                              }}>
+                                {initials}
+                              </div>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                                  {formattedName}
+                                </div>
+                                {[enr.ageDisplay, enr.sex].filter(Boolean).filter((v) => v !== '—').length > 0 && (
+                                  <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                                    {[enr.ageDisplay, enr.sex].filter(Boolean).filter((v) => v !== '—').join(' • ')}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
 
-                        <TableCell>{enr.barangay}</TableCell>
+                          {/* ECCD ID */}
+                          <TableCell className="enr-col-id">
+                            <code style={{
+                              fontSize: 'var(--font-size-xs)',
+                              backgroundColor: 'var(--color-neutral-100)',
+                              color: 'var(--color-primary-900)',
+                              padding: '3px 8px',
+                              borderRadius: 'var(--radius-sm)',
+                              fontWeight: 600,
+                              letterSpacing: '0.02em',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {enr.childId}
+                            </code>
+                          </TableCell>
 
-                        <TableCell>
-                          <div style={{ fontWeight: '500' }}>{enr.center}</div>
-                          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-                            {enr.session}
-                          </div>
-                        </TableCell>
+                          {/* Barangay */}
+                          <TableCell className="enr-col-brgy">
+                            <span style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{enr.barangay}</span>
+                          </TableCell>
 
-                        <TableCell>
-                          <Badge variant="neutral" size="sm">{enr.schoolYear}</Badge>
-                        </TableCell>
+                          {/* Day Care Center */}
+                          <TableCell className="enr-col-center">
+                            <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{enr.center}</div>
+                            {enr.session && (
+                              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                {enr.session}
+                              </div>
+                            )}
+                          </TableCell>
 
-                        <TableCell style={{ fontSize: 'var(--font-size-xs)' }}>
-                          {enr.enrollmentDate}
-                        </TableCell>
+                          {/* School Year */}
+                          <TableCell className="enr-col-sy">
+                            <Badge variant="neutral" size="sm" dot={false}>
+                              {enr.schoolYear}
+                            </Badge>
+                          </TableCell>
 
-                        <TableCell>
-                          <Badge variant="success" size="sm">
-                            {enr.status}
-                          </Badge>
-                        </TableCell>
+                          {/* Enrollment Date */}
+                          <TableCell className="enr-col-date">
+                            <span style={{ fontSize: 'var(--font-size-sm)', whiteSpace: 'nowrap', fontWeight: 500 }}>
+                              {enr.enrollmentDate}
+                            </span>
+                          </TableCell>
 
-                        <TableCell style={{ textAlign: 'right' }}>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleViewHistory(enr)}
-                          >
-                            <History size={16} />
-                            History
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                          {/* Status */}
+                          <TableCell className="enr-col-status">
+                            <Badge variant="success" size="sm">
+                              {enr.status}
+                            </Badge>
+                          </TableCell>
+
+                          {/* Actions */}
+                          <TableCell className="enr-col-action" style={{ textAlign: 'right' }}>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              icon={History}
+                              onClick={() => handleViewHistory(enr)}
+                              title="View Enrollment History"
+                            >
+                              History
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
-              </Table>
+              </table>
             </div>
           </CardBody>
         </Card>
@@ -664,17 +615,17 @@ export function EnrollmentView({ onNavigate }) {
 
               {/* Table */}
               <div className="table-container mobile-table-to-cards">
-                <Table>
+                <table className="table not-enrolled-table">
                   <TableHead>
                     <TableRow>
-                      <TableHeader>Child Name</TableHeader>
-                      <TableHeader>ECCD ID</TableHeader>
-                      <TableHeader>Age &amp; Sex</TableHeader>
-                      <TableHeader>Barangay &amp; Purok</TableHeader>
-                      <TableHeader>Mapping Date</TableHeader>
-                      <TableHeader>Priority Target</TableHeader>
-                      <TableHeader>Nearest Center</TableHeader>
-                      <TableHeader style={{ textAlign: 'right' }}>Action</TableHeader>
+                      <TableHeader className="notenr-col-child">Child Name</TableHeader>
+                      <TableHeader className="notenr-col-id">ECCD ID</TableHeader>
+                      <TableHeader className="notenr-col-age">Age &amp; Sex</TableHeader>
+                      <TableHeader className="notenr-col-brgy">Barangay &amp; Purok</TableHeader>
+                      <TableHeader className="notenr-col-date">Mapping Date</TableHeader>
+                      <TableHeader className="notenr-col-priority">Priority Target</TableHeader>
+                      <TableHeader className="notenr-col-center">Nearest Center</TableHeader>
+                      <TableHeader className="notenr-col-action" style={{ textAlign: 'right' }}>Action</TableHeader>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -688,68 +639,126 @@ export function EnrollmentView({ onNavigate }) {
                       notEnrolledChildren.map((child) => {
                         const priority = child?.priorityTarget || (child?.ageYears >= 4 ? '4-Year-Old Priority' : 'Age 3 Target');
                         const isPriority = priority.includes('4-Year-Old');
+                        const initials = getInitials(child.childName);
+                        const formattedName = formatChildName(child.childName);
+                        const guardianDisplay = child.parentGuardian
+                          ? `Guardian: ${child.parentGuardian}${child.contactNumber ? ` (${child.contactNumber})` : ''}`
+                          : null;
 
                         return (
                           <TableRow key={child.childId}>
-                            <TableCell>
-                              <strong>{child.childName}</strong>
-                              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-                                Guardian: {child.parentGuardian} ({child.contactNumber})
+                            {/* Child with Avatar */}
+                            <TableCell className="notenr-col-child">
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                                <div style={{
+                                  width: '2.25rem',
+                                  height: '2.25rem',
+                                  borderRadius: 'var(--radius-full)',
+                                  backgroundColor: 'var(--color-primary-100)',
+                                  color: 'var(--color-primary-900)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontWeight: '700',
+                                  fontSize: 'var(--font-size-xs)',
+                                  flexShrink: 0
+                                }}>
+                                  {initials}
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                                    {formattedName}
+                                  </div>
+                                  {guardianDisplay && (
+                                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                                      {guardianDisplay}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </TableCell>
 
-                            <TableCell>
-                              <code style={{ fontSize: 'var(--font-size-xs)', backgroundColor: 'var(--color-warning-bg)', padding: '2px 6px', borderRadius: 'var(--radius-sm)' }}>
+                            {/* ECCD ID */}
+                            <TableCell className="notenr-col-id">
+                              <code style={{
+                                fontSize: 'var(--font-size-xs)',
+                                backgroundColor: 'var(--color-neutral-100)',
+                                color: 'var(--color-primary-900)',
+                                padding: '3px 8px',
+                                borderRadius: 'var(--radius-sm)',
+                                fontWeight: 600,
+                                letterSpacing: '0.02em',
+                                whiteSpace: 'nowrap'
+                              }}>
                                 {child.childId}
                               </code>
                             </TableCell>
 
-                            <TableCell>{child.ageDisplay} • {child.sex}</TableCell>
-
-                            <TableCell>
-                              <div>{child.barangay}</div>
-                              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>{child.purok}</div>
+                            {/* Age & Sex */}
+                            <TableCell className="notenr-col-age">
+                              <span style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
+                                {[child.ageDisplay, child.sex].filter(Boolean).filter((v) => v !== '—').join(' • ') || '—'}
+                              </span>
                             </TableCell>
 
-                            <TableCell style={{ fontSize: 'var(--font-size-xs)' }}>
-                              {child.mappedDate || child.mappingDate || getPhilippinesDate()}
+                            {/* Barangay & Purok */}
+                            <TableCell className="notenr-col-brgy">
+                              <div style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{child.barangay}</div>
+                              {child.purok && (
+                                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                                  {child.purok}
+                                </div>
+                              )}
                             </TableCell>
 
-                            <TableCell>
+                            {/* Mapping Date */}
+                            <TableCell className="notenr-col-date">
+                              <span style={{ fontSize: 'var(--font-size-sm)', whiteSpace: 'nowrap', fontWeight: 500 }}>
+                                {child.mappedDate || child.mappingDate || getPhilippinesDate()}
+                              </span>
+                            </TableCell>
+
+                            {/* Priority Target */}
+                            <TableCell className="notenr-col-priority">
                               <Badge variant={isPriority ? 'danger' : 'warning'} size="sm">
                                 {priority}
                               </Badge>
                             </TableCell>
 
-                            <TableCell>
-                              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '500' }}>{child.nearestCenter || 'San Isidro Child Development Center I'}</span>
-                              <div style={{ fontSize: '11px', color: 'var(--color-success-primary)' }}>
+                            {/* Nearest Center */}
+                            <TableCell className="notenr-col-center">
+                              <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--text-primary)' }}>
+                                {child.nearestCenter || 'San Isidro Child Development Center I'}
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--color-success-primary)', fontWeight: 600, marginTop: '2px' }}>
                                 {child.availableSlots ?? 12} open slots
                               </div>
                             </TableCell>
 
-                          <TableCell style={{ textAlign: 'right' }}>
-                            {!isFieldWorker ? (
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleInitiateEnrollment(child)}
-                              >
-                                <Plus size={16} />
-                                Enroll
-                              </Button>
-                            ) : (
-                              <span style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                <Lock size={14} /> CDW Only
-                              </span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
+                            {/* Actions */}
+                            <TableCell className="notenr-col-action" style={{ textAlign: 'right' }}>
+                              {!isFieldWorker ? (
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  icon={Plus}
+                                  onClick={() => handleInitiateEnrollment(child)}
+                                  title="Enroll in Child Development Center"
+                                >
+                                  Enroll
+                                </Button>
+                              ) : (
+                                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <Lock size={14} /> CDW Only
+                                </span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
                   </TableBody>
-                </Table>
+                </table>
               </div>
             </CardBody>
           </Card>
@@ -820,7 +829,12 @@ export function EnrollmentView({ onNavigate }) {
                         <Badge variant="warning" size="sm">Mapped (Not Enrolled)</Badge>
                       </div>
                       <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                        Age: {c.ageDisplay} • {c.sex} • Barangay: {c.barangay} • Guardian: {c.parentGuardian}
+                        {[
+                          c.ageDisplay && `Age: ${c.ageDisplay}`,
+                          c.sex,
+                          c.barangay && `Barangay: ${c.barangay}`,
+                          c.parentGuardian && `Guardian: ${c.parentGuardian}`,
+                        ].filter(Boolean).join(' • ')}
                       </div>
                     </div>
 

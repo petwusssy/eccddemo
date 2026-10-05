@@ -34,6 +34,17 @@ export function Modal({
 
   if (!isOpen) return null;
 
+  const sizeClasses = {
+    sm: 'modal-sm',
+    md: 'modal-md',
+    lg: 'modal-lg',
+    xl: 'modal-xl',
+    '2xl': 'modal-2xl',
+    full: 'modal-full',
+  };
+  const sizeClass = sizeClasses[size] || (size ? `modal-${size}` : 'modal-md');
+  const hasHeader = Boolean(title || subtitle);
+
   return (
     <div
       className="modal-backdrop"
@@ -42,25 +53,38 @@ export function Modal({
       }}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="modal-title"
+      aria-labelledby={hasHeader ? 'modal-title' : undefined}
     >
-      <div className={`modal-container ${size === 'lg' ? 'modal-lg' : ''} ${className}`}>
-        <div className="modal-header">
-          <div>
-            <h3 id="modal-title" className="modal-title">
-              {title}
-            </h3>
-            {subtitle && <p className="card-subtitle">{subtitle}</p>}
+      <div className={`modal-container ${sizeClass} ${className}`}>
+        {hasHeader ? (
+          <div className="modal-header">
+            <div>
+              {title && (
+                <h3 id="modal-title" className="modal-title">
+                  {title}
+                </h3>
+              )}
+              {subtitle && <p className="card-subtitle">{subtitle}</p>}
+            </div>
+            <button
+              type="button"
+              className="btn-ghost btn-sm btn-icon-only modal-close"
+              onClick={onClose}
+              aria-label="Close dialog"
+            >
+              <X size={18} />
+            </button>
           </div>
+        ) : (
           <button
             type="button"
-            className="btn-ghost btn-sm btn-icon-only"
+            className="modal-floating-close"
             onClick={onClose}
             aria-label="Close dialog"
           >
             <X size={18} />
           </button>
-        </div>
+        )}
 
         <div className="modal-body">{children}</div>
 

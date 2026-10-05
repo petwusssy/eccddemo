@@ -27,9 +27,50 @@ import {
 import { developmentService } from '../../services/developmentService';
 import { barangaysList, dayCareCentersList } from '../../data/mockData';
 import Button from '../ui/Button';
+import { Badge } from '../ui/Badge';
+import { TableHead, TableBody, TableRow, TableHeader, TableCell } from '../ui/Table';
 import { OfficialEccdChecklistModal } from '../forms/OfficialEccdChecklistModal';
 import { EccdManualReferenceModal } from '../forms/EccdManualReferenceModal';
 import { getPhilippinesDate } from '../../utils/phTime';
+
+const formatChildName = (name) => {
+  if (!name) return '—';
+  if (name === name.toUpperCase() && name.length > 2) {
+    return name
+      .toLowerCase()
+      .split(' ')
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+  return name;
+};
+
+const getInitials = (fullName, firstName, lastName) => {
+  if (firstName && lastName) {
+    return `${firstName[0] || ''}${lastName[0] || ''}`.toUpperCase();
+  }
+  if (!fullName) return 'C';
+  const parts = fullName.trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+  return parts[0]?.[0]?.toUpperCase() || 'C';
+};
+
+const getDevBadgeVariant = (status) => {
+  if (status === 'Assessment Completed') return 'success';
+  if (status === 'Follow-up Required') return 'warning';
+  if (status === 'Assessment Pending') return 'neutral';
+  return 'neutral';
+};
+
+const getDevBadgeIcon = (status) => {
+  if (status === 'Assessment Completed') return CheckCircle2;
+  if (status === 'Follow-up Required') return AlertTriangle;
+  if (status === 'Assessment Pending') return Clock;
+  return null;
+};
 
 export function DevelopmentView({ onNavigate }) {
   // Navigation tabs
@@ -220,14 +261,11 @@ export function DevelopmentView({ onNavigate }) {
   return (
     <div className="dev-module-container">
       {/* Page Header */}
-      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
         <div>
           <h1 className="text-h1" style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
             ECCD Developmental Assessment
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', margin: 'var(--space-1) 0 0 0' }}>
-            National ECCD Council 7-Domain Checklist administration and domain scoring
-          </p>
         </div>
         <Button
           variant="outline"
@@ -245,147 +283,74 @@ export function DevelopmentView({ onNavigate }) {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: 'var(--space-3)',
-          marginBottom: 'var(--space-4)',
+          marginBottom: 'var(--space-3)',
         }}
       >
         <div
+          className={`bento-stat-card card-success ${statusFilter === 'assessment completed' ? 'is-active' : ''}`}
           onClick={() =>
             setStatusFilter(statusFilter === 'assessment completed' ? 'all' : 'assessment completed')
           }
-          style={{
-            background: statusFilter === 'assessment completed' ? 'var(--color-success-50)' : 'var(--surface-primary)',
-            border: statusFilter === 'assessment completed' ? '1.5px solid var(--color-success-500)' : '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-xs)',
-            cursor: 'pointer',
-          }}
           title="Filter completed assessments"
         >
           <div>
             <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Completed Assessments
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-success-600)', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-success-600)', marginTop: '2px' }}>
               {cohortData.counts.completedAssessments}
             </div>
           </div>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-success-50)',
-              color: 'var(--color-success-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="stat-icon-wrap">
             <CheckCircle2 size={18} />
           </div>
         </div>
 
         <div
+          className={`bento-stat-card card-warning ${statusFilter === 'assessment pending' ? 'is-active' : ''}`}
           onClick={() =>
             setStatusFilter(statusFilter === 'assessment pending' ? 'all' : 'assessment pending')
           }
-          style={{
-            background: statusFilter === 'assessment pending' ? 'var(--color-warning-50)' : 'var(--surface-primary)',
-            border: statusFilter === 'assessment pending' ? '1.5px solid var(--color-warning-500)' : '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-xs)',
-            cursor: 'pointer',
-          }}
           title="Filter pending assessments"
         >
           <div>
             <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Pending Assessments
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-warning-600)', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-warning-600)', marginTop: '2px' }}>
               {cohortData.counts.pendingAssessments}
             </div>
           </div>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-warning-50)',
-              color: 'var(--color-warning-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="stat-icon-wrap">
             <Clock size={18} />
           </div>
         </div>
 
         <div
+          className={`bento-stat-card card-danger ${statusFilter === 'follow-up required' ? 'is-active' : ''}`}
           onClick={() =>
             setStatusFilter(statusFilter === 'follow-up required' ? 'all' : 'follow-up required')
           }
-          style={{
-            background: statusFilter === 'follow-up required' ? '#fef2f2' : 'var(--surface-primary)',
-            border: statusFilter === 'follow-up required' ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-xs)',
-            cursor: 'pointer',
-          }}
           title="Filter assessments flagged for follow-up"
         >
           <div>
             <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Follow-ups Needed
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#dc2626', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#dc2626', marginTop: '2px' }}>
               {cohortData.counts.followUps}
             </div>
           </div>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              background: 'rgba(239, 68, 68, 0.1)',
-              color: '#dc2626',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="stat-icon-wrap">
             <AlertTriangle size={18} />
           </div>
         </div>
 
         <div
+          className="bento-stat-card card-primary"
           onClick={() => {
             setStatusFilter('all');
             setSearchQuery('');
-          }}
-          style={{
-            background: 'var(--surface-primary)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-xs)',
-            cursor: 'pointer',
           }}
           title="Total due assessments in current cycle"
         >
@@ -393,22 +358,11 @@ export function DevelopmentView({ onNavigate }) {
             <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Due Baseline Rate
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-primary-600)', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-primary-800)', marginTop: '2px' }}>
               {cohortData.counts.dueAssessments}
             </div>
           </div>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-primary-50)',
-              color: 'var(--color-primary-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="stat-icon-wrap">
             <CalendarClock size={18} />
           </div>
         </div>
@@ -522,124 +476,178 @@ export function DevelopmentView({ onNavigate }) {
           </div>
 
           {/* Cohort Table */}
-          <div className="health-table-card mobile-table-to-cards">
-            <table className="health-table">
-              <thead>
-                <tr>
-                  <th>Child</th>
-                  <th>ECCD ID</th>
-                  <th>Barangay</th>
-                  <th>Day Care Center</th>
-                  <th>Cycle</th>
-                  <th>Last Assessment</th>
-                  <th>Development Status</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="table-container mobile-table-to-cards">
+            <table className="table dev-registry-table">
+              <TableHead>
+                <TableRow>
+                  <TableHeader className="dev-col-child">Child</TableHeader>
+                  <TableHeader className="dev-col-id">ECCD ID</TableHeader>
+                  <TableHeader className="dev-col-brgy">Barangay</TableHeader>
+                  <TableHeader className="dev-col-center">Day Care Center</TableHeader>
+                  <TableHeader className="dev-col-cycle">Cycle</TableHeader>
+                  <TableHeader className="dev-col-last">Last Assessment</TableHeader>
+                  <TableHeader className="dev-col-status">Development Status</TableHeader>
+                  <TableHeader className="dev-col-actions" style={{ textAlign: 'right' }}>Actions</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem' }}>
-                      <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 0.5rem' }} />
-                      <p style={{ color: '#64748b', margin: 0 }}>Loading development cohort...</p>
-                    </td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={8} style={{ textAlign: 'center', padding: '2.5rem' }}>
+                      <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 0.5rem', color: 'var(--color-primary-800)' }} />
+                      <p style={{ color: 'var(--text-muted)', margin: 0 }}>Loading development cohort...</p>
+                    </TableCell>
+                  </TableRow>
                 ) : cohortData.children.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem' }}>
-                      <p style={{ color: '#64748b', fontSize: '0.9375rem', margin: 0 }}>
+                  <TableRow>
+                    <TableCell colSpan={8} style={{ textAlign: 'center', padding: '2.5rem' }}>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem', margin: 0 }}>
                         No children match the selected assessment filters.
                       </p>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   cohortData.children.map((child) => {
-                    const badgeClass =
-                      child.status === 'Assessment Completed'
-                        ? 'completed'
-                        : child.status === 'Follow-up Required'
-                        ? 'followup'
-                        : 'pending';
+                    const initials = getInitials(child.fullName, child.firstName, child.lastName);
+                    const formattedName = formatChildName(child.fullName);
 
                     return (
-                      <tr key={child.childId}>
-                        <td>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontWeight: 600, color: '#0f172a' }}>{child.fullName}</span>
-                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                              {child.ageDisplay} • {child.sex}
-                            </span>
+                      <TableRow key={child.childId}>
+                        {/* Child Name & Avatar */}
+                        <TableCell className="dev-col-child">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                            <div style={{
+                              width: '2.25rem',
+                              height: '2.25rem',
+                              borderRadius: 'var(--radius-full)',
+                              backgroundColor: 'var(--color-primary-100)',
+                              color: 'var(--color-primary-900)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: '700',
+                              fontSize: 'var(--font-size-xs)',
+                              flexShrink: 0
+                            }}>
+                              {initials}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                                {formattedName}
+                              </div>
+                              {[child.ageDisplay, child.sex].filter(Boolean).filter((v) => v !== '—').length > 0 && (
+                                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                                  {[child.ageDisplay, child.sex].filter(Boolean).filter((v) => v !== '—').join(' • ')}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </td>
-                        <td>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0f2744' }}>
+                        </TableCell>
+
+                        {/* ECCD ID */}
+                        <TableCell className="dev-col-id">
+                          <code style={{
+                            fontSize: 'var(--font-size-xs)',
+                            backgroundColor: 'var(--color-neutral-100)',
+                            color: 'var(--color-primary-900)',
+                            padding: '3px 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            fontWeight: 600,
+                            letterSpacing: '0.02em',
+                            whiteSpace: 'nowrap'
+                          }}>
                             {child.childId}
+                          </code>
+                        </TableCell>
+
+                        {/* Barangay */}
+                        <TableCell className="dev-col-brgy">
+                          <span style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{child.barangay}</span>
+                        </TableCell>
+
+                        {/* Day Care Center */}
+                        <TableCell className="dev-col-center">
+                          <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
+                            {child.dayCareCenter}
                           </span>
-                        </td>
-                        <td>{child.barangay}</td>
-                        <td>
-                          <span style={{ fontSize: '0.8125rem' }}>{child.dayCareCenter}</span>
-                        </td>
-                        <td>
-                          <span style={{ fontSize: '0.8125rem', color: '#475569' }}>
+                        </TableCell>
+
+                        {/* Cycle */}
+                        <TableCell className="dev-col-cycle">
+                          <span style={{
+                            fontSize: 'var(--font-size-xs)',
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: 'var(--color-neutral-100)',
+                            color: 'var(--text-secondary)',
+                            whiteSpace: 'nowrap'
+                          }}>
                             {child.cycle || 'Cycle 1'}
                           </span>
-                        </td>
-                        <td>
+                        </TableCell>
+
+                        {/* Last Assessment */}
+                        <TableCell className="dev-col-last">
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontWeight: 500 }}>
+                            <span style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
                               {child.lastAssessmentDate || 'None administered'}
                             </span>
                             {child.assessor && (
-                              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                                 By {child.assessor}
                               </span>
                             )}
                           </div>
-                        </td>
-                        <td>
-                          <span className={`dev-status-badge ${badgeClass}`}>
-                            {child.status === 'Assessment Completed' && <CheckCircle2 size={12} />}
-                            {child.status === 'Assessment Pending' && <Clock size={12} />}
-                            {child.status === 'Follow-up Required' && <AlertTriangle size={12} />}
+                        </TableCell>
+
+                        {/* Development Status */}
+                        <TableCell className="dev-col-status">
+                          <Badge
+                            variant={getDevBadgeVariant(child.status)}
+                            icon={getDevBadgeIcon(child.status)}
+                            dot={!getDevBadgeIcon(child.status)}
+                            size="sm"
+                          >
                             {child.status}
-                          </span>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.375rem' }}>
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-sm"
-                              style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="dev-col-actions" style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', justifyContent: 'flex-end', gap: 'var(--space-2)', whiteSpace: 'nowrap' }}>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              icon={FileText}
                               onClick={() => {
                                 setViewHistoryModal(child);
                                 loadChildDetails(child.childId);
                               }}
                               title="View Assessment History"
                             >
-                              <FileText size={16} style={{ marginRight: '0.25rem' }} />
                               History
-                            </button>
+                            </Button>
 
-                            <button
-                              type="button"
-                              className="btn btn-primary btn-sm"
-                              style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              icon={CheckSquare}
                               onClick={() => {
                                 setChecklistChildId(child.childId);
                                 setIsChecklistModalOpen(true);
                               }}
+                              title="Conduct ECCD Checklist"
                             >
-                              <CheckSquare size={16} style={{ marginRight: '0.25rem' }} />
                               Checklist
-                            </button>
+                            </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })
                 )}
-              </tbody>
+              </TableBody>
             </table>
           </div>
         </div>
@@ -739,7 +747,7 @@ export function DevelopmentView({ onNavigate }) {
           <div className="dev-integration-box">
             <div className="dev-integration-header">
               <div className="dev-integration-title">
-                <ShieldCheck size={18} style={{ color: '#0f2744' }} />
+                <ShieldCheck size={18} style={{ color: '#7e191b' }} />
                 <span>OFFICIAL ECCD CHECKLIST ASSESSMENTS</span>
               </div>
               <span
@@ -759,10 +767,10 @@ export function DevelopmentView({ onNavigate }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
               <div className="dev-placeholder-card" style={{ background: '#f8fafc', borderColor: '#cbd5e1' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontWeight: 800, color: '#0f2744', fontSize: '13px' }}>
+                  <span style={{ fontWeight: 800, color: '#7e191b', fontSize: '13px' }}>
                     Child's Record 1 (Form 2)
                   </span>
-                  <span style={{ fontSize: '11px', color: '#0369a1', background: '#e0f2fe', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                  <span style={{ fontSize: '11px', color: '#ba1607', background: '#fdf2f2', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
                     Ages 0 to 3.0 yrs
                   </span>
                 </div>
@@ -784,7 +792,7 @@ export function DevelopmentView({ onNavigate }) {
 
               <div className="dev-placeholder-card" style={{ background: '#f8fafc', borderColor: '#cbd5e1' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontWeight: 800, color: '#0f2744', fontSize: '13px' }}>
+                  <span style={{ fontWeight: 800, color: '#7e191b', fontSize: '13px' }}>
                     Child's Record 2 (Form 2)
                   </span>
                   <span style={{ fontSize: '11px', color: '#166534', background: '#dcfce7', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
@@ -815,14 +823,14 @@ export function DevelopmentView({ onNavigate }) {
           <div className="dev-scoring-box">
             <div className="dev-scoring-header">
               <div className="dev-scoring-title">
-                <TrendingUp size={18} style={{ color: '#0284c7' }} />
+                <TrendingUp size={18} style={{ color: '#ba1607' }} />
                 <span>OFFICIAL ECCD COUNCIL SCORING MATRIX</span>
               </div>
               <span
                 style={{
                   fontSize: '0.75rem',
                   fontWeight: 600,
-                  color: '#0369a1',
+                  color: '#ba1607',
                   background: '#e0f2fe',
                   padding: '0.25rem 0.625rem',
                   borderRadius: '4px',
@@ -1088,7 +1096,7 @@ export function DevelopmentView({ onNavigate }) {
                               background: '#f1f5f9',
                               padding: '0.2rem 0.5rem',
                               borderRadius: '4px',
-                              color: '#0369a1',
+                              color: '#ba1607',
                             }}
                           >
                             Placeholder Attached
@@ -1109,10 +1117,10 @@ export function DevelopmentView({ onNavigate }) {
           ========================================================================= */}
       {quickAssessChild && (
         <div className="modal-backdrop" onClick={() => setQuickAssessChild(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '540px' }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CheckSquare size={20} style={{ color: '#0f2744' }} />
+                <CheckSquare size={20} style={{ color: '#7e191b' }} />
                 <h3 className="modal-title">Administer ECCD Assessment</h3>
               </div>
               <button
@@ -1233,11 +1241,11 @@ export function DevelopmentView({ onNavigate }) {
           <div
             className="modal-content"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '720px', maxHeight: '90vh', overflowY: 'auto' }}
+            style={{ maxWidth: '920px', width: '92vw' }}
           >
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FileText size={20} style={{ color: '#0f2744' }} />
+                <FileText size={20} style={{ color: '#7e191b' }} />
                 <div>
                   <h3 className="modal-title" style={{ margin: 0 }}>
                     Assessment Record: {viewHistoryModal.fullName}

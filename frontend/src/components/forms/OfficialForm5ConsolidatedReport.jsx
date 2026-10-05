@@ -250,7 +250,7 @@ export function OfficialForm5ConsolidatedReport() {
         </div>
 
         {/* Legal Notice */}
-        <div style={{ background: '#f8fafc', borderLeft: '4px solid #0284c7', padding: '10px 14px', fontSize: '11px', color: '#334155', marginBottom: '20px', borderRadius: '4px' }}>
+        <div style={{ background: 'var(--bg-subtle, #f8f2f2)', borderLeft: '4px solid #7e191b', padding: '10px 14px', fontSize: '11px', color: '#334155', marginBottom: '20px', borderRadius: '4px' }}>
           <strong>Consolidated Single-Source Intake:</strong> This profile aggregates live demographic, anthropometric, health, and logistical data directly from verified Form 2 Child Profiles without manual re-entry.
         </div>
 
@@ -482,7 +482,7 @@ export function OfficialForm5ConsolidatedReport() {
                   <td style={{ padding: '6px 10px' }}>{r.label}</td>
                   <td style={{ textAlign: 'center', padding: '6px 10px' }}>{r.count}</td>
                   <td style={{ textAlign: 'center', padding: '6px 10px' }}>{r.sum}</td>
-                  <td style={{ textAlign: 'center', padding: '6px 10px', fontWeight: 'bold', color: '#0284c7' }}>{r.avg} cm</td>
+                  <td style={{ textAlign: 'center', padding: '6px 10px', fontWeight: 'bold', color: '#7e191b' }}>{r.avg} cm</td>
                 </tr>
               ))}
             </tbody>
@@ -509,7 +509,7 @@ export function OfficialForm5ConsolidatedReport() {
                   <td style={{ padding: '6px 10px' }}>{r.label}</td>
                   <td style={{ textAlign: 'center', padding: '6px 10px' }}>{r.count}</td>
                   <td style={{ textAlign: 'center', padding: '6px 10px' }}>{r.sum}</td>
-                  <td style={{ textAlign: 'center', padding: '6px 10px', fontWeight: 'bold', color: '#0284c7' }}>{r.avg} kg</td>
+                  <td style={{ textAlign: 'center', padding: '6px 10px', fontWeight: 'bold', color: '#7e191b' }}>{r.avg} kg</td>
                 </tr>
               ))}
             </tbody>
@@ -904,7 +904,7 @@ export function OfficialForm5ConsolidatedReport() {
               {consolidation.foodsNormallyEaten.map((f, i) => (
                 <div key={i} style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
                   <span>{f.label}</span>
-                  <strong style={{ color: '#0284c7' }}>{f.count}</strong>
+                  <strong style={{ color: '#7e191b' }}>{f.count}</strong>
                 </div>
               ))}
             </div>

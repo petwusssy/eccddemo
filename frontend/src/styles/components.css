@@ -124,14 +124,23 @@ body {
 
 /* Button Variants */
 .btn-primary {
-  background-color: var(--color-primary-800);
+  background: linear-gradient(135deg, #7e191b 0%, #941517 100%);
   color: var(--text-inverse);
-  border-color: var(--color-primary-850);
+  border: 1px solid #6b1416;
+  box-shadow: 0 1px 3px rgba(126, 25, 27, 0.25);
+  transition: all var(--transition-fast);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--color-primary-900);
-  border-color: var(--color-primary-950);
+  background: linear-gradient(135deg, #941517 0%, #ba1607 100%);
+  border-color: #7e191b;
+  box-shadow: 0 4px 12px rgba(186, 22, 7, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: #7e191b;
+  transform: translateY(0);
 }
 
 .btn-secondary {
@@ -147,25 +156,30 @@ body {
 }
 
 .btn-accent {
-  background-color: var(--color-accent-600);
+  background: linear-gradient(135deg, #ba1607 0%, #ff2800 100%);
   color: var(--text-inverse);
-  border-color: var(--color-accent-700);
+  border: 1px solid #ba1607;
+  box-shadow: 0 2px 8px rgba(255, 40, 0, 0.3);
+  transition: all var(--transition-fast);
 }
 
 .btn-accent:hover:not(:disabled) {
-  background-color: var(--color-accent-700);
-  border-color: var(--color-accent-800);
+  background: linear-gradient(135deg, #d61e06 0%, #ff471a 100%);
+  border-color: #ba1607;
+  box-shadow: 0 4px 14px rgba(255, 40, 0, 0.45);
+  transform: translateY(-1px);
 }
 
 .btn-outline {
   background-color: transparent;
-  color: var(--color-primary-800);
-  border-color: var(--color-primary-700);
+  color: #7e191b;
+  border-color: #ba1607;
 }
 
 .btn-outline:hover:not(:disabled) {
   background-color: var(--color-primary-50);
-  color: var(--color-primary-900);
+  color: #ba1607;
+  border-color: #7e191b;
 }
 
 .btn-ghost {
@@ -319,8 +333,8 @@ body {
 
 .input:focus {
   outline: none;
-  border-color: var(--color-primary-700);
-  box-shadow: 0 0 0 3px rgba(26, 66, 119, 0.15);
+  border-color: #ba1607;
+  box-shadow: 0 0 0 3px rgba(186, 22, 7, 0.18);
 }
 
 .input::placeholder {
@@ -372,8 +386,8 @@ body {
 
 .select:focus {
   outline: none;
-  border-color: var(--color-primary-700);
-  box-shadow: 0 0 0 3px rgba(26, 66, 119, 0.15);
+  border-color: #ba1607;
+  box-shadow: 0 0 0 3px rgba(186, 22, 7, 0.18);
 }
 
 .select:disabled {
@@ -399,8 +413,8 @@ body {
 
 .textarea:focus {
   outline: none;
-  border-color: var(--color-primary-700);
-  box-shadow: 0 0 0 3px rgba(26, 66, 119, 0.15);
+  border-color: #ba1607;
+  box-shadow: 0 0 0 3px rgba(186, 22, 7, 0.18);
 }
 
 /* Checkbox & Radio */
@@ -808,6 +822,25 @@ input[type="checkbox"]:focus-visible + .switch-track {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background-color: var(--bg-surface);
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: var(--bg-subtle, #f8fafc);
+  border-radius: var(--radius-full);
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: var(--radius-full);
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .table {
@@ -815,6 +848,11 @@ input[type="checkbox"]:focus-visible + .switch-track {
   border-collapse: collapse;
   text-align: left;
   font-size: var(--font-size-sm);
+}
+
+.table td code,
+.table th code {
+  white-space: nowrap;
 }
 
 .table thead {
@@ -945,21 +983,93 @@ input[type="checkbox"]:focus-visible + .switch-track {
   animation: fadeIn 150ms ease-out;
 }
 
-.modal-container {
+.modal-container,
+.modal-content {
   background-color: var(--bg-surface);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl, 14px);
   border: 1px solid var(--border-default);
   box-shadow: var(--shadow-modal);
   width: 100%;
-  max-width: 540px;
-  max-height: 90vh;
+  max-width: 640px;
+  max-height: calc(100vh - 3rem);
   display: flex;
   flex-direction: column;
+  position: relative;
   animation: modalSlideIn 150ms ease-out;
 }
 
+.modal-container.modal-sm {
+  max-width: 440px;
+}
+
+.modal-container.modal-md {
+  max-width: 640px;
+}
+
 .modal-container.modal-lg {
-  max-width: 760px;
+  max-width: 880px;
+  width: 92vw;
+}
+
+.modal-container.modal-xl {
+  max-width: 1180px;
+  width: 95vw;
+}
+
+.modal-container.modal-2xl {
+  max-width: 1380px;
+  width: 96vw;
+}
+
+.modal-container.modal-full {
+  max-width: calc(100vw - 2.5rem);
+  width: calc(100vw - 2.5rem);
+  height: calc(100vh - 2.5rem);
+  max-height: calc(100vh - 2.5rem);
+}
+
+.modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-close:hover {
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.modal-floating-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-default, #cbd5e1);
+  background-color: var(--bg-surface, #ffffff);
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease;
+}
+
+.modal-floating-close:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+  transform: scale(1.08);
 }
 
 .modal-header {
@@ -981,6 +1091,8 @@ input[type="checkbox"]:focus-visible + .switch-track {
   padding: var(--space-5);
   overflow-y: auto;
   line-height: var(--line-height-normal);
+  flex: 1;
+  min-height: 0;
 }
 
 .modal-footer {
@@ -1305,3 +1417,155 @@ input[type="checkbox"]:focus-visible + .switch-track {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ==========================================================================
+   ECCD CARE — Dynamic Metric & Bento Stat Cards (Rich Aesthetics & Alive Feel)
+   ========================================================================== */
+
+.bento-stat-card {
+  position: relative;
+  background: linear-gradient(145deg, #ffffff 0%, #faf8f8 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: 0 2px 8px -2px rgba(30, 17, 18, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s ease,
+              border-color 0.22s ease;
+  cursor: pointer;
+}
+
+.bento-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-primary-800);
+  opacity: 0.9;
+  transition: height 0.2s ease, opacity 0.2s ease;
+}
+
+.bento-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -4px rgba(30, 17, 18, 0.09), 0 4px 8px -2px rgba(0, 0, 0, 0.03);
+}
+
+.bento-stat-card:hover::before {
+  height: 4px;
+  opacity: 1;
+}
+
+.bento-stat-card:hover .stat-icon-wrap {
+  transform: scale(1.08);
+}
+
+.stat-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Variant: Primary (Cohort, Master, General) */
+.bento-stat-card.card-primary {
+  background: linear-gradient(145deg, #ffffff 0%, #fff7f7 100%);
+  border-color: #ffd8d6;
+}
+.bento-stat-card.card-primary::before {
+  background: linear-gradient(90deg, #7e191b, #ba1607);
+}
+.bento-stat-card.card-primary:hover {
+  border-color: #fca5a5;
+  box-shadow: 0 12px 24px -4px rgba(126, 25, 27, 0.14);
+}
+.bento-stat-card.card-primary .stat-icon-wrap {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecdd3 100%);
+  color: #7e191b;
+}
+
+/* Variant: Success (Enrolled, Completed, Up to Date) */
+.bento-stat-card.card-success {
+  background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
+  border-color: #bbf7d0;
+}
+.bento-stat-card.card-success::before {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+.bento-stat-card.card-success:hover {
+  border-color: #86efac;
+  box-shadow: 0 12px 24px -4px rgba(22, 101, 52, 0.14);
+}
+.bento-stat-card.card-success .stat-icon-wrap {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #15803d;
+}
+
+/* Variant: Warning (Due, Pending, Queue) */
+.bento-stat-card.card-warning {
+  background: linear-gradient(145deg, #ffffff 0%, #fffbeb 100%);
+  border-color: #fde68a;
+}
+.bento-stat-card.card-warning::before {
+  background: linear-gradient(90deg, #d97706, #f59e0b);
+}
+.bento-stat-card.card-warning:hover {
+  border-color: #fcd34d;
+  box-shadow: 0 12px 24px -4px rgba(180, 83, 9, 0.14);
+}
+.bento-stat-card.card-warning .stat-icon-wrap {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #b45309;
+}
+
+/* Variant: Danger (Overdue, Unenrolled Target, Active Alerts) */
+.bento-stat-card.card-danger {
+  background: linear-gradient(145deg, #ffffff 0%, #fff1f2 100%);
+  border-color: #fecdd3;
+}
+.bento-stat-card.card-danger::before {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+.bento-stat-card.card-danger:hover {
+  border-color: #fda4af;
+  box-shadow: 0 12px 24px -4px rgba(220, 38, 38, 0.14);
+}
+.bento-stat-card.card-danger .stat-icon-wrap {
+  background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
+  color: #b91c1c;
+}
+
+/* Variant: Info (Mapped, Active Rounds, Regional) */
+.bento-stat-card.card-info {
+  background: linear-gradient(145deg, #ffffff 0%, #eff6ff 100%);
+  border-color: #bfdbfe;
+}
+.bento-stat-card.card-info::before {
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+}
+.bento-stat-card.card-info:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 12px 24px -4px rgba(37, 99, 235, 0.14);
+}
+.bento-stat-card.card-info .stat-icon-wrap {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1d4ed8;
+}
+
+/* Active Filter Selection highlight */
+.bento-stat-card.is-active {
+  box-shadow: 0 0 0 2px var(--color-primary-600), 0 12px 24px -4px rgba(126, 25, 27, 0.18) !important;
+  border-color: var(--color-primary-600) !important;
+}
+

@@ -100,10 +100,6 @@ export function ReportsView({ onNavigate }) {
             <Layers size={16} />
             <span>Select Report Category ({REPORT_CATEGORIES.length})</span>
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <Database size={13} color="#0284c7" />
-            <span>Centralized Child Database • Single-Source Dynamic Compilation</span>
-          </div>
         </div>
 
         <div className="reports-category-chips">
@@ -420,7 +416,7 @@ export function ReportsView({ onNavigate }) {
 
           {/* Applied Filters Strip */}
           <div className="report-meta-filters">
-            <span style={{ fontWeight: 700, color: '#0f2744' }}>Filters Active:</span>
+            <span style={{ fontWeight: 700, color: '#7e191b' }}>Filters Active:</span>
             <span className="report-filter-pill">Year: <strong>{typeof reportData?.meta?.appliedFilters?.year === 'object' ? (reportData.meta.appliedFilters.year?.name || reportData.meta.appliedFilters.year?.id) : reportData?.meta?.appliedFilters?.year}</strong></span>
             <span className="report-filter-pill">Barangay: <strong>{typeof reportData?.meta?.appliedFilters?.barangay === 'object' ? (reportData.meta.appliedFilters.barangay?.name || reportData.meta.appliedFilters.barangay?.id) : reportData?.meta?.appliedFilters?.barangay}</strong></span>
             <span className="report-filter-pill">Center: <strong>{typeof reportData?.meta?.appliedFilters?.dayCareCenter === 'object' ? (reportData.meta.appliedFilters.dayCareCenter?.name || reportData.meta.appliedFilters.dayCareCenter?.id) : reportData?.meta?.appliedFilters?.dayCareCenter}</strong></span>

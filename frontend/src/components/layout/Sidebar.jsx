@@ -17,6 +17,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import Tooltip from '../ui/Tooltip';
+import anacLogo from '../../assets/anac-logo.png';
 
 const navigationSections = [
   {
@@ -90,18 +91,13 @@ export function Sidebar({
         {/* Sidebar Brand Header */}
         <div className="sidebar-header">
           <div className="sidebar-brand">
-            <div className="sidebar-seal" title="City Social Welfare and Development Office">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                <path d="M12 8v4" />
-                <path d="M12 16h.01" />
-              </svg>
+            <div className="sidebar-seal" title="ANÁC - City Social Welfare and Development Office">
+              <img src={anacLogo} alt="ANÁC Logo" className="sidebar-brand-logo" />
             </div>
 
             {!isCollapsed && (
               <div className="sidebar-title-group">
-                <span className="sidebar-title">ECCD CARE</span>
-                <span className="sidebar-subtitle">CSWDO System</span>
+                <span className="sidebar-title">ANÁC</span>
               </div>
             )}
           </div>

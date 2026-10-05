@@ -36,6 +36,8 @@ export const developmentService = {
       return {
         childId: c.id,
         fullName: c.fullName || `${c.firstName || ''} ${c.lastName || ''}`.trim(),
+        firstName: c.firstName,
+        lastName: c.lastName,
         sex: c.sex || 'Female',
         ageDisplay: c.ageDisplay || `${c.ageYears || 3} yrs`,
         barangay: c.barangay || 'San Isidro',

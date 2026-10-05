@@ -10,7 +10,7 @@
   padding: var(--space-4) var(--space-6);
   color: var(--color-white);
   box-shadow: var(--shadow-md);
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
   border: 1px solid var(--color-primary-800);
 }
 
@@ -110,21 +110,106 @@
 }
 
 .kpi-card {
-  background-color: var(--bg-surface);
+  position: relative;
+  background: linear-gradient(145deg, #ffffff 0%, #faf8f8 100%);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 2px 8px -2px rgba(30, 17, 18, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: all var(--transition-fast);
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s ease,
+              border-color 0.22s ease;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-primary-800);
+  opacity: 0.9;
+  transition: height 0.2s ease, opacity 0.2s ease;
 }
 
 .kpi-card:hover {
-  border-color: var(--border-default);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -4px rgba(30, 17, 18, 0.09), 0 4px 8px -2px rgba(0, 0, 0, 0.03);
+}
+
+.kpi-card:hover::before {
+  height: 4px;
+  opacity: 1;
+}
+
+.kpi-card:hover .kpi-icon-wrap {
+  transform: scale(1.08);
+}
+
+/* Specific Semantic Status Color Tints */
+.kpi-card.card-primary {
+  background: linear-gradient(145deg, #ffffff 0%, #fff5f5 100%);
+  border-color: #ffd8d6;
+}
+.kpi-card.card-primary::before {
+  background: linear-gradient(90deg, #7e191b, #ba1607);
+}
+.kpi-card.card-primary:hover {
+  border-color: #fca5a5;
+  box-shadow: 0 12px 24px -4px rgba(126, 25, 27, 0.14);
+}
+
+.kpi-card.card-success {
+  background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
+  border-color: #bbf7d0;
+}
+.kpi-card.card-success::before {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+.kpi-card.card-success:hover {
+  border-color: #86efac;
+  box-shadow: 0 12px 24px -4px rgba(22, 101, 52, 0.14);
+}
+
+.kpi-card.card-warning {
+  background: linear-gradient(145deg, #ffffff 0%, #fffbeb 100%);
+  border-color: #fde68a;
+}
+.kpi-card.card-warning::before {
+  background: linear-gradient(90deg, #d97706, #f59e0b);
+}
+.kpi-card.card-warning:hover {
+  border-color: #fcd34d;
+  box-shadow: 0 12px 24px -4px rgba(180, 83, 9, 0.14);
+}
+
+.kpi-card.card-danger {
+  background: linear-gradient(145deg, #ffffff 0%, #fff1f2 100%);
+  border-color: #fecdd3;
+}
+.kpi-card.card-danger::before {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+.kpi-card.card-danger:hover {
+  border-color: #fda4af;
+  box-shadow: 0 12px 24px -4px rgba(220, 38, 38, 0.14);
+}
+
+.kpi-card.card-info {
+  background: linear-gradient(145deg, #ffffff 0%, #eff6ff 100%);
+  border-color: #bfdbfe;
+}
+.kpi-card.card-info::before {
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+}
+.kpi-card.card-info:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 12px 24px -4px rgba(37, 99, 235, 0.14);
 }
 
 .kpi-top {
@@ -143,12 +228,15 @@
 }
 
 .kpi-icon-wrap {
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .kpi-value {
@@ -403,6 +491,58 @@
 
 .attention-row-urgent:hover {
   background-color: rgba(220, 38, 38, 0.05) !important;
+}
+
+/* Attention Table Column Formatting */
+.attention-table {
+  min-width: 1140px;
+  width: 100%;
+}
+
+.attention-table th,
+.attention-table td {
+  padding: 0.875rem 1.125rem;
+  vertical-align: middle;
+}
+
+.attention-col-child {
+  min-width: 250px;
+}
+
+.attention-col-id {
+  min-width: 145px;
+  white-space: nowrap;
+}
+
+.attention-col-brgy {
+  min-width: 135px;
+  white-space: nowrap;
+}
+
+.attention-col-issue {
+  min-width: 260px;
+  max-width: 380px;
+}
+
+.attention-col-worker {
+  min-width: 180px;
+  white-space: nowrap;
+}
+
+.attention-col-due {
+  min-width: 130px;
+  white-space: nowrap;
+}
+
+.attention-col-status {
+  min-width: 130px;
+  white-space: nowrap;
+}
+
+.attention-col-action {
+  min-width: 105px;
+  text-align: right;
+  white-space: nowrap;
 }
 
 /* Activity Feed */

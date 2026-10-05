@@ -470,9 +470,6 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
             <h1 className="page-title">Community Child Mapping</h1>
             <Badge variant="primary" size="sm">0–4 Cohort</Badge>
           </div>
-          <p className="page-subtitle">
-            Demographic profiling, deduplication &amp; early education tracking
-          </p>
         </div>
 
         {/* Sync Status Badge */}
@@ -499,44 +496,44 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
 
       {/* Community Mapping Bento Quick Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-        <div className="kpi-card" style={{ padding: 'var(--space-3) var(--space-4)' }}>
+        <div className="kpi-card card-primary" style={{ padding: 'var(--space-3) var(--space-4)' }}>
           <div className="kpi-top" style={{ marginBottom: '4px' }}>
             <span className="kpi-title">Mapped Households</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-primary-50)', color: 'var(--color-primary-800)', width: '1.75rem', height: '1.75rem' }}>
               <Home size={16} />
             </div>
           </div>
-          <div className="kpi-value" style={{ fontSize: '1.5rem', margin: 0 }}>{households.length}</div>
+          <div className="kpi-value" style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-primary-900)', margin: 0 }}>{households.length}</div>
         </div>
 
-        <div className="kpi-card" style={{ padding: 'var(--space-3) var(--space-4)' }}>
+        <div className="kpi-card card-info" style={{ padding: 'var(--space-3) var(--space-4)' }}>
           <div className="kpi-top" style={{ marginBottom: '4px' }}>
             <span className="kpi-title">Active Rounds</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-accent-50)', color: 'var(--color-accent-700)', width: '1.75rem', height: '1.75rem' }}>
               <MapPin size={16} />
             </div>
           </div>
-          <div className="kpi-value" style={{ fontSize: '1.5rem', margin: 0 }}>{activities.filter(a => a.status === 'In Progress').length || activities.length}</div>
+          <div className="kpi-value" style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-info-primary)', margin: 0 }}>{activities.filter(a => a.status === 'In Progress').length || activities.length}</div>
         </div>
 
-        <div className="kpi-card" style={{ padding: 'var(--space-3) var(--space-4)' }}>
+        <div className="kpi-card card-success" style={{ padding: 'var(--space-3) var(--space-4)' }}>
           <div className="kpi-top" style={{ marginBottom: '4px' }}>
             <span className="kpi-title">Field Workers</span>
             <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success-primary)', width: '1.75rem', height: '1.75rem' }}>
               <Users size={16} />
             </div>
           </div>
-          <div className="kpi-value" style={{ fontSize: '1.5rem', margin: 0 }}>{assignments.length}</div>
+          <div className="kpi-value" style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-success-primary)', margin: 0 }}>{assignments.length}</div>
         </div>
 
-        <div className="kpi-card" style={{ padding: 'var(--space-3) var(--space-4)' }}>
+        <div className="kpi-card card-primary" style={{ padding: 'var(--space-3) var(--space-4)' }}>
           <div className="kpi-top" style={{ marginBottom: '4px' }}>
             <span className="kpi-title">Surveyed Children</span>
-            <div className="kpi-icon-wrap" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', width: '1.75rem', height: '1.75rem' }}>
+            <div className="kpi-icon-wrap" style={{ backgroundColor: 'var(--color-primary-50)', color: 'var(--color-primary-700)', width: '1.75rem', height: '1.75rem' }}>
               <Baby size={16} />
             </div>
           </div>
-          <div className="kpi-value" style={{ fontSize: '1.5rem', margin: 0 }}>
+          <div className="kpi-value" style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-primary-800)', margin: 0 }}>
             {households.reduce((acc, h) => acc + (h.children?.length || (h.childrenAges ? h.childrenAges.length : 0) || 1), 0)}
           </div>
         </div>
@@ -654,7 +651,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
             <Card>
               <CardHeader>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <CardTitle subtitle="Household identifiers and residential location">
+                  <CardTitle>
                     Household Information
                   </CardTitle>
                 </div>
@@ -708,13 +705,6 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                     value={householdForm.address}
                     onChange={(e) => setHouseholdForm({ ...householdForm, address: e.target.value })}
                     required
-                  />
-
-                  <Select
-                    label="Associated Mapping Activity"
-                    value={householdForm.activityId}
-                    onChange={(e) => setHouseholdForm({ ...householdForm, activityId: e.target.value })}
-                    options={activities.map((a) => ({ value: a.id, label: `${a.name} (${a.year})` }))}
                   />
                 </div>
               </CardBody>
@@ -959,9 +949,6 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                    <Alert variant="info" title="Centralized Duplicate Prevention Protocol">
-                      Children already registered in past mapping drives, Day Care enrollment, or health clinics will be matched here. Linking prevents duplicate records and tracks children over time.
-                    </Alert>
 
                     {childrenList.map((child, index) => (
                       <div key={child.tempId} className="child-duplicate-check-box">
