@@ -22,6 +22,7 @@
 
 import { centralDataStore } from './centralDataStore.js';
 import { getPhilippinesDate, addDaysPHT, formatPHTTime } from '../utils/phTime.js';
+import { getApiUrl } from './apiConfig.js';
 
 const STORAGE_KEY_ACTIVITIES = 'eccd_mapping_activities_data_v2';
 const STORAGE_KEY_ASSIGNMENTS = 'eccd_mapping_assignments_data_v2';
@@ -156,7 +157,7 @@ export const communityMappingService = {
    */
   async getActivities() {
     try {
-      const res = await fetch('/api/mapping/activities', { headers: { Accept: 'application/json' } });
+      const res = await fetch(getApiUrl('/api/mapping/activities'), { headers: { Accept: 'application/json' } });
       if (res.ok) {
         const json = await res.json();
         return json.data || json;
@@ -217,7 +218,7 @@ export const communityMappingService = {
     }
 
     try {
-      await fetch('/api/mapping/activities', {
+      await fetch(getApiUrl('/api/mapping/activities'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newActivity),
@@ -306,7 +307,7 @@ export const communityMappingService = {
     });
 
     try {
-      await fetch('/api/households', {
+      await fetch(getApiUrl('/api/households'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newHousehold),
@@ -372,7 +373,7 @@ export const communityMappingService = {
     });
 
     try {
-      await fetch('/api/children', {
+      await fetch(getApiUrl('/api/children'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newChild),

@@ -14,6 +14,7 @@
  */
 
 import { getPhilippinesDateTime } from '../utils/phTime.js';
+import { getApiUrl } from './apiConfig.js';
 
 const STORAGE_KEY = 'eccd_care_audit_logs_v2';
 
@@ -31,7 +32,9 @@ export const auditService = {
     if (filters.search) params.append('search', filters.search);
 
     try {
-      const res = await fetch(`/api/audit-logs?${params.toString()}`);
+      const qs = params.toString();
+      const url = getApiUrl('/api/audit-logs' + (qs ? `?${qs}` : ''));
+      const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
         return json.data.logs;
@@ -89,7 +92,7 @@ export const auditService = {
     };
 
     try {
-      await fetch('/api/audit-logs', {
+      await fetch(getApiUrl('/api/audit-logs'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry),

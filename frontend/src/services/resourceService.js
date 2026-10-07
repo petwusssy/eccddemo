@@ -14,6 +14,8 @@
  * GET /api/resources/:id
  */
 
+import { getApiUrl } from './apiConfig.js';
+
 export const INITIAL_RESOURCES = [
   // SECTION 1: COMMUNITY MAPPING & REGISTRATION (10 Forms)
   {
@@ -226,7 +228,9 @@ export const resourceService = {
     if (filters.search) params.append('search', filters.search);
 
     try {
-      const res = await fetch(`/api/resources?${params.toString()}`);
+      const qs = params.toString();
+      const url = getApiUrl('/api/resources' + (qs ? `?${qs}` : ''));
+      const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
         return json.data.resources;
@@ -256,7 +260,8 @@ export const resourceService = {
    */
   async getResourceById(id) {
     try {
-      const res = await fetch(`/api/resources/${encodeURIComponent(id)}`);
+      const url = getApiUrl(`/api/resources/${encodeURIComponent(id)}`);
+      const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
         return json.data;

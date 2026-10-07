@@ -18,15 +18,13 @@
 
 import { centralDataStore } from './centralDataStore.js';
 import { getPhilippinesDate, getPhilippinesDateTime } from '../utils/phTime.js';
+import { getApiBaseUrl, API_BASE_URL, getApiUrl } from './apiConfig.js';
 
-const BASE_URL =
-  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
-  '/api';
 const SIMULATE_NETWORK_DELAY = 120; // ms
 
 class ApiClient {
   constructor() {
-    this.baseUrl = BASE_URL;
+    this.baseUrl = getApiBaseUrl();
     this.mockMode = false; // Hybrid mode: Attempts live Laravel backend first, falls back gracefully to centralDataStore
   }
 
@@ -62,11 +60,7 @@ class ApiClient {
     // If real backend active, try real fetch first
     if (!this.mockMode && typeof window !== 'undefined') {
       try {
-        let url = `${this.baseUrl}${endpoint}`;
-        if (params) {
-          const queryString = new URLSearchParams(params).toString();
-          url += (url.includes('?') ? '&' : '?') + queryString;
-        }
+        const url = getApiUrl(endpoint, params);
 
         const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
         const requestHeaders = {
@@ -132,7 +126,7 @@ class ApiClient {
     // 1. Try Live Laravel S3 Backend
     if (!this.mockMode && typeof window !== 'undefined') {
       try {
-        const url = `${this.baseUrl}/upload-s3`;
+        const url = getApiUrl('/upload-s3');
         const token = this.getToken();
         const headers = { Accept: 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -542,4 +536,6 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient();
+export { getApiBaseUrl, API_BASE_URL, getApiUrl };
 export default apiClient;
+

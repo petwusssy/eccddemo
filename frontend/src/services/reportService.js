@@ -18,6 +18,7 @@
  */
 
 import { getPhilippinesDate, formatPHTDate, formatPHTTime } from '../utils/phTime.js';
+import { getApiUrl } from './apiConfig.js';
 
 export const REPORT_CATEGORIES = [
   {
@@ -119,7 +120,9 @@ export const reportService = {
     if (filters.endDate) params.append('endDate', filters.endDate);
 
     try {
-      const res = await fetch(`${cat.endpoint}?${params.toString()}`);
+      const qs = params.toString();
+      const url = getApiUrl(`${cat.endpoint}${qs ? `?${qs}` : ''}`);
+      const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
         return json.data;
