@@ -45,9 +45,14 @@ import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '.
 import { Modal } from '../ui/Modal';
 import { useToast } from '../ui/Toast';
 import { communityMappingService } from '../../services/communityMappingService';
-import { apiClient } from '../../services/apiClient';
 import { OfficialForm1HomeProfileModal } from '../forms/OfficialForm1HomeProfileModal';
 import { OfficialForm3CommunityProfileModal } from '../forms/OfficialForm3CommunityProfileModal';
+import { OfflineSyncBanner } from '../ui/OfflineSyncBanner';
+import {
+  saveOfflineSurvey,
+  getAllOfflineSurveys,
+  getPendingSyncCount,
+} from '../../services/offlineMappingStore';
 import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
 import { formatPHTTime } from '../../utils/phTime';
 
@@ -185,7 +190,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
   const [assignWorkerIds, setAssignWorkerIds] = useState([]);
   const [assignBarangay, setAssignBarangay] = useState('San Isidro');
 
-  // Load initial data
+  // Load initial data including offline IndexedDB records
   const loadData = async () => {
     setLoading(true);
     try {
@@ -194,7 +199,37 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       setAssignments(actsData.assignments || []);
 
       const hhData = await communityMappingService.getHouseholds();
-      setHouseholds(hhData || []);
+      const offlineSurveys = await getAllOfflineSurveys();
+
+      // Format offline surveys and merge with server households
+      const offlineHouseholds = (offlineSurveys || []).map((s) => ({
+        id: s.householdId || s.id,
+        parentGuardian: s.household?.parentGuardian || s.parentGuardian || 'Offline Household Record',
+        address: s.household?.address || s.address || 'Field Survey',
+        barangay: s.household?.barangay || s.barangay || 'San Isidro',
+        contactNumber: s.household?.contactNumber || s.contactNumber || 'N/A',
+        childrenCount: s.children?.length || s.household?.childrenCount || 1,
+        mappedBy: s.mappedBy || 'Field Worker (PWA Offline)',
+        mappedDate: s.createdAt ? s.createdAt.slice(0, 10) : 'Recent',
+        status: s.syncStatus === 'pending' ? 'Pending Sync' : 'Completed',
+        syncStatus: s.syncStatus,
+        isOfflineRecord: true,
+        children: s.children || [],
+      }));
+
+      const existingIds = new Set((hhData || []).map((h) => h.id));
+      const mergedHouseholds = [
+        ...offlineHouseholds.filter((oh) => !existingIds.has(oh.id)),
+        ...(hhData || []).map((h) => {
+          const matchingOffline = (offlineSurveys || []).find((s) => s.householdId === h.id || s.id === h.id);
+          if (matchingOffline) {
+            return { ...h, syncStatus: matchingOffline.syncStatus };
+          }
+          return h;
+        }),
+      ];
+
+      setHouseholds(mergedHouseholds);
 
       // Check for saved local draft
       const draft = communityMappingService.getDraft();
@@ -216,7 +251,13 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     loadData();
     const handleStoreUpdate = () => loadData();
     window.addEventListener('eccd:datastore-updated', handleStoreUpdate);
-    return () => window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
+    window.addEventListener('eccd:offline-survey-updated', handleStoreUpdate);
+    window.addEventListener('eccd:offline-sync-completed', handleStoreUpdate);
+    return () => {
+      window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
+      window.removeEventListener('eccd:offline-survey-updated', handleStoreUpdate);
+      window.removeEventListener('eccd:offline-sync-completed', handleStoreUpdate);
+    };
   }, []);
 
   // Save draft locally
@@ -327,23 +368,37 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     }
   };
 
-  // Final Step 4 Submission: Save household and children
+  // Final Step 4 Submission: Save household and children with Offline-First IndexedDB resilience
   const handleFinalSubmission = async () => {
     setSyncStatus('saving');
-    try {
-      // 1. Create household
-      const createdHh = await communityMappingService.createHousehold({
-        id: householdForm.id,
-        parentGuardian: householdForm.parentGuardian,
-        contactNumber: householdForm.contactNumber,
-        address: `${householdForm.address}, ${householdForm.purok}`,
-        barangay: householdForm.barangay,
-        mappingActivityId: householdForm.activityId,
-        childrenCount: childrenList.length,
-        mappedBy: 'CSWDO Field Officer',
-      });
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
 
-      // 2. Register or link children without duplicates
+    const householdPayload = {
+      id: householdForm.id,
+      parentGuardian: householdForm.parentGuardian,
+      contactNumber: householdForm.contactNumber,
+      address: `${householdForm.address}, ${householdForm.purok}`,
+      barangay: householdForm.barangay,
+      mappingActivityId: householdForm.activityId,
+      childrenCount: childrenList.length,
+      mappedBy: 'CSWDO Field Officer',
+      mappedDate: new Date().toISOString().slice(0, 10),
+    };
+
+    // 1. Immediately write to IndexedDB (idb) so data is never lost offline
+    await saveOfflineSurvey({
+      id: `SURVEY-${householdForm.id}`,
+      householdId: householdForm.id,
+      household: householdPayload,
+      children: childrenList,
+      syncStatus: isOnline ? 'synced' : 'pending',
+    });
+
+    try {
+      // 2. Create household
+      const createdHh = await communityMappingService.createHousehold(householdPayload);
+
+      // 3. Register or link children without duplicates
       const savedChildren = [];
       for (const child of childrenList) {
         const regRes = await communityMappingService.registerChild({
@@ -364,11 +419,11 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
         savedChildren.push(regRes.child);
       }
 
-      // 3. Clear draft
+      // 4. Clear draft
       communityMappingService.clearDraft();
-      setSyncStatus('synced');
+      setSyncStatus(isOnline ? 'synced' : 'draft');
 
-      // 4. Set completed summary
+      // 5. Set completed summary
       setCompletedSummary({
         household: createdHh,
         children: savedChildren,
@@ -376,18 +431,31 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       });
 
       setCurrentStep(5);
-      addToast('Household mapping completed and synced successfully!', 'success');
+      if (isOnline) {
+        addToast('Household mapping completed and synced successfully!', 'success');
+      } else {
+        addToast('Saved offline to IndexedDB. Record queued for sync!', 'info');
+      }
 
-      // Refresh background datasets
-      const updatedActs = await communityMappingService.getActivities();
-      setActivities(updatedActs.activities || []);
-      setAssignments(updatedActs.assignments || []);
-      const updatedHhs = await communityMappingService.getHouseholds();
-      setHouseholds(updatedHhs || []);
+      await loadData();
     } catch (err) {
-      console.error('Error saving mapping workflow:', err);
-      addToast('Error saving household mapping. Draft preserved.', 'error');
+      console.warn('Network issue during submission, safely retained in IndexedDB:', err);
+      // Mark as pending sync in IndexedDB
+      await saveOfflineSurvey({
+        id: `SURVEY-${householdForm.id}`,
+        householdId: householdForm.id,
+        household: householdPayload,
+        children: childrenList,
+        syncStatus: 'pending',
+      });
       setSyncStatus('draft');
+      setCompletedSummary({
+        household: householdPayload,
+        children: childrenList,
+        timestamp: formatPHTTime(new Date(), true),
+      });
+      setCurrentStep(5);
+      addToast('Working offline: Survey saved to local IndexedDB and queued for sync.', 'warning');
     }
   };
 
@@ -493,6 +561,9 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           )}
         </div>
       </div>
+
+      {/* Prominent Offline / Online Sync Banner with Pending Queue Counter & Sync Now button */}
+      <OfflineSyncBanner onSyncComplete={loadData} />
 
       {/* Community Mapping Bento Quick Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
@@ -1477,9 +1548,15 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                         <span style={{ fontSize: 'var(--font-size-xs)' }}>{hh.mappedDate}</span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="success" size="sm">
-                          {hh.status}
-                        </Badge>
+                        {hh.syncStatus === 'pending' ? (
+                          <Badge variant="warning" size="sm">
+                            Pending Sync (IndexedDB)
+                          </Badge>
+                        ) : (
+                          <Badge variant="success" size="sm">
+                            {hh.status || 'Verified'}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell style={{ textAlign: 'right' }}>
                         <Button

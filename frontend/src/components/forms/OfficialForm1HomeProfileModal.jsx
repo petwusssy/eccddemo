@@ -18,6 +18,7 @@ import { Select } from '../ui/Select';
 import { Badge } from '../ui/Badge';
 import { officialFormsService } from '../../services/officialFormsService';
 import { centralDataStore } from '../../services/centralDataStore';
+import { saveOfflineSurvey } from '../../services/offlineMappingStore';
 import { useToast } from '../ui/Toast';
 import { getPhilippinesDate } from '../../utils/phTime';
 
@@ -175,10 +176,28 @@ export function OfficialForm1HomeProfileModal({
     addToast('Official Form 1 draft saved locally.', 'info');
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
     officialFormsService.saveForm1Data(householdId, formData);
-    addToast('Official Form 1 (Home Profile) saved and synced to centralized records.', 'success');
+
+    try {
+      await saveOfflineSurvey({
+        id: `FORM1-${householdId}`,
+        householdId,
+        type: 'official_form_1_home_profile',
+        formData,
+        syncStatus: isOnline ? 'synced' : 'pending',
+      });
+    } catch (err) {
+      console.warn('Could not save Form 1 to IndexedDB:', err);
+    }
+
+    if (isOnline) {
+      addToast('Official Form 1 (Home Profile) saved and synced to centralized records.', 'success');
+    } else {
+      addToast('Working offline: Official Form 1 saved to IndexedDB.', 'info');
+    }
     if (onSuccess) onSuccess(formData);
     onClose();
   };

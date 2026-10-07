@@ -227,6 +227,7 @@ export async function apiLogin({ email, password }) {
 
   // Persist session to localStorage
   localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem('eccd_jwt_token', token);
   localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
   localStorage.setItem(EXPIRY_KEY, expiresAt.toString());
 
@@ -248,6 +249,7 @@ export async function apiLogout() {
   await simulateNetworkDelay(200, 400);
 
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem('eccd_jwt_token');
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(EXPIRY_KEY);
 
@@ -258,13 +260,13 @@ export async function apiLogout() {
  * GET /api/auth/me
  *
  * Returns the current authenticated user from session.
- * Checks token validity and expiry.
+ * Checks token validity and ensures field workers are NEVER kicked out offline.
  *
  * auth-implementation-patterns: validate token lifecycle, detect expiry.
  */
 export async function apiGetCurrentUser() {
   // No network delay for session check — instant UX
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(TOKEN_KEY) || localStorage.getItem('eccd_jwt_token');
   const userJson = localStorage.getItem(USER_KEY);
   const expiryStr = localStorage.getItem(EXPIRY_KEY);
 
@@ -277,11 +279,21 @@ export async function apiGetCurrentUser() {
     );
   }
 
-  // Session expired
+  // Offline-First Session Guard:
+  // If the field worker is offline or currently working, never kick them out.
+  // Seamlessly extend the offline working lease.
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
   const expiresAt = parseInt(expiryStr, 10);
-  if (Date.now() > expiresAt) {
-    // Clean up expired session
+
+  if (isOffline) {
+    // When offline, extend the lease so the session is never destroyed in the field
+    const extendedExpiry = Date.now() + SESSION_DURATION_MS * 7; // 7 days offline lease
+    localStorage.setItem(EXPIRY_KEY, extendedExpiry.toString());
+  } else if (expiresAt && Date.now() > expiresAt) {
+    // If online and session expired, extend if active user present or clean up
+    // Clean up expired session only when explicitly online
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('eccd_jwt_token');
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(EXPIRY_KEY);
 
