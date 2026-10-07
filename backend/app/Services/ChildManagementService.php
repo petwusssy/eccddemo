@@ -227,10 +227,13 @@ class ChildManagementService
     {
         $count = \App\Models\Child::count() ?: count(self::$children);
         $sequence = 1245 + $count;
-        $uniqueId = $data['id'] ?? ('ECCD-2026-' . str_pad((string) $sequence, 6, '0', STR_PAD_LEFT));
+        $uniqueId = $data['id'] ?? $data['eccd_id'] ?? null;
+        if (!$uniqueId || str_starts_with((string)$uniqueId, 'TMP-') || str_starts_with((string)$uniqueId, 'OFFLINE-')) {
+            $uniqueId = 'ECCD-2026-' . str_pad((string) $sequence, 6, '0', STR_PAD_LEFT);
+        }
 
         try {
-            $hhNo = $data['householdId'] ?? 'HH-2026-0101';
+            $hhNo = $data['householdId'] ?? $data['household_id'] ?? 'HH-2026-0101';
             $household = \App\Models\Household::where('household_no', $hhNo)->first();
             if (!$household) {
                 $barangay = \App\Models\Barangay::where('name', $data['barangay'] ?? 'San Isidro')->first() ?? \App\Models\Barangay::first();
@@ -238,29 +241,32 @@ class ChildManagementService
                     'household_no' => $hhNo,
                     'barangay_id' => $barangay?->id ?? 1,
                     'address' => $data['address'] ?? 'N/A',
-                    'parent_guardian' => $data['parentGuardian'] ?? 'Parent / Guardian',
-                    'contact_number' => $data['contactNumber'] ?? null,
+                    'parent_guardian' => $data['parentGuardian'] ?? $data['parent_guardian'] ?? 'Parent / Guardian',
+                    'contact_number' => $data['contactNumber'] ?? $data['contact_number'] ?? null,
                     'mapped_date' => now()->toDateString(),
-                    'mapped_by' => 'Field Worker',
+                    'mapped_by' => $data['assignedWorker'] ?? 'Field Worker',
                 ]);
             }
 
             $barangayId = $household->barangay_id ?? (\App\Models\Barangay::where('name', $data['barangay'] ?? '')->first()?->id ?? 1);
+
+            $rawBirthDate = $data['birthDate'] ?? $data['birth_date'] ?? '2023-01-01';
+            $birthDate = substr($rawBirthDate, 0, 10);
 
             $childModel = \App\Models\Child::updateOrCreate(
                 ['eccd_id' => $uniqueId],
                 [
                     'household_id' => $household->id,
                     'barangay_id' => $barangayId,
-                    'first_name' => $data['firstName'] ?? 'Child',
-                    'middle_name' => $data['middleName'] ?? null,
-                    'last_name' => $data['lastName'] ?? 'Record',
-                    'birth_date' => $data['birthDate'] ?? '2023-01-01',
+                    'first_name' => $data['firstName'] ?? $data['first_name'] ?? 'Child',
+                    'middle_name' => $data['middleName'] ?? $data['middle_name'] ?? null,
+                    'last_name' => $data['lastName'] ?? $data['last_name'] ?? 'Record',
+                    'birth_date' => $birthDate,
                     'sex' => (ucfirst(strtolower($data['sex'] ?? 'Female')) === 'Male') ? 'Male' : 'Female',
-                    'blood_type' => $data['bloodType'] ?? null,
-                    'philsys_card_no' => $data['philSysNumber'] ?? null,
-                    'psa_birth_cert' => $data['psaBirthCert'] ?? null,
-                    'enrollment_status' => $data['enrollmentStatus'] ?? 'Not Enrolled',
+                    'blood_type' => $data['bloodType'] ?? $data['blood_type'] ?? null,
+                    'philsys_card_no' => $data['philSysNumber'] ?? $data['philsys_card_no'] ?? null,
+                    'psa_birth_cert' => $data['psaBirthCert'] ?? $data['psa_birth_cert'] ?? null,
+                    'enrollment_status' => $data['enrollmentStatus'] ?? $data['enrollment_status'] ?? 'Not Enrolled',
                 ]
             );
 

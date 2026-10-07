@@ -282,16 +282,22 @@ class CommunityMappingService
             $activityCode = $data['mappingActivityId'] ?? 'ACT-MAP-2026-001';
             $activity = \App\Models\MappingActivity::where('code', $activityCode)->first() ?? \App\Models\MappingActivity::first();
 
+            $rawMappedDate = $data['mappedDate'] ?? $data['mapped_date'] ?? now()->toDateString();
+            $mappedDate = substr($rawMappedDate, 0, 10);
+
             $model = \App\Models\Household::updateOrCreate(
                 ['household_no' => $id],
                 [
                     'mapping_activity_id' => $activity?->id,
                     'barangay_id' => $barangay?->id ?? 1,
+                    'purok' => $data['purok'] ?? null,
                     'address' => $data['address'] ?? 'N/A',
                     'parent_guardian' => $data['parentGuardian'] ?? $data['parent_guardian'] ?? 'N/A',
                     'contact_number' => $data['contactNumber'] ?? $data['contact_number'] ?? null,
-                    'mapped_date' => $data['mappedDate'] ?? now()->toDateString(),
-                    'mapped_by' => $data['mappedBy'] ?? 'Field Worker',
+                    'is_4ps' => !empty($data['is4Ps']) || !empty($data['is_4ps']),
+                    'is_ip' => !empty($data['isIP']) || !empty($data['is_ip']),
+                    'mapped_date' => $mappedDate,
+                    'mapped_by' => $data['mappedBy'] ?? $data['mapped_by'] ?? 'Field Worker',
                 ]
             );
 
@@ -302,6 +308,7 @@ class CommunityMappingService
                 'contactNumber' => $model->contact_number,
                 'address' => $model->address,
                 'barangay' => $model->barangay?->name ?? $barangayName,
+                'purok' => $model->purok,
                 'mappingActivityId' => $activityCode,
                 'mappedDate' => $model->mapped_date?->toDateString() ?? now()->toDateString(),
                 'mappedBy' => $model->mapped_by,

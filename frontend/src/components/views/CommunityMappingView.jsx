@@ -52,6 +52,8 @@ import {
   saveOfflineSurvey,
   getAllOfflineSurveys,
   getPendingSyncCount,
+  markSurveySynced,
+  syncPendingSurveysToBackend,
 } from '../../services/offlineMappingStore';
 import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
 import { formatPHTTime } from '../../utils/phTime';
@@ -385,13 +387,14 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       mappedDate: new Date().toISOString().slice(0, 10),
     };
 
-    // 1. Immediately write to IndexedDB (idb) so data is never lost offline
+    // 1. Immediately write to IndexedDB (idb) with pending status so data is never lost offline
+    const surveyId = `SURVEY-${householdForm.id}`;
     await saveOfflineSurvey({
-      id: `SURVEY-${householdForm.id}`,
+      id: surveyId,
       householdId: householdForm.id,
       household: householdPayload,
       children: childrenList,
-      syncStatus: isOnline ? 'synced' : 'pending',
+      syncStatus: 'pending',
     });
 
     try {
@@ -417,6 +420,16 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           existingChildId: child.decision === 'same' && child.matchedRecord ? child.matchedRecord.id : null,
         });
         savedChildren.push(regRes.child);
+      }
+
+      // If online, perform complete sync to central backend
+      if (isOnline) {
+        try {
+          await syncPendingSurveysToBackend();
+          await markSurveySynced(surveyId, { ok: true, synced: true });
+        } catch (syncErr) {
+          console.warn('Auto-sync deferred:', syncErr.message);
+        }
       }
 
       // 4. Clear draft

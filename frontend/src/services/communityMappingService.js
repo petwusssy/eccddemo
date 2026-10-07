@@ -323,12 +323,25 @@ export const communityMappingService = {
     });
 
     try {
-      await fetch(getApiUrl('/api/households'), {
+      const res = await fetch(getApiUrl('/api/households'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
         body: JSON.stringify(newHousehold),
       });
-    } catch (e) { }
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data) {
+          centralDataStore.mergeRecordsFromServer([], [json.data]);
+          return json.data;
+        }
+      }
+    } catch (e) {
+      console.warn('Network offline during createHousehold, safely retained locally:', e.message);
+    }
 
     return newHousehold;
   },
@@ -389,12 +402,29 @@ export const communityMappingService = {
     });
 
     try {
-      await fetch(getApiUrl('/api/children'), {
+      const res = await fetch(getApiUrl('/api/children'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
         body: JSON.stringify(newChild),
       });
-    } catch (e) { }
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data) {
+          centralDataStore.mergeRecordsFromServer([json.data], []);
+          return {
+            child: json.data,
+            isDuplicatePrevented: false,
+            message: `New unique child ID generated: ${json.data.id || json.data.eccd_id}`,
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Network offline during registerChild, safely retained locally:', e.message);
+    }
 
     return {
       child: newChild,

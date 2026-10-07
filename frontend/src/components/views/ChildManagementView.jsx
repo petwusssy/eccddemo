@@ -269,8 +269,21 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
         loadProfile(selectedChildId);
       }
     };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleStoreUpdate();
+      }
+    };
     window.addEventListener('eccd:datastore-updated', handleStoreUpdate);
-    return () => window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
+    window.addEventListener('eccd:offline-sync-completed', handleStoreUpdate);
+    window.addEventListener('focus', handleStoreUpdate);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
+      window.removeEventListener('eccd:offline-sync-completed', handleStoreUpdate);
+      window.removeEventListener('focus', handleStoreUpdate);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [viewMode, selectedChildId]);
 
   // 3. Golden Path Lifecycle Indicator Calculation based on actual records

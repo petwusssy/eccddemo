@@ -58,6 +58,11 @@ import { useToast } from '../ui/Toast';
 import { communityMappingService } from '../../services/communityMappingService';
 import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
 import { formatPHTTime } from '../../utils/phTime';
+import {
+  getPendingSyncCount,
+  saveOfflineSurvey,
+  syncPendingSurveysToBackend,
+} from '../../services/offlineMappingStore';
 
 const AVAILABLE_BARANGAYS = SAN_FERNANDO_BARANGAYS;
 
@@ -127,7 +132,7 @@ export function MobileFieldWorker({ onNavigate }) {
   // Recent completed households for touch cards view
   const [recentRecords, setRecentRecords] = useState([]);
 
-  // Load existing draft if available
+  // Load existing draft if available & listen to pending offline records
   useEffect(() => {
     const draft = communityMappingService.getDraft();
     if (draft && draft.householdForm) {
@@ -140,24 +145,75 @@ export function MobileFieldWorker({ onNavigate }) {
       }
       addToast('Resumed active field draft from local storage', 'info');
     }
+
+    const refreshPending = async () => {
+      try {
+        const count = await getPendingSyncCount();
+        setPendingCount(count);
+        if (count > 0 && syncState !== 'offline') {
+          setSyncState('pending');
+        }
+      } catch (e) {
+        console.warn('Pending sync count notice:', e);
+      }
+    };
+
+    refreshPending();
+
+    const handleOnline = () => {
+      setSyncState('online');
+      refreshPending();
+    };
+
+    const handleOffline = () => {
+      setSyncState('offline');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('eccd:offline-survey-updated', refreshPending);
+    window.addEventListener('eccd:offline-sync-completed', refreshPending);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('eccd:offline-survey-updated', refreshPending);
+      window.removeEventListener('eccd:offline-sync-completed', refreshPending);
+    };
   }, []);
 
-  // --- SYNC ACTIONS ---
-  const handleTriggerSync = () => {
-    if (syncState === 'offline') {
-      addToast('Cannot sync while device is Offline. Turn on network.', 'error');
+  // --- REAL SYNC ACTIONS ---
+  const handleTriggerSync = async () => {
+    if (syncState === 'offline' || !navigator.onLine) {
+      addToast('Cannot sync while device is Offline. Please connect to internet/WiFi.', 'error');
       return;
     }
     setSyncState('syncing');
-    addToast(`Syncing ${pendingCount} field records to CSWDO central server...`, 'info');
+    addToast('Synchronizing records to CSWDO central server...', 'info');
 
-    setTimeout(() => {
-      setSyncState('synced');
-      setPendingCount(0);
+    try {
+      const result = await syncPendingSurveysToBackend();
+      const count = await getPendingSyncCount();
+      setPendingCount(count);
+
       const currentTime = formatPHTTime(new Date(), false);
       setLastSyncedTime(`${currentTime} Today`);
-      addToast('All field records synced successfully!', 'success');
-    }, 1800);
+
+      if (result.synced > 0) {
+        setSyncState('synced');
+        addToast(`Successfully synchronized ${result.synced} record(s) to central database!`, 'success');
+      } else if (result.failed > 0) {
+        setSyncState('pending');
+        addToast(`Sync finished with ${result.failed} error(s). Please retry.`, 'error');
+      } else {
+        setSyncState('synced');
+        addToast('All field records are already synchronized and up to date.', 'info');
+      }
+    } catch (err) {
+      console.error('MobileFieldWorker sync error:', err);
+      setSyncState('pending');
+      addToast('Sync failed: ' + (err.message || 'Network error'), 'error');
+    }
   };
 
   const handleToggleOffline = () => {
@@ -323,7 +379,7 @@ export function MobileFieldWorker({ onNavigate }) {
   const handleSaveMappingRecord = async () => {
     setFlowStep(6);
     try {
-      // 1. Create household record
+      // 1. Create household record in local store
       const fullAddress = `${householdForm.address}, ${selectedPurok}, ${selectedBarangay}`;
       const createdHh = await communityMappingService.createHousehold({
         id: householdForm.id,
@@ -331,10 +387,12 @@ export function MobileFieldWorker({ onNavigate }) {
         contactNumber: householdForm.contactNumber,
         address: fullAddress,
         barangay: selectedBarangay,
+        purok: selectedPurok,
         mappingActivityId: selectedActivity,
         childrenCount: childrenList.length,
         mappedBy: assignmentData.workerName,
         is4Ps: householdForm.is4Ps === 'Yes',
+        isIP: householdForm.isIP === 'Yes',
       });
 
       // 2. Register children without duplicating
@@ -352,6 +410,7 @@ export function MobileFieldWorker({ onNavigate }) {
           householdId: createdHh.id,
           parentGuardian: householdForm.parentGuardian,
           barangay: selectedBarangay,
+          purok: selectedPurok,
           enrollmentStatus: c.enrollmentStatus,
           enrollmentCenter: c.enrollmentCenter,
           existingChildId: item.decision === 'same' && item.matchedRecord ? item.matchedRecord.id : null,
@@ -359,20 +418,57 @@ export function MobileFieldWorker({ onNavigate }) {
         savedChildren.push(regRes.child);
       }
 
-      // 3. Clear local draft
+      // 3. Persist survey into IndexedDB (Guarantees offline resilience)
+      await saveOfflineSurvey({
+        id: `SURVEY-${createdHh.id}`,
+        householdId: createdHh.id,
+        household: {
+          id: createdHh.id,
+          parentGuardian: householdForm.parentGuardian,
+          contactNumber: householdForm.contactNumber,
+          address: fullAddress,
+          barangay: selectedBarangay,
+          purok: selectedPurok,
+          mappingActivityId: selectedActivity,
+          childrenCount: savedChildren.length,
+          mappedBy: assignmentData.workerName,
+          is4Ps: householdForm.is4Ps === 'Yes',
+          isIP: householdForm.isIP === 'Yes',
+        },
+        children: savedChildren,
+        syncStatus: 'pending',
+      });
+
+      // 4. Clear local draft
       communityMappingService.clearDraft();
 
-      // 4. Update stats
+      // 5. Update stats
       setAssignmentData((prev) => ({
         ...prev,
         completedHouseholds: prev.completedHouseholds + 1,
         childrenIdentified: prev.childrenIdentified + childrenList.length,
       }));
 
-      // 5. Update pending sync count
-      setPendingCount((prev) => prev + 1);
-      if (syncState === 'synced') {
-        setSyncState('pending');
+      // 6. Update pending count & check online sync
+      let count = await getPendingSyncCount();
+      setPendingCount(count);
+
+      const isActuallyOnline = typeof navigator !== 'undefined' && navigator.onLine && syncState !== 'offline';
+      if (isActuallyOnline) {
+        try {
+          const syncRes = await syncPendingSurveysToBackend();
+          count = await getPendingSyncCount();
+          setPendingCount(count);
+          if (syncRes.synced > 0) {
+            setSyncState('synced');
+            setLastSyncedTime(`${formatPHTTime(new Date(), false)} Today`);
+          }
+        } catch (syncErr) {
+          console.warn('Background auto-sync deferred:', syncErr);
+          setSyncState('pending');
+        }
+      } else {
+        setSyncState(syncState === 'offline' ? 'offline' : 'pending');
       }
 
       // Add to recent records
@@ -384,7 +480,7 @@ export function MobileFieldWorker({ onNavigate }) {
           childrenCount: savedChildren.length,
           childrenNames: savedChildren.map((c) => `${c.firstName} (${c.ageYears}y)`).join(', '),
           is4Ps: householdForm.is4Ps === 'Yes',
-          syncStatus: syncState === 'offline' ? 'Waiting to sync' : 'Pending Sync',
+          syncStatus: isActuallyOnline && count === 0 ? 'Synced' : 'Pending Sync',
           time: formatPHTTime(new Date(), false),
         },
         ...recentRecords,
@@ -398,7 +494,11 @@ export function MobileFieldWorker({ onNavigate }) {
 
       // Move to step 7: Next Household prompt
       setFlowStep(7);
-      addToast('Household record saved successfully!', 'success');
+      if (isActuallyOnline && count === 0) {
+        addToast('Household record saved and synced to database!', 'success');
+      } else {
+        addToast('Household record saved to offline queue. Tap Sync when online.', 'info');
+      }
     } catch (err) {
       console.error('Failed to save mapping record:', err);
       addToast('Error saving record. Preserved in local draft.', 'error');

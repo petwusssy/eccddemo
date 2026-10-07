@@ -105,8 +105,21 @@ export function DashboardOverview({ onNavigate }) {
   useEffect(() => {
     loadDashboardData();
     const handleStoreUpdate = () => loadDashboardData();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadDashboardData();
+      }
+    };
     window.addEventListener('eccd:datastore-updated', handleStoreUpdate);
-    return () => window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
+    window.addEventListener('eccd:offline-sync-completed', handleStoreUpdate);
+    window.addEventListener('focus', handleStoreUpdate);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('eccd:datastore-updated', handleStoreUpdate);
+      window.removeEventListener('eccd:offline-sync-completed', handleStoreUpdate);
+      window.removeEventListener('focus', handleStoreUpdate);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   // Filtered Attention Cases
