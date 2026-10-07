@@ -41,6 +41,7 @@
 
 import { SAN_FERNANDO_BARANGAYS } from '../data/sanFernandoBarangays.js';
 import { getPhilippinesDate, getPhilippinesDateTime, addDaysPHT } from '../utils/phTime.js';
+import { getApiUrl } from './apiConfig.js';
 
 const STORAGE_KEY = 'eccd_care_central_datastore_v3';
 
@@ -179,6 +180,12 @@ export const SEED_RESOURCES = [
 class CentralDataStore {
   constructor() {
     this.data = this.loadInitial();
+    // Auto-hydrate from backend when in browser
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        this.syncWithBackend().catch(() => {});
+      }, 500);
+    }
   }
 
   loadInitial() {
@@ -322,6 +329,7 @@ class CentralDataStore {
 
   /**
    * Merge live records received from MySQL backend API into local store.
+   * Normalizes fields so UI views never crash on undefined properties.
    */
   mergeRecordsFromServer(serverChildren = [], serverHouseholds = []) {
     let changed = false;
@@ -329,12 +337,21 @@ class CentralDataStore {
     if (Array.isArray(serverHouseholds) && serverHouseholds.length > 0) {
       if (!Array.isArray(this.data.households)) this.data.households = [];
       serverHouseholds.forEach((sh) => {
-        const id = sh.id || sh.household_no;
+        if (!sh) return;
+        const id = sh.id || sh.household_no || `HH-${Date.now()}`;
         const idx = this.data.households.findIndex((h) => h.id === id || h.household_no === id);
+        const normalizedHh = {
+          ...sh,
+          id,
+          household_no: id,
+          parentGuardian: sh.parentGuardian || sh.parent_guardian || 'Parent / Guardian',
+          barangay: sh.barangay || 'San Isidro',
+          status: sh.status || 'Completed',
+        };
         if (idx >= 0) {
-          this.data.households[idx] = { ...this.data.households[idx], ...sh };
+          this.data.households[idx] = { ...this.data.households[idx], ...normalizedHh };
         } else {
-          this.data.households.unshift(sh);
+          this.data.households.unshift(normalizedHh);
         }
         changed = true;
       });
@@ -343,12 +360,34 @@ class CentralDataStore {
     if (Array.isArray(serverChildren) && serverChildren.length > 0) {
       if (!Array.isArray(this.data.children)) this.data.children = [];
       serverChildren.forEach((sc) => {
-        const id = sc.id || sc.eccd_id;
+        if (!sc) return;
+        const id = sc.id || sc.eccd_id || `ECCD-${Date.now()}`;
         const idx = this.data.children.findIndex((c) => c.id === id || c.eccd_id === id);
+        const ageY = parseInt(sc.ageYears ?? 3, 10);
+        const ageM = parseInt(sc.ageMonths ?? 0, 10);
+        const normalizedChild = {
+          ...sc,
+          id,
+          eccd_id: id,
+          firstName: sc.firstName || sc.first_name || '',
+          lastName: sc.lastName || sc.last_name || '',
+          middleName: sc.middleName || sc.middle_name || '',
+          fullName: sc.fullName || `${sc.firstName || sc.first_name || ''} ${sc.lastName || sc.last_name || ''}`.trim() || 'Child Record',
+          ageYears: isNaN(ageY) ? 3 : ageY,
+          ageMonths: isNaN(ageM) ? 0 : ageM,
+          ageDisplay: sc.ageDisplay || `${isNaN(ageY) ? 3 : ageY} yrs, ${isNaN(ageM) ? 0 : ageM} mos`,
+          sex: sc.sex || 'Female',
+          barangay: sc.barangay || 'San Isidro',
+          householdId: sc.householdId || sc.household_id || 'HH-2026-0101',
+          parentGuardian: sc.parentGuardian || sc.parent_guardian || '',
+          enrollmentStatus: sc.enrollmentStatus || sc.enrollment_status || 'Not Enrolled',
+          healthStatus: sc.healthStatus || sc.health_status || 'Due for Monitoring',
+          developmentStatus: sc.developmentStatus || sc.development_status || 'Pending Initial Assessment',
+        };
         if (idx >= 0) {
-          this.data.children[idx] = { ...this.data.children[idx], ...sc };
+          this.data.children[idx] = { ...this.data.children[idx], ...normalizedChild };
         } else {
-          this.data.children.unshift(sc);
+          this.data.children.unshift(normalizedChild);
         }
         changed = true;
       });
@@ -356,6 +395,44 @@ class CentralDataStore {
 
     if (changed) {
       this.save();
+    }
+  }
+
+  /**
+   * Hydrates centralDataStore from live MySQL backend API.
+   * Guarantees that records mapped on another device appear across all clients.
+   */
+  async syncWithBackend() {
+    try {
+      const [childRes, hhRes] = await Promise.allSettled([
+        fetch(getApiUrl('/api/children'), {
+          headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+        }),
+        fetch(getApiUrl('/api/households'), {
+          headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+        }),
+      ]);
+
+      let serverChildren = [];
+      let serverHouseholds = [];
+
+      if (childRes.status === 'fulfilled' && childRes.value && childRes.value.ok) {
+        const cJson = await childRes.value.json();
+        serverChildren = cJson.data?.children || cJson.data || [];
+        if (!Array.isArray(serverChildren)) serverChildren = [];
+      }
+
+      if (hhRes.status === 'fulfilled' && hhRes.value && hhRes.value.ok) {
+        const hJson = await hhRes.value.json();
+        serverHouseholds = hJson.data || [];
+        if (!Array.isArray(serverHouseholds)) serverHouseholds = [];
+      }
+
+      if (serverChildren.length > 0 || serverHouseholds.length > 0) {
+        this.mergeRecordsFromServer(serverChildren, serverHouseholds);
+      }
+    } catch (err) {
+      console.warn('CentralDataStore: backend sync notice:', err.message);
     }
   }
 

@@ -39,6 +39,7 @@ import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '.
 import { Modal } from '../ui/Modal';
 import { useToast } from '../ui/Toast';
 import { dashboardService } from '../../services/dashboardService';
+import { centralDataStore } from '../../services/centralDataStore';
 import { BARANGAY_OPTIONS } from '../../data/sanFernandoBarangays';
 import { formatPHTDate } from '../../utils/phTime';
 
@@ -47,12 +48,35 @@ export function DashboardOverview({ onNavigate }) {
 
   // Loading & Data States (api-and-interface-design + react-patterns)
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState(null);
-  const [enrollment, setEnrollment] = useState(null);
-  const [monitoring, setMonitoring] = useState(null);
-  const [barangays, setBarangays] = useState(null);
-  const [attentionData, setAttentionData] = useState(null);
-  const [activityData, setActivityData] = useState(null);
+  const [summary, setSummary] = useState({
+    totalChildren: 0,
+    mappedChildren: 0,
+    mappedPercentage: 0,
+    enrolledChildren: 0,
+    enrolledPercentage: 0,
+    notEnrolledChildren: 0,
+    notEnrolledPercentage: 0,
+    pendingChildren: 0,
+    healthMonitoringDue: 0,
+    developmentFollowups: 0,
+  });
+  const [enrollment, setEnrollment] = useState({
+    total: 0,
+    breakdown: [
+      { key: 'enrolled', count: 0, percentage: 0, subcategories: [{ count: 0 }, { count: 0 }] },
+      { key: 'not_enrolled', count: 0, percentage: 0, subcategories: [{ count: 0 }, { count: 0 }] },
+      { key: 'pending', count: 0, percentage: 0, subcategories: [{ count: 0 }, { count: 0 }] },
+    ],
+    targetCohortComparison: { targetAnnualEnrollment: 0, targetMetPercentage: 0 },
+  });
+  const [monitoring, setMonitoring] = useState({
+    health: { upToDate: { count: 0, percentage: 0 }, due: { count: 0, percentage: 0 }, overdue: { count: 0, percentage: 0 } },
+    development: { completed: { count: 0, percentage: 0 }, pending: { count: 0, percentage: 0 }, followUp: { count: 0, percentage: 0 } },
+    criticalAlerts: [],
+  });
+  const [barangays, setBarangays] = useState({ rankedBarangays: [], barangays: [], totalBarangays: 35 });
+  const [attentionData, setAttentionData] = useState({ items: [], highPriorityCount: 0 });
+  const [activityData, setActivityData] = useState({ activities: [] });
 
   // Filters & Interactivity States
   const [attentionFilter, setAttentionFilter] = useState('all'); // all | development | health | enrollment | urgent
@@ -79,6 +103,9 @@ export function DashboardOverview({ onNavigate }) {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
+      // First ensure central store has latest records from server
+      await centralDataStore.syncWithBackend().catch(() => {});
+
       const [sum, enr, mon, bar, att, act] = await Promise.all([
         dashboardService.getSummary(),
         dashboardService.getEnrollment(),
@@ -88,12 +115,12 @@ export function DashboardOverview({ onNavigate }) {
         dashboardService.getRecentActivity(),
       ]);
 
-      setSummary(sum);
-      setEnrollment(enr);
-      setMonitoring(mon);
-      setBarangays(bar);
-      setAttentionData(att);
-      setActivityData(act);
+      if (sum) setSummary(sum);
+      if (enr) setEnrollment(enr);
+      if (mon) setMonitoring(mon);
+      if (bar) setBarangays(bar);
+      if (att) setAttentionData(att);
+      if (act) setActivityData(act);
     } catch (err) {
       console.error('Error fetching dashboard endpoints:', err);
       addToast('Error synchronizing dashboard datasets', 'error');
@@ -124,13 +151,14 @@ export function DashboardOverview({ onNavigate }) {
 
   // Filtered Attention Cases
   const filteredAttentionItems = useMemo(() => {
-    if (!attentionData?.items) return [];
+    if (!attentionData?.items || !Array.isArray(attentionData.items)) return [];
     return attentionData.items.filter((item) => {
-      const childName = (item.childName || '').toLowerCase();
-      const id = (item.id || '').toLowerCase();
-      const barangay = (item.barangay || '').toLowerCase();
-      const issue = (item.issue || item.reason || '').toLowerCase();
-      const query = (attentionSearch || '').toLowerCase();
+      if (!item) return false;
+      const childName = String(item.childName || '').toLowerCase();
+      const id = String(item.id || '').toLowerCase();
+      const barangay = String(item.barangay || '').toLowerCase();
+      const issue = String(item.issue || item.reason || '').toLowerCase();
+      const query = String(attentionSearch || '').toLowerCase();
 
       const matchesSearch =
         childName.includes(query) ||
@@ -152,8 +180,11 @@ export function DashboardOverview({ onNavigate }) {
   // Filtered Barangays
   const filteredBarangays = useMemo(() => {
     const list = barangays?.rankedBarangays || barangays?.barangays || [];
+    if (!Array.isArray(list)) return [];
     return list.filter((b) => {
-      const matchesSearch = b.name.toLowerCase().includes(barangaySearch.toLowerCase());
+      if (!b) return false;
+      const bName = String(b.name || '');
+      const matchesSearch = bName.toLowerCase().includes(String(barangaySearch || '').toLowerCase());
       const matchesRisk = !barangayRiskFilter || b.riskLevel === barangayRiskFilter;
       return matchesSearch && matchesRisk;
     });
@@ -520,7 +551,7 @@ export function DashboardOverview({ onNavigate }) {
                           fontSize: 'var(--font-size-xs)',
                           flexShrink: 0
                         }}>
-                          {item.childName?.trim().split(' ').map((n) => n[0]).filter(Boolean).slice(0, 2).join('') || 'C'}
+                          {String(item?.childName || 'Child').trim().split(' ').map((n) => n[0]).filter(Boolean).slice(0, 2).join('') || 'C'}
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
@@ -922,8 +953,8 @@ export function DashboardOverview({ onNavigate }) {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredBarangays.map((b) => (
-                    <TableRow key={b.name}>
+                  {filteredBarangays.map((b, bIdx) => (
+                    <TableRow key={b?.name || `brgy-${bIdx}`}>
                       <TableCell>
                         <span className={`barangay-rank-num ${b.rank <= 3 ? 'top-rank' : ''}`}>
                           {b.rank}

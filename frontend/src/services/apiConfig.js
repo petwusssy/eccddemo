@@ -34,6 +34,18 @@ export function getApiBaseUrl() {
     return envUrl.trim().replace(/\/+$/, '');
   }
 
+  // If running in browser on a mobile device or LAN host (e.g. 192.168.x.x)
+  if (typeof window !== 'undefined' && window.location) {
+    const host = window.location.hostname;
+    const isRemote = host !== 'localhost' && host !== '127.0.0.1';
+    if (isRemote) {
+      // In dev mode, Vite runs on this host (e.g. port 5173) and proxies /api directly to the Laravel backend (127.0.0.1:8000).
+      // Using window.location.origin guarantees mobile phones make API requests to http://192.168.x.x:5173/api/...
+      // which Vite dev server seamlessly forwards to Laravel!
+      return window.location.origin;
+    }
+  }
+
   return 'http://127.0.0.1:8000';
 }
 

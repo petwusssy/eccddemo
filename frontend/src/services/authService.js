@@ -59,6 +59,7 @@ export const ROLE_PERMISSIONS = {
     label: 'Frontline ECCD Programs & Direct Delivery',
     description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
     sections: [
+      'dashboard',
       'children',
       'households',
       'community-mapping',
@@ -69,13 +70,14 @@ export const ROLE_PERMISSIONS = {
       'follow-ups',
       'community-network',
     ],
-    // Strictly restricted from: 'dashboard' (Executive consolidation), 'reports' (Citywide submissions), 'audit-logs', 'settings'
+    // Executive-only administrative modules remain restricted: 'reports' (Citywide submissions), 'audit-logs', 'settings'
   },
   // Legacy aliases
   'field_worker': {
     label: 'Frontline ECCD Programs & Direct Delivery',
     description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
     sections: [
+      'dashboard',
       'children',
       'households',
       'community-mapping',
@@ -91,6 +93,7 @@ export const ROLE_PERMISSIONS = {
     label: 'Frontline ECCD Programs & Direct Delivery',
     description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
     sections: [
+      'dashboard',
       'children',
       'households',
       'community-mapping',

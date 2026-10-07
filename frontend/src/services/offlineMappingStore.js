@@ -211,18 +211,9 @@ export async function syncPendingSurveysToBackend() {
           syncedCount++;
         }
 
-        // Merge latest children from server
+        // Hydrate latest children and households from server
         try {
-          const freshChildren = await fetch(getApiUrl('/api/children'), {
-            headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
-          });
-          if (freshChildren.ok) {
-            const fcJson = await freshChildren.json();
-            const serverKids = fcJson.data?.children || fcJson.data || [];
-            if (Array.isArray(serverKids) && serverKids.length > 0) {
-              centralDataStore.mergeRecordsFromServer(serverKids, []);
-            }
-          }
+          await centralDataStore.syncWithBackend();
         } catch (_) {}
 
         if (typeof window !== 'undefined') {

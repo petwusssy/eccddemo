@@ -39,6 +39,7 @@ import auditService from './services/auditService';
 
 import ModulePlaceholder from './components/views/ModulePlaceholder';
 import ErrorBoundary from './components/layout/ErrorBoundary';
+import { centralDataStore } from './services/centralDataStore';
 import { Button } from './components/ui/Button';
 import { Printer, Loader2 } from 'lucide-react';
 import anacLogo from './assets/anac-logo.png';
@@ -131,8 +132,15 @@ function AuthenticatedApp() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Active navigation section derived directly from URL
-  const activeItem = PATH_TO_SECTION[location.pathname] || 'dashboard';
+  // Hydrate central data store from backend whenever authenticated
+  useEffect(() => {
+    centralDataStore.syncWithBackend().catch(() => {});
+  }, [user]);
+
+  // Active navigation section derived directly from URL (or role landing when on root)
+  const activeItem = location.pathname === '/'
+    ? (ROLE_LANDING[user?.role] || 'dashboard')
+    : (PATH_TO_SECTION[location.pathname] || 'dashboard');
 
   // Centralized navigation handler accepting route key or path
   const handleNavigate = (target) => {
@@ -314,7 +322,7 @@ function AuthenticatedApp() {
       ) : (
         <ErrorBoundary key={location.pathname} onNavigate={handleNavigate}>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to={ROLE_LANDING_ROUTE[user?.role] || '/dashboard'} replace />} />
             <Route path="/dashboard" element={<DashboardOverview onNavigate={handleNavigate} />} />
             <Route path="/children" element={<ChildManagementView onNavigate={handleNavigate} />} />
             <Route path="/mapping" element={<CommunityMappingView onNavigate={handleNavigate} />} />
@@ -346,7 +354,7 @@ function AuthenticatedApp() {
             />
             <Route path="/settings" element={<SettingsView onNavigate={handleNavigate} />} />
             <Route path="/resources" element={<ModulePlaceholder moduleId="resources" onNavigate={handleNavigate} />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to={ROLE_LANDING_ROUTE[user?.role] || '/dashboard'} replace />} />
           </Routes>
         </ErrorBoundary>
       )}
@@ -375,7 +383,11 @@ function AuthRouter() {
 
     case AUTH_STATUS.AUTHENTICATED:
     case AUTH_STATUS.EXPIRED:
-      return <AuthenticatedApp />;
+      return (
+        <ErrorBoundary onReset={() => window.location.reload()}>
+          <AuthenticatedApp />
+        </ErrorBoundary>
+      );
 
     case AUTH_STATUS.UNAUTHENTICATED:
     default:
