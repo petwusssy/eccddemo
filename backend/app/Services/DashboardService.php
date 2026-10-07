@@ -6,10 +6,50 @@ class DashboardService
 {
     /**
      * Get top-level dashboard summary metrics.
-     * Initial clean slate: 0 active operational records.
+     * Computes live metrics from MySQL database.
      */
     public function getSummary(): array
     {
+        try {
+            $totalChildren = \App\Models\Child::count();
+            $mappedHouseholds = \App\Models\Household::count();
+            $enrolled = \App\Models\Child::where('enrollment_status', 'Enrolled')->count();
+            $notEnrolled = \App\Models\Child::where(function ($q) {
+                $q->where('enrollment_status', 'Not Enrolled')->orWhereNull('enrollment_status');
+            })->count();
+            $healthDue = \App\Models\Child::where('health_status', 'like', '%due%')->count();
+            $devFollowups = \App\Models\Child::where('has_open_follow_up', true)->count();
+
+            return [
+                'totalChildren' => $totalChildren,
+                'mappedChildren' => $totalChildren,
+                'mappedPercentage' => $totalChildren > 0 ? 100 : 0,
+                'enrolledChildren' => $enrolled,
+                'enrolledPercentage' => $totalChildren > 0 ? (int) round(($enrolled / $totalChildren) * 100) : 0,
+                'notEnrolledChildren' => $notEnrolled,
+                'notEnrolledPercentage' => $totalChildren > 0 ? (int) round(($notEnrolled / $totalChildren) * 100) : 0,
+                'pendingChildren' => 0,
+                'pendingPercentage' => 0,
+                'healthMonitoringDue' => $healthDue,
+                'developmentFollowups' => $devFollowups,
+                'totalBarangays' => count(CommunityService::SAN_FERNANDO_BARANGAYS),
+                'barangaysNeedingAttention' => 0,
+                'reportingSchoolYear' => 'SY 2026–2027',
+                'cityMunicipality' => 'City of San Fernando, Pampanga',
+                'lastUpdated' => now()->toIso8601String(),
+                'coreAnswers' => [
+                    'identifiedChildren' => "{$totalChildren} children aged 0–4 documented in system",
+                    'enrolledChildren' => "{$enrolled} enrolled in CDCs and SNP programs (" . ($totalChildren > 0 ? (int) round(($enrolled / $totalChildren) * 100) : 0) . "%)",
+                    'notEnrolledChildren' => "{$notEnrolled} not enrolled",
+                    'needsHealthMonitoring' => "{$healthDue} children due/overdue for immunization or growth monitoring",
+                    'needsDevFollowup' => "{$devFollowups} children flagged for developmental domain delays or re-assessment",
+                    'barangaysNeedingAttention' => 'All barangays in good standing (0 priority cases)',
+                ],
+            ];
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Dashboard getSummary fallback: ' . $e->getMessage());
+        }
+
         return [
             'totalChildren' => 0,
             'mappedChildren' => 0,

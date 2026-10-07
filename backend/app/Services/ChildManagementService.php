@@ -11,10 +11,133 @@ class ChildManagementService
     protected static array $children = [];
 
     /**
+     * Helper to format Eloquent Child into API contract response format.
+     */
+    protected function formatChildModel(\App\Models\Child $child): array
+    {
+        $birthDate = $child->birth_date;
+        $now = now();
+        $ageYears = (int) ($birthDate ? $birthDate->diffInYears($now) : 3);
+        $ageMonths = (int) ($birthDate ? ($birthDate->diffInMonths($now) % 12) : 0);
+
+        $enrollmentStatus = $child->enrollment_status ?? 'Not Enrolled';
+        $healthStatus = $child->health_status ?? 'Normal';
+        $developmentStatus = $child->development_status ?? 'Normal';
+        $hasFollowUp = (bool) $child->has_open_follow_up;
+
+        $hhNo = $child->household?->household_no ?? 'HH-2026-0101';
+        $guardian = $child->household?->parent_guardian ?? '';
+        $address = $child->household?->address ?? '';
+        $contact = $child->household?->contact_number ?? '';
+        $brgyName = $child->barangay?->name ?? 'San Isidro';
+
+        return [
+            'id' => $child->eccd_id,
+            'eccd_id' => $child->eccd_id,
+            'firstName' => $child->first_name,
+            'middleName' => $child->middle_name ?? '',
+            'lastName' => $child->last_name,
+            'fullName' => trim($child->first_name . ' ' . $child->middle_name . ' ' . $child->last_name . ' ' . $child->suffix),
+            'birthDate' => $birthDate ? $birthDate->toDateString() : '2023-01-01',
+            'ageYears' => (int) $ageYears,
+            'ageMonths' => (int) $ageMonths,
+            'ageDisplay' => $ageYears . ' yrs',
+            'sex' => $child->sex,
+            'bloodType' => $child->blood_type ?? 'N/A',
+            'philSysNumber' => $child->philsys_card_no ?? 'N/A',
+            'psaBirthCert' => $child->psa_birth_cert ?? 'N/A',
+            'barangay' => $brgyName,
+            'purok' => $child->household?->purok ?? 'Purok 1',
+            'address' => $address,
+            'householdId' => $hhNo,
+            'parentGuardian' => $guardian,
+            'guardianRelationship' => 'Parent / Guardian',
+            'contactNumber' => $contact,
+            'emergencyContact' => $contact,
+            'is4PsBeneficiary' => (bool) ($child->household?->is_4ps ?? false),
+            'monthlyIncomeClass' => $child->household?->monthly_income_class ?? 'Low Income',
+            'assignedWorker' => 'CSWDO Worker',
+            'assignedWorkerContact' => '0917-555-0100',
+            'assignedCenter' => $child->dayCareCenter?->name ?? ($brgyName . ' CDC I'),
+            'enrollmentStatus' => $enrollmentStatus,
+            'healthStatus' => $healthStatus,
+            'developmentStatus' => $developmentStatus,
+            'hasOpenFollowUp' => $hasFollowUp,
+            'statusPillars' => [
+                'mapped' => ['status' => 'Mapped', 'variant' => 'success', 'date' => $child->created_at?->toDateString() ?? now()->toDateString()],
+                'enrolled' => ['status' => $enrollmentStatus, 'variant' => $enrollmentStatus === 'Enrolled' ? 'success' : 'neutral'],
+                'health' => ['status' => $healthStatus, 'variant' => 'neutral'],
+                'development' => ['status' => $developmentStatus, 'variant' => 'neutral'],
+                'followUp' => ['status' => $hasFollowUp ? 'Needs Attention' : 'None', 'variant' => $hasFollowUp ? 'danger' : 'neutral'],
+            ],
+            'healthRecords' => [],
+            'developmentAssessments' => [],
+            'followUpCases' => [],
+            'timeline' => [
+                [
+                    'id' => 'TL-NEW',
+                    'type' => 'Community Mapping',
+                    'title' => 'Child Record Registered',
+                    'description' => 'Master persistent record registered in CSWDO database.',
+                    'date' => $child->created_at?->toDateString() ?? now()->toDateString(),
+                    'author' => 'CSWDO Field Officer',
+                    'badgeVariant' => 'success',
+                ],
+            ],
+            'familyHousehold' => [
+                'householdId' => $hhNo,
+                'parentGuardian' => $guardian,
+                'address' => $address,
+                'barangay' => $brgyName,
+                'totalFamilyMembers' => 3,
+                'coResidentChildren' => [],
+            ],
+        ];
+    }
+
+    /**
      * GET /api/children
      */
     public function getChildren(array $filters = []): array
     {
+        try {
+            $query = \App\Models\Child::with(['household', 'barangay', 'dayCareCenter']);
+
+            if (!empty($filters['search'])) {
+                $q = trim($filters['search']);
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('first_name', 'like', "%{$q}%")
+                        ->orWhere('last_name', 'like', "%{$q}%")
+                        ->orWhere('eccd_id', 'like', "%{$q}%");
+                });
+            }
+
+            if (!empty($filters['barangay'])) {
+                $query->whereHas('barangay', function ($bQuery) use ($filters) {
+                    $bQuery->where('name', $filters['barangay']);
+                });
+            }
+
+            if (!empty($filters['enrollmentStatus'])) {
+                $query->where('enrollment_status', $filters['enrollmentStatus']);
+            }
+
+            if (!empty($filters['sex'])) {
+                $query->where('sex', $filters['sex']);
+            }
+
+            $dbChildren = $query->get();
+            if ($dbChildren->isNotEmpty()) {
+                $formatted = $dbChildren->map(fn($c) => $this->formatChildModel($c))->toArray();
+                return [
+                    'total' => count($formatted),
+                    'children' => $formatted,
+                ];
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('DB getChildren fallback: ' . $e->getMessage());
+        }
+
         $result = self::$children;
 
         // Search query
@@ -55,6 +178,13 @@ class ChildManagementService
      */
     public function getChildById(string $id): ?array
     {
+        try {
+            $child = \App\Models\Child::where('eccd_id', $id)->with(['household', 'barangay', 'dayCareCenter'])->first();
+            if ($child) {
+                return $this->formatChildModel($child);
+            }
+        } catch (\Throwable $e) { }
+
         foreach (self::$children as $child) {
             if ($child['id'] === $id) {
                 return $child;
@@ -95,69 +225,112 @@ class ChildManagementService
      */
     public function createChild(array $data): array
     {
-        $sequence = 1245 + count(self::$children);
-        $uniqueId = 'ECCD-2026-' . str_pad((string) $sequence, 6, '0', STR_PAD_LEFT);
+        $count = \App\Models\Child::count() ?: count(self::$children);
+        $sequence = 1245 + $count;
+        $uniqueId = $data['id'] ?? ('ECCD-2026-' . str_pad((string) $sequence, 6, '0', STR_PAD_LEFT));
 
-        $newChild = [
-            'id' => $uniqueId,
-            'firstName' => $data['firstName'] ?? '',
-            'middleName' => $data['middleName'] ?? '',
-            'lastName' => $data['lastName'] ?? '',
-            'fullName' => trim(($data['firstName'] ?? '') . ' ' . ($data['middleName'] ?? '') . ' ' . ($data['lastName'] ?? '')),
-            'birthDate' => $data['birthDate'] ?? '2023-01-01',
-            'ageYears' => (int) ($data['ageYears'] ?? 3),
-            'ageMonths' => (int) ($data['ageMonths'] ?? 0),
-            'ageDisplay' => ($data['ageYears'] ?? 3) . ' yrs',
-            'sex' => $data['sex'] ?? 'Female',
-            'bloodType' => $data['bloodType'] ?? 'N/A',
-            'philSysNumber' => $data['philSysNumber'] ?? 'N/A',
-            'psaBirthCert' => $data['psaBirthCert'] ?? 'N/A',
-            'barangay' => $data['barangay'] ?? 'San Isidro',
-            'purok' => $data['purok'] ?? 'Purok 1',
-            'address' => $data['address'] ?? '',
-            'householdId' => $data['householdId'] ?? 'HH-2026-0101',
-            'parentGuardian' => $data['parentGuardian'] ?? '',
-            'guardianRelationship' => $data['guardianRelationship'] ?? 'Mother',
-            'contactNumber' => $data['contactNumber'] ?? '',
-            'emergencyContact' => $data['emergencyContact'] ?? '',
-            'is4PsBeneficiary' => (bool) ($data['is4PsBeneficiary'] ?? false),
-            'monthlyIncomeClass' => $data['monthlyIncomeClass'] ?? 'Low Income',
-            'assignedWorker' => $data['assignedWorker'] ?? 'CSWDO Worker',
-            'assignedWorkerContact' => '0917-555-0100',
-            'assignedCenter' => $data['assignedCenter'] ?? 'San Isidro CDC I',
-            'statusPillars' => [
-                'mapped' => ['status' => 'Mapped', 'variant' => 'success', 'date' => now()->toDateString()],
-                'enrolled' => ['status' => $data['enrollmentStatus'] ?? 'Not Enrolled', 'variant' => 'neutral'],
-                'health' => ['status' => 'Pending Assessment', 'variant' => 'neutral'],
-                'development' => ['status' => 'Pending Evaluation', 'variant' => 'neutral'],
-                'followUp' => ['status' => 'None', 'variant' => 'neutral'],
-            ],
-            'healthRecords' => [],
-            'developmentAssessments' => [],
-            'followUpCases' => [],
-            'timeline' => [
+        try {
+            $hhNo = $data['householdId'] ?? 'HH-2026-0101';
+            $household = \App\Models\Household::where('household_no', $hhNo)->first();
+            if (!$household) {
+                $barangay = \App\Models\Barangay::where('name', $data['barangay'] ?? 'San Isidro')->first() ?? \App\Models\Barangay::first();
+                $household = \App\Models\Household::create([
+                    'household_no' => $hhNo,
+                    'barangay_id' => $barangay?->id ?? 1,
+                    'address' => $data['address'] ?? 'N/A',
+                    'parent_guardian' => $data['parentGuardian'] ?? 'Parent / Guardian',
+                    'contact_number' => $data['contactNumber'] ?? null,
+                    'mapped_date' => now()->toDateString(),
+                    'mapped_by' => 'Field Worker',
+                ]);
+            }
+
+            $barangayId = $household->barangay_id ?? (\App\Models\Barangay::where('name', $data['barangay'] ?? '')->first()?->id ?? 1);
+
+            $childModel = \App\Models\Child::updateOrCreate(
+                ['eccd_id' => $uniqueId],
                 [
-                    'id' => 'TL-NEW',
-                    'type' => 'Community Mapping',
-                    'title' => 'Child Record Registered',
-                    'description' => 'Master persistent record registered in CSWDO database.',
-                    'date' => now()->toDateString(),
-                    'author' => 'CSWDO Field Officer',
-                    'badgeVariant' => 'success',
-                ],
-            ],
-            'familyHousehold' => [
+                    'household_id' => $household->id,
+                    'barangay_id' => $barangayId,
+                    'first_name' => $data['firstName'] ?? 'Child',
+                    'middle_name' => $data['middleName'] ?? null,
+                    'last_name' => $data['lastName'] ?? 'Record',
+                    'birth_date' => $data['birthDate'] ?? '2023-01-01',
+                    'sex' => (ucfirst(strtolower($data['sex'] ?? 'Female')) === 'Male') ? 'Male' : 'Female',
+                    'blood_type' => $data['bloodType'] ?? null,
+                    'philsys_card_no' => $data['philSysNumber'] ?? null,
+                    'psa_birth_cert' => $data['psaBirthCert'] ?? null,
+                    'enrollment_status' => $data['enrollmentStatus'] ?? 'Not Enrolled',
+                ]
+            );
+
+            $formatted = $this->formatChildModel($childModel->load(['household', 'barangay']));
+            self::$children[] = $formatted;
+            return $formatted;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('DB createChild in ChildManagementService error: ' . $e->getMessage());
+
+            $newChild = [
+                'id' => $uniqueId,
+                'firstName' => $data['firstName'] ?? '',
+                'middleName' => $data['middleName'] ?? '',
+                'lastName' => $data['lastName'] ?? '',
+                'fullName' => trim(($data['firstName'] ?? '') . ' ' . ($data['middleName'] ?? '') . ' ' . ($data['lastName'] ?? '')),
+                'birthDate' => $data['birthDate'] ?? '2023-01-01',
+                'ageYears' => (int) ($data['ageYears'] ?? 3),
+                'ageMonths' => (int) ($data['ageMonths'] ?? 0),
+                'ageDisplay' => ($data['ageYears'] ?? 3) . ' yrs',
+                'sex' => $data['sex'] ?? 'Female',
+                'bloodType' => $data['bloodType'] ?? 'N/A',
+                'philSysNumber' => $data['philSysNumber'] ?? 'N/A',
+                'psaBirthCert' => $data['psaBirthCert'] ?? 'N/A',
+                'barangay' => $data['barangay'] ?? 'San Isidro',
+                'purok' => $data['purok'] ?? 'Purok 1',
+                'address' => $data['address'] ?? '',
                 'householdId' => $data['householdId'] ?? 'HH-2026-0101',
                 'parentGuardian' => $data['parentGuardian'] ?? '',
-                'address' => $data['address'] ?? '',
-                'barangay' => $data['barangay'] ?? 'San Isidro',
-                'totalFamilyMembers' => 3,
-                'coResidentChildren' => [],
-            ],
-        ];
+                'guardianRelationship' => $data['guardianRelationship'] ?? 'Mother',
+                'contactNumber' => $data['contactNumber'] ?? '',
+                'emergencyContact' => $data['emergencyContact'] ?? '',
+                'is4PsBeneficiary' => (bool) ($data['is4PsBeneficiary'] ?? false),
+                'monthlyIncomeClass' => $data['monthlyIncomeClass'] ?? 'Low Income',
+                'assignedWorker' => $data['assignedWorker'] ?? 'CSWDO Worker',
+                'assignedWorkerContact' => '0917-555-0100',
+                'assignedCenter' => $data['assignedCenter'] ?? 'San Isidro CDC I',
+                'statusPillars' => [
+                    'mapped' => ['status' => 'Mapped', 'variant' => 'success', 'date' => now()->toDateString()],
+                    'enrolled' => ['status' => $data['enrollmentStatus'] ?? 'Not Enrolled', 'variant' => 'neutral'],
+                    'health' => ['status' => 'Pending Assessment', 'variant' => 'neutral'],
+                    'development' => ['status' => 'Pending Evaluation', 'variant' => 'neutral'],
+                    'followUp' => ['status' => 'None', 'variant' => 'neutral'],
+                ],
+                'healthRecords' => [],
+                'developmentAssessments' => [],
+                'followUpCases' => [],
+                'timeline' => [
+                    [
+                        'id' => 'TL-NEW',
+                        'type' => 'Community Mapping',
+                        'title' => 'Child Record Registered',
+                        'description' => 'Master persistent record registered in CSWDO database.',
+                        'date' => now()->toDateString(),
+                        'author' => 'CSWDO Field Officer',
+                        'badgeVariant' => 'success',
+                    ],
+                ],
+                'familyHousehold' => [
+                    'householdId' => $data['householdId'] ?? 'HH-2026-0101',
+                    'parentGuardian' => $data['parentGuardian'] ?? '',
+                    'address' => $data['address'] ?? '',
+                    'barangay' => $data['barangay'] ?? 'San Isidro',
+                    'totalFamilyMembers' => 3,
+                    'coResidentChildren' => [],
+                ],
+            ];
 
-        self::$children[] = $newChild;
-        return $newChild;
+            self::$children[] = $newChild;
+            return $newChild;
+        }
     }
 
     /**

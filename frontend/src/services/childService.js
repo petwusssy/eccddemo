@@ -15,12 +15,28 @@
  */
 
 import { centralDataStore } from './centralDataStore.js';
+import { getApiUrl } from './apiConfig.js';
 
 export const childService = {
   /**
    * GET /api/children (Directory with search & filters)
    */
   async getChildren(filters = {}) {
+    try {
+      const res = await fetch(getApiUrl('/api/children'), {
+        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const serverList = json.data?.children || json.data || (Array.isArray(json) ? json : []);
+        if (Array.isArray(serverList) && serverList.length > 0) {
+          centralDataStore.mergeRecordsFromServer(serverList, []);
+        }
+      }
+    } catch (e) {
+      // Offline fallback: continue reading from local centralDataStore
+    }
+
     let list = centralDataStore.getChildren() || [];
 
     if (filters.search) {

@@ -14,12 +14,28 @@
 
 import { centralDataStore } from './centralDataStore.js';
 import { getPhilippinesDateTime } from '../utils/phTime.js';
+import { getApiUrl } from './apiConfig.js';
 
 export const dashboardService = {
   /**
    * GET /api/dashboard/summary
    */
   async getSummary() {
+    try {
+      const res = await fetch(getApiUrl('/api/dashboard/summary'), {
+        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const serverData = json.data || json;
+        if (serverData && typeof serverData.totalChildren === 'number' && serverData.totalChildren > 0) {
+          return serverData;
+        }
+      }
+    } catch (e) {
+      // Offline fallback
+    }
+
     const children = centralDataStore.getChildren() || [];
     const enrollments = centralDataStore.getEnrollments() || [];
     const healthLogs = centralDataStore.getHealthMonitorings() || [];

@@ -10,6 +10,7 @@
 
 import { openDB } from 'idb';
 import { getApiUrl } from './apiConfig';
+import { centralDataStore } from './centralDataStore.js';
 
 const DB_NAME = 'eccd_care_offline_db';
 const DB_VERSION = 1;
@@ -154,26 +155,38 @@ export async function syncPendingSurveysToBackend() {
         body: JSON.stringify(householdPayload),
       });
 
+      if (!hhRes.ok) {
+        throw new Error(`Household sync failed with HTTP status ${hhRes.status}`);
+      }
+
+      const hhJson = await hhRes.json();
+      const savedHh = hhJson.data || householdPayload;
+      centralDataStore.mergeRecordsFromServer([], [savedHh]);
+
       // 2. Post Children if present
       if (Array.isArray(survey.children) && survey.children.length > 0) {
         for (const child of survey.children) {
-          try {
-            await fetch(getApiUrl('/api/children'), {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'Bypass-Tunnel-Reminder': 'true',
-              },
-              body: JSON.stringify({
-                ...child,
-                householdId: householdPayload.id,
-                barangay: householdPayload.barangay,
-              }),
-            });
-          } catch (childErr) {
-            console.warn('Child registration sync warning:', childErr);
+          const childRes = await fetch(getApiUrl('/api/children'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              'Bypass-Tunnel-Reminder': 'true',
+            },
+            body: JSON.stringify({
+              ...child,
+              householdId: householdPayload.id,
+              barangay: householdPayload.barangay,
+            }),
+          });
+
+          if (!childRes.ok) {
+            throw new Error(`Child sync failed with HTTP status ${childRes.status}`);
           }
+
+          const childJson = await childRes.json();
+          const savedChild = childJson.data || child;
+          centralDataStore.mergeRecordsFromServer([savedChild], []);
         }
       }
 
@@ -183,7 +196,6 @@ export async function syncPendingSurveysToBackend() {
     } catch (err) {
       console.error(`Failed to sync survey ${survey.id}:`, err);
       failedCount++;
-      // Stop or continue processing remaining
     }
   }
 

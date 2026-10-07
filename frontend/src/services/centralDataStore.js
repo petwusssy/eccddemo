@@ -327,6 +327,45 @@ class CentralDataStore {
     this.save();
   }
 
+  /**
+   * Merge live records received from MySQL backend API into local store.
+   */
+  mergeRecordsFromServer(serverChildren = [], serverHouseholds = []) {
+    let changed = false;
+
+    if (Array.isArray(serverHouseholds) && serverHouseholds.length > 0) {
+      if (!Array.isArray(this.data.households)) this.data.households = [];
+      serverHouseholds.forEach((sh) => {
+        const id = sh.id || sh.household_no;
+        const idx = this.data.households.findIndex((h) => h.id === id || h.household_no === id);
+        if (idx >= 0) {
+          this.data.households[idx] = { ...this.data.households[idx], ...sh };
+        } else {
+          this.data.households.unshift(sh);
+        }
+        changed = true;
+      });
+    }
+
+    if (Array.isArray(serverChildren) && serverChildren.length > 0) {
+      if (!Array.isArray(this.data.children)) this.data.children = [];
+      serverChildren.forEach((sc) => {
+        const id = sc.id || sc.eccd_id;
+        const idx = this.data.children.findIndex((c) => c.id === id || c.eccd_id === id);
+        if (idx >= 0) {
+          this.data.children[idx] = { ...this.data.children[idx], ...sc };
+        } else {
+          this.data.children.unshift(sc);
+        }
+        changed = true;
+      });
+    }
+
+    if (changed) {
+      this.save();
+    }
+  }
+
   // --- ENTITY COLLECTION GETTERS ---
   getRoles() { return this.data.roles; }
   getUsers() { return this.data.users; }
