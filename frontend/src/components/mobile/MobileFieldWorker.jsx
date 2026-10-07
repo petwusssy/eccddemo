@@ -74,7 +74,9 @@ export function MobileFieldWorker({ onNavigate }) {
 
   // --- SYNC ENGINE STATE ---
   // Sync states: 'online' | 'offline' | 'syncing' | 'pending' | 'synced'
-  const [syncState, setSyncState] = useState('online');
+  const [syncState, setSyncState] = useState(
+    typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'online'
+  );
   const [pendingCount, setPendingCount] = useState(0);
   const [lastSyncedTime, setLastSyncedTime] = useState('Just now');
 
@@ -162,7 +164,9 @@ export function MobileFieldWorker({ onNavigate }) {
 
     const handleOnline = () => {
       setSyncState('online');
-      refreshPending();
+      refreshPending().then(() => {
+        handleTriggerSync();
+      });
     };
 
     const handleOffline = () => {
@@ -174,7 +178,19 @@ export function MobileFieldWorker({ onNavigate }) {
     window.addEventListener('eccd:offline-survey-updated', refreshPending);
     window.addEventListener('eccd:offline-sync-completed', refreshPending);
 
+    const interval = setInterval(() => {
+      if (typeof navigator !== 'undefined') {
+        if (!navigator.onLine && syncState !== 'offline') {
+          setSyncState('offline');
+        } else if (navigator.onLine && syncState === 'offline') {
+          setSyncState('online');
+          refreshPending();
+        }
+      }
+    }, 10000);
+
     return () => {
+      clearInterval(interval);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('eccd:offline-survey-updated', refreshPending);
@@ -568,19 +584,24 @@ export function MobileFieldWorker({ onNavigate }) {
             {syncState === 'offline' ? <Wifi size={14} /> : <WifiOff size={14} />}
             <span>{syncState === 'offline' ? 'Go Online' : 'Go Offline'}</span>
           </button>
-
-          {(syncState === 'pending' || syncState === 'offline') && (
-            <button
-              type="button"
-              className="sync-interactive-chip"
-              onClick={handleTriggerSync}
-              disabled={syncState === 'offline' || syncState === 'syncing'}
-              title="Sync pending records"
-            >
-              <RefreshCw size={14} className={syncState === 'syncing' ? 'spin' : ''} />
-              <span>Sync</span>
-            </button>
-          )}
+          <button
+            type="button"
+            className="sync-interactive-chip"
+            onClick={handleTriggerSync}
+            disabled={syncState === 'offline' || syncState === 'syncing'}
+            title={syncState === 'offline' ? 'Cannot sync while offline. Connect to Wi-Fi/cellular.' : 'Sync pending records or double-check server synchronization'}
+          >
+            <RefreshCw size={14} className={syncState === 'syncing' ? 'spin' : ''} />
+            <span>
+              {syncState === 'syncing'
+                ? 'Syncing...'
+                : syncState === 'offline'
+                ? 'Offline'
+                : pendingCount > 0
+                ? `Sync (${pendingCount})`
+                : 'Sync (Double-Check)'}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -689,9 +710,10 @@ export function MobileFieldWorker({ onNavigate }) {
           className="quick-action-btn"
           onClick={handleTriggerSync}
           disabled={syncState === 'syncing' || syncState === 'offline'}
+          title={syncState === 'offline' ? 'Connect to Wi-Fi to sync records' : 'Sync pending records or double-check server synchronization'}
         >
           <RefreshCw size={20} color="#059669" className={syncState === 'syncing' ? 'spin' : ''} />
-          <span>Sync</span>
+          <span>{syncState === 'syncing' ? 'Syncing...' : syncState === 'offline' ? 'Offline' : pendingCount > 0 ? `Sync (${pendingCount})` : 'Sync (Check)'}</span>
         </button>
       </div>
 

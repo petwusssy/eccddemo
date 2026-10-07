@@ -71,6 +71,7 @@ Route::prefix('mapping')->group(function () {
     Route::get('/activities/{id}', [CommunityMappingController::class, 'getActivityById']);
     Route::post('/activities/{id}/assignments', [CommunityMappingController::class, 'assignWorkers']);
     Route::post('/children', [CommunityMappingController::class, 'createChild']);
+    Route::post('/sync', [CommunityMappingController::class, 'syncBatch']);
 });
 
 Route::prefix('households')->group(function () {

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import { OfflineSyncBanner } from '../ui/OfflineSyncBanner';
+import { getPendingSyncCount } from '../../services/offlineMappingStore';
 
 export function AppShell({
   children,
@@ -20,9 +21,44 @@ export function AppShell({
 }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+  const [hasPendingRecords, setHasPendingRecords] = useState(false);
 
-  // Dedicated Frontline Offline capabilities exclusively for Child Development Teachers (CDTs)
+  // Frontline role detection
   const isCDT = user?.role === 'cdt' || user?.role === 'daycare_worker' || user?.role === 'field_worker';
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (typeof navigator !== 'undefined') {
+        setIsOffline(!navigator.onLine);
+      }
+      try {
+        const count = await getPendingSyncCount();
+        setHasPendingRecords(count > 0);
+      } catch (_) {}
+    };
+
+    checkStatus();
+
+    const handleOnline = () => { setIsOffline(false); checkStatus(); };
+    const handleOffline = () => { setIsOffline(true); checkStatus(); };
+    const handleStoreChange = () => { checkStatus(); };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('eccd:offline-survey-updated', handleStoreChange);
+    window.addEventListener('eccd:offline-sync-completed', handleStoreChange);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('eccd:offline-survey-updated', handleStoreChange);
+      window.removeEventListener('eccd:offline-sync-completed', handleStoreChange);
+    };
+  }, []);
+
+  // Show banner whenever: device is offline, has pending records, or in frontline/mapping workflows
+  const showOfflineBanner = isOffline || hasPendingRecords || isCDT || ['mapping', 'community-mapping', 'households'].includes(activeItem);
 
   return (
     <div className="app-root">
@@ -50,12 +86,14 @@ export function AppShell({
             user={user}
             onLogout={onLogout}
             roleLabel={roleLabel}
+            isOffline={isOffline}
+            pendingCount={hasPendingRecords ? 1 : 0}
           />
 
           {/* Main Workspace */}
           <main className="main-content">
-            {/* Dedicated Frontline Offline Sync Indicator exclusively for Child Development Teachers */}
-            {isCDT && <OfflineSyncBanner />}
+            {/* Frontline Offline Sync Indicator */}
+            {showOfflineBanner && <OfflineSyncBanner />}
 
             {/* Contextual Page Header */}
             {(pageTitle || pageActions) && (

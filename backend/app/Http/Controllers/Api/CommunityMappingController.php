@@ -147,4 +147,28 @@ class CommunityMappingController extends Controller
             'data' => $result,
         ], 201);
     }
+
+    /**
+     * POST /api/mapping/sync
+     * Batch synchronization of offline surveys, households, and children.
+     */
+    public function syncBatch(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'surveys' => 'nullable|array',
+            'households' => 'nullable|array',
+            'children' => 'nullable|array',
+            'frontlineActions' => 'nullable|array',
+        ]);
+
+        $result = $this->mappingService->syncBatch($validated);
+
+        return response()->json([
+            'ok' => true,
+            'status' => 200,
+            'data' => $result,
+            'message' => $result['message'] ?? 'Records synchronized successfully.',
+        ], 200);
+    }
 }
+

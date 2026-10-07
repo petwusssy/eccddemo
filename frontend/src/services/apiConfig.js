@@ -11,9 +11,20 @@
 
 /**
  * Get the configured dynamic API base URL.
+ * Priority:
+ * 1. User runtime setting in localStorage (enables phone/Vercel to point to laptop IP or tunnel)
+ * 2. Vite build-time env VITE_API_URL
+ * 3. Localhost fallback http://127.0.0.1:8000
  * @returns {string} Normalized base URL without trailing slash
  */
 export function getApiBaseUrl() {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const customUrl = window.localStorage.getItem('eccd_backend_api_url');
+    if (customUrl && typeof customUrl === 'string' && customUrl.trim() !== '') {
+      return customUrl.trim().replace(/\/+$/, '');
+    }
+  }
+
   const envUrl =
     typeof import.meta !== 'undefined' &&
     import.meta.env &&
@@ -24,6 +35,30 @@ export function getApiBaseUrl() {
   }
 
   return 'http://127.0.0.1:8000';
+}
+
+export function setCustomApiUrl(url) {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    if (url && typeof url === 'string' && url.trim() !== '') {
+      window.localStorage.setItem('eccd_backend_api_url', url.trim().replace(/\/+$/, ''));
+    } else {
+      window.localStorage.removeItem('eccd_backend_api_url');
+    }
+    window.dispatchEvent(new CustomEvent('eccd:api-url-changed', { detail: { url: getApiBaseUrl() } }));
+  }
+}
+
+export function clearCustomApiUrl() {
+  setCustomApiUrl('');
+}
+
+export function isUsingLocalhostOnRemote() {
+  if (typeof window === 'undefined') return false;
+  const host = window.location.hostname;
+  const isRemote = host !== 'localhost' && host !== '127.0.0.1';
+  const currentBase = getApiBaseUrl();
+  const pointsToLocalhost = currentBase.includes('127.0.0.1') || currentBase.includes('localhost');
+  return isRemote && pointsToLocalhost;
 }
 
 export const API_BASE_URL = getApiBaseUrl();
@@ -74,4 +109,7 @@ export default {
   getApiBaseUrl,
   API_BASE_URL,
   getApiUrl,
+  setCustomApiUrl,
+  clearCustomApiUrl,
+  isUsingLocalhostOnRemote,
 };

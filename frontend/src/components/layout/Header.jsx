@@ -13,10 +13,17 @@ import {
   ChevronDown,
   Settings,
   HelpCircle,
+  Wifi,
+  WifiOff,
+  RefreshCw,
 } from 'lucide-react';
 import { mockNotifications } from '../../data/mockData';
 import { ROLE_LABELS } from '../../services/authService';
 import anacLogo from '../../assets/anac-logo.png';
+import {
+  getPendingSyncCount,
+  syncPendingSurveysToBackend,
+} from '../../services/offlineMappingStore';
 
 /**
  * ECCD CARE — Application Header
@@ -42,10 +49,60 @@ export function Header({
   user,
   onLogout,
   roleLabel,
+  isOffline: initialIsOffline,
 }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notifications, setNotifications] = useState(mockNotifications);
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+  const [pendingCount, setPendingCount] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  useEffect(() => {
+    const updateStatus = async () => {
+      if (typeof navigator !== 'undefined') {
+        setIsOnline(navigator.onLine);
+      }
+      try {
+        const count = await getPendingSyncCount();
+        setPendingCount(count);
+      } catch (_) {}
+    };
+
+    updateStatus();
+
+    const handleOnline = () => { setIsOnline(true); updateStatus(); };
+    const handleOffline = () => { setIsOnline(false); updateStatus(); };
+    const handleStore = () => { updateStatus(); };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('eccd:offline-survey-updated', handleStore);
+    window.addEventListener('eccd:offline-sync-completed', handleStore);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('eccd:offline-survey-updated', handleStore);
+      window.removeEventListener('eccd:offline-sync-completed', handleStore);
+    };
+  }, []);
+
+  const handleHeaderSync = async () => {
+    if (!navigator.onLine || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      await syncPendingSurveysToBackend();
+      const count = await getPendingSyncCount();
+      setPendingCount(count);
+    } catch (e) {
+      console.warn('Header sync notice:', e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const notifRef = useRef(null);
   const profileRef = useRef(null);
@@ -124,6 +181,76 @@ export function Header({
       </div>
 
       <div className="header-right">
+        {/* Network & Offline Status Indicator */}
+        <div className="header-action-wrapper">
+          {!isOnline ? (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '4px 10px',
+                borderRadius: '9999px',
+                fontSize: '11px',
+                fontWeight: 600,
+                background: '#fef3c7',
+                color: '#92400e',
+                border: '1px solid #fde68a',
+              }}
+              title="Walang internet connection. Naka-save ang bagong data sa device (IndexedDB)."
+            >
+              <WifiOff size={13} className="animate-pulse" style={{ color: '#d97706' }} />
+              <span>Offline Mode</span>
+            </span>
+          ) : pendingCount > 0 ? (
+            <button
+              type="button"
+              onClick={handleHeaderSync}
+              disabled={isSyncing}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '4px 10px',
+                borderRadius: '9999px',
+                fontSize: '11px',
+                fontWeight: 600,
+                background: '#eff6ff',
+                color: '#1d4ed8',
+                border: '1px solid #bfdbfe',
+                cursor: 'pointer',
+              }}
+              title="Click to sync pending records to backend server"
+            >
+              <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
+              <span>Sync ({pendingCount})</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleHeaderSync}
+              disabled={isSyncing}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '4px 9px',
+                borderRadius: '9999px',
+                fontSize: '11px',
+                fontWeight: 600,
+                background: '#ecfdf5',
+                color: '#047857',
+                border: '1px solid #a7f3d0',
+                cursor: 'pointer',
+              }}
+              title="Click to double-check sync with backend database"
+            >
+              <Wifi size={12} style={{ color: '#059669' }} />
+              <span>Online</span>
+            </button>
+          )}
+        </div>
+
         {/* Notifications Popover */}
         <div className="header-action-wrapper" ref={notifRef}>
           <button

@@ -178,7 +178,75 @@ export async function syncPendingSurveysToBackend() {
   let syncedCount = 0;
   let failedCount = 0;
 
-  // 1. Sync Community Mapping Surveys from IndexedDB (Form 1)
+  // 1. Primary Attempt: Atomic Batch Sync via POST /api/mapping/sync
+  if (pendingSurveys.length > 0 || pendingActions.length > 0) {
+    try {
+      const batchPayload = {
+        surveys: pendingSurveys,
+        frontlineActions: pendingActions,
+        households: centralDataStore.getHouseholds() || [],
+        children: centralDataStore.getChildren() || [],
+      };
+
+      const syncRes = await fetch(getApiUrl('/api/mapping/sync'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+        body: JSON.stringify(batchPayload),
+      });
+
+      if (syncRes.ok) {
+        const syncJson = await syncRes.json();
+        for (const survey of pendingSurveys) {
+          await markSurveySynced(survey.id, { ok: true, synced: true });
+          syncedCount++;
+        }
+        for (const item of pendingActions) {
+          item.syncStatus = 'synced';
+          item.syncedAt = new Date().toISOString();
+          await db.put(STORE_QUEUE, item);
+          syncedCount++;
+        }
+
+        // Merge latest children from server
+        try {
+          const freshChildren = await fetch(getApiUrl('/api/children'), {
+            headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+          });
+          if (freshChildren.ok) {
+            const fcJson = await freshChildren.json();
+            const serverKids = fcJson.data?.children || fcJson.data || [];
+            if (Array.isArray(serverKids) && serverKids.length > 0) {
+              centralDataStore.mergeRecordsFromServer(serverKids, []);
+            }
+          }
+        } catch (_) {}
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('eccd:offline-sync-completed', {
+              detail: { synced: syncedCount, failed: 0 },
+            })
+          );
+        }
+
+        return {
+          success: true,
+          synced: syncedCount,
+          failed: 0,
+          total: syncedCount,
+          message: syncJson.message || 'Successfully synchronized all records to CSWDO database.',
+        };
+      }
+    } catch (batchErr) {
+      console.warn('Batch sync endpoint note, falling back to itemized sync:', batchErr.message);
+    }
+  }
+
+  // 2. Resilient Itemized Fallback: Sync Community Mapping Surveys from IndexedDB (Form 1)
   for (const survey of pendingSurveys) {
     try {
       const householdPayload = survey.household || {
@@ -245,7 +313,7 @@ export async function syncPendingSurveysToBackend() {
     }
   }
 
-  // 2. Sync General Frontline Actions (Health, Assessment, Enrollment, Follow-up)
+  // 3. Sync General Frontline Actions (Health, Assessment, Enrollment, Follow-up)
   for (const item of pendingActions) {
     try {
       const res = await fetch(getApiUrl(item.endpoint), {
@@ -272,7 +340,7 @@ export async function syncPendingSurveysToBackend() {
     }
   }
 
-  // 3. Fallback Cross-Check: Sync any children in centralDataStore that are missing on the server
+  // 4. Double-Check & Cross-Check: Sync any children/households in centralDataStore missing on server
   try {
     const serverChildrenRes = await fetch(getApiUrl('/api/children'), {
       headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
@@ -288,9 +356,7 @@ export async function syncPendingSurveysToBackend() {
 
       for (const localChild of localChildren) {
         const localId = localChild.id || localChild.eccd_id;
-        // If this child is not on the server and is not just the seed template
         if (!serverIdSet.has(localId)) {
-          // Push household first
           const hh = localHouseholds.find((h) => (h.id || h.household_no) === localChild.householdId) || {
             id: localChild.householdId || 'HH-2026-0101',
             parentGuardian: localChild.parentGuardian || 'Parent / Guardian',
@@ -313,7 +379,6 @@ export async function syncPendingSurveysToBackend() {
             console.warn('Household push warning:', hhErr.message);
           }
 
-          // Push child
           const childPushRes = await fetch(getApiUrl('/api/children'), {
             method: 'POST',
             headers: {
@@ -338,7 +403,6 @@ export async function syncPendingSurveysToBackend() {
         }
       }
 
-      // Merge latest server data into centralDataStore
       if (serverKids.length > 0) {
         centralDataStore.mergeRecordsFromServer(serverKids, []);
       }
@@ -360,7 +424,97 @@ export async function syncPendingSurveysToBackend() {
     synced: syncedCount,
     failed: failedCount,
     total: pendingSurveys.length + pendingActions.length + syncedCount,
+    message: failedCount === 0
+      ? (syncedCount > 0 ? `Successfully synchronized ${syncedCount} record(s) to server.` : 'Verified: All records are up to date in central database.')
+      : `Sync completed with ${failedCount} error(s).`,
   };
+}
+
+/**
+ * Exports all offline surveys and local records as a downloadable JSON file.
+ * Perfect backup for phone-to-laptop transfer when offline or across network barriers.
+ */
+export async function exportOfflineDataBundle() {
+  const db = await getOfflineDb();
+  const allSurveys = await db.getAll('mapping_surveys');
+  const allQueue = await db.getAll('frontline_queue');
+  const localHouseholds = centralDataStore.getHouseholds() || [];
+  const localChildren = centralDataStore.getChildren() || [];
+
+  const bundle = {
+    exportedAt: new Date().toISOString(),
+    version: '1.0',
+    surveys: allSurveys,
+    queue: allQueue,
+    households: localHouseholds,
+    children: localChildren,
+  };
+
+  const jsonStr = JSON.stringify(bundle, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `eccd-mapping-offline-bundle-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  return bundle;
+}
+
+/**
+ * Imports an offline bundle into IndexedDB and centralDataStore.
+ */
+export async function importOfflineDataBundle(bundle) {
+  if (!bundle || typeof bundle !== 'object') {
+    throw new Error('Invalid bundle format');
+  }
+
+  const db = await getOfflineDb();
+  let count = 0;
+
+  if (Array.isArray(bundle.surveys)) {
+    for (const survey of bundle.surveys) {
+      await db.put('mapping_surveys', survey);
+      count++;
+    }
+  }
+
+  if (Array.isArray(bundle.queue)) {
+    for (const item of bundle.queue) {
+      await db.put('frontline_queue', item);
+      count++;
+    }
+  }
+
+  if (Array.isArray(bundle.children) || Array.isArray(bundle.households)) {
+    centralDataStore.mergeRecordsFromServer(bundle.children || [], bundle.households || []);
+  }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('eccd:offline-survey-updated', { detail: { count } }));
+  }
+
+  return { success: true, importedCount: count };
+}
+
+/**
+ * Clears all pending and cached offline mapping records from IndexedDB.
+ */
+export async function clearAllOfflineData() {
+  const db = await getOfflineDb();
+  await db.clear('mapping_surveys');
+  await db.clear('frontline_queue');
+  centralDataStore.reset();
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('eccd:offline-survey-updated', { detail: { cleared: true } }));
+    window.dispatchEvent(new CustomEvent('eccd:offline-sync-completed', { detail: { synced: 0, failed: 0 } }));
+  }
+
+  return { success: true };
 }
 
 export default {
@@ -374,4 +528,9 @@ export default {
   markSurveySynced,
   deleteOfflineSurvey,
   syncPendingSurveysToBackend,
+  exportOfflineDataBundle,
+  importOfflineDataBundle,
+  clearAllOfflineData,
 };
+
+
