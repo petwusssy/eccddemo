@@ -1,9 +1,0 @@
-/vendor
-.env
-.git
-.github
-node_modules
-npm-debug.log
-tests
-phpunit.xml
-.editorconfig
