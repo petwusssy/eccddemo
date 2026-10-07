@@ -166,10 +166,6 @@ export function EnrollmentView({ onNavigate }) {
 
   // Open confirmation modal for child enrollment
   const handleInitiateEnrollment = (child) => {
-    if (isFieldWorker) {
-      addToast('Admission restricted: Only Child Development Workers (CDWs) can enroll children.', 'warning');
-      return;
-    }
     setSelectedChildForEnrollment(child);
     setEnrollmentForm({
       ...enrollmentForm,
@@ -181,10 +177,6 @@ export function EnrollmentView({ onNavigate }) {
   // Confirm and submit enrollment
   const handleConfirmEnrollment = async (e) => {
     e.preventDefault();
-    if (isFieldWorker) {
-      addToast('Admission restricted: Only Child Development Workers (CDWs) can enroll children.', 'warning');
-      return;
-    }
     if (!selectedChildForEnrollment) return;
 
     const res = await enrollmentService.enrollChild({
@@ -235,21 +227,14 @@ export function EnrollmentView({ onNavigate }) {
         </div>
 
         <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-          {!isFieldWorker ? (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setActiveTab('enroll-wizard')}
-            >
-              <Plus size={16} />
-              Enroll Existing Child
-            </Button>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', color: '#64748b' }}>
-              <Lock size={16} />
-              <span>Admission: CDW Only</span>
-            </div>
-          )}
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setActiveTab('enroll-wizard')}
+          >
+            <Plus size={16} />
+            Enroll Existing Child
+          </Button>
         </div>
       </div>
 
@@ -769,20 +754,6 @@ export function EnrollmentView({ onNavigate }) {
           TAB 3: 3. ENROLL EXISTING CHILD (SEARCH & CONFIRMATION FLOW)
           ========================================================================= */}
       {activeTab === 'enroll-wizard' && (
-        isFieldWorker ? (
-          <Card>
-            <CardBody style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
-              <ShieldAlert size={36} style={{ color: '#f59e0b', margin: '0 auto var(--space-3)' }} />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Admission Action Restricted</h3>
-              <p style={{ color: 'var(--text-muted)', maxWidth: '480px', margin: '8px auto var(--space-4)' }}>
-                Field workers can track not-enrolled children from house-to-house mapping, but official Day Care admission is reserved for accredited Child Development Workers (CDWs).
-              </p>
-              <Button variant="secondary" size="sm" onClick={() => setActiveTab('not-enrolled')}>
-                Back to Not-Enrolled Children List
-              </Button>
-            </CardBody>
-          </Card>
-        ) : (
         <Card>
           <CardHeader>
             <CardTitle subtitle="Search for mapped children by name or ECCD Child ID to enroll without creating duplicate records">
@@ -852,7 +823,6 @@ export function EnrollmentView({ onNavigate }) {
             )}
           </CardBody>
         </Card>
-        )
       )}
 
       {/* =========================================================================
