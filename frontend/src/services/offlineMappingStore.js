@@ -13,8 +13,9 @@ import { getApiUrl } from './apiConfig';
 import { centralDataStore } from './centralDataStore.js';
 
 const DB_NAME = 'eccd_care_offline_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_SURVEYS = 'mapping_surveys';
+const STORE_QUEUE = 'frontline_queue';
 
 /**
  * Initializes and returns the IndexedDB database instance
@@ -27,6 +28,12 @@ export async function getOfflineDb() {
         store.createIndex('syncStatus', 'syncStatus', { unique: false });
         store.createIndex('createdAt', 'createdAt', { unique: false });
         store.createIndex('householdId', 'householdId', { unique: false });
+      }
+      if (!db.objectStoreNames.contains(STORE_QUEUE)) {
+        const qStore = db.createObjectStore(STORE_QUEUE, { keyPath: 'id' });
+        qStore.createIndex('syncStatus', 'syncStatus', { unique: false });
+        qStore.createIndex('type', 'type', { unique: false });
+        qStore.createIndex('createdAt', 'createdAt', { unique: false });
       }
     },
   });
@@ -77,12 +84,49 @@ export async function getPendingSurveys() {
 }
 
 /**
- * Gets count of pending offline records waiting for sync.
+ * Queues a general frontline action (health measurement, assessment, enrollment, followup)
+ * into IndexedDB when offline.
+ */
+export async function queueFrontlineAction({ type, endpoint, method = 'POST', payload }) {
+  const db = await getOfflineDb();
+  const id = `OFFLINE-${type.toUpperCase()}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+  const item = {
+    id,
+    type,
+    endpoint,
+    method,
+    payload,
+    syncStatus: 'pending',
+    createdAt: new Date().toISOString(),
+  };
+
+  await db.put(STORE_QUEUE, item);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('eccd:offline-survey-updated', { detail: { item } }));
+  }
+
+  return item;
+}
+
+/**
+ * Retrieves all pending frontline queue actions.
+ */
+export async function getPendingFrontlineActions() {
+  const db = await getOfflineDb();
+  const all = await db.getAll(STORE_QUEUE);
+  return all.filter((item) => item.syncStatus === 'pending');
+}
+
+/**
+ * Gets total count of pending offline records across all Child Development Teacher modules.
  */
 export async function getPendingSyncCount() {
   try {
-    const pending = await getPendingSurveys();
-    return pending.length;
+    const pendingSurveys = await getPendingSurveys();
+    const pendingActions = await getPendingFrontlineActions();
+    return pendingSurveys.length + pendingActions.length;
   } catch (err) {
     console.error('Error getting pending sync count from idb:', err);
     return 0;
@@ -119,21 +163,25 @@ export async function deleteOfflineSurvey(id) {
 }
 
 /**
- * Syncs all pending offline surveys to backend API using dynamic URL.
+ * Syncs all pending offline surveys and frontline actions to backend API.
  * Automatically respects import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'.
  */
 export async function syncPendingSurveysToBackend() {
-  const pending = await getPendingSurveys();
-  if (pending.length === 0) {
+  const pendingSurveys = await getPendingSurveys();
+  const pendingActions = await getPendingFrontlineActions();
+  const total = pendingSurveys.length + pendingActions.length;
+
+  if (total === 0) {
     return { success: true, synced: 0, failed: 0, total: 0 };
   }
 
   let syncedCount = 0;
   let failedCount = 0;
+  const db = await getOfflineDb();
 
-  for (const survey of pending) {
+  // 1. Sync Community Mapping Surveys (Form 1)
+  for (const survey of pendingSurveys) {
     try {
-      // 1. Post Household to Backend API
       const householdPayload = survey.household || {
         id: survey.householdId,
         parentGuardian: survey.parentGuardian,
@@ -142,7 +190,7 @@ export async function syncPendingSurveysToBackend() {
         barangay: survey.barangay,
         mappingActivityId: survey.mappingActivityId || survey.activityId,
         childrenCount: survey.children?.length || 1,
-        mappedBy: survey.mappedBy || 'Field Worker (Offline PWA)',
+        mappedBy: survey.mappedBy || 'Child Development Teacher (Offline PWA)',
       };
 
       const hhRes = await fetch(getApiUrl('/api/households'), {
@@ -163,7 +211,7 @@ export async function syncPendingSurveysToBackend() {
       const savedHh = hhJson.data || householdPayload;
       centralDataStore.mergeRecordsFromServer([], [savedHh]);
 
-      // 2. Post Children if present
+      // Post Children if present
       if (Array.isArray(survey.children) && survey.children.length > 0) {
         for (const child of survey.children) {
           const childRes = await fetch(getApiUrl('/api/children'), {
@@ -190,11 +238,37 @@ export async function syncPendingSurveysToBackend() {
         }
       }
 
-      // Mark this survey as synced in IndexedDB
       await markSurveySynced(survey.id, { ok: true, synced: true });
       syncedCount++;
     } catch (err) {
       console.error(`Failed to sync survey ${survey.id}:`, err);
+      failedCount++;
+    }
+  }
+
+  // 2. Sync General Frontline Actions (Health, Assessment, Enrollment, Follow-up)
+  for (const item of pendingActions) {
+    try {
+      const res = await fetch(getApiUrl(item.endpoint), {
+        method: item.method || 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+        body: JSON.stringify(item.payload),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Action ${item.type} sync failed with HTTP ${res.status}`);
+      }
+
+      item.syncStatus = 'synced';
+      item.syncedAt = new Date().toISOString();
+      await db.put(STORE_QUEUE, item);
+      syncedCount++;
+    } catch (err) {
+      console.error(`Failed to sync frontline action ${item.id}:`, err);
       failedCount++;
     }
   }
@@ -211,7 +285,7 @@ export async function syncPendingSurveysToBackend() {
     success: failedCount === 0,
     synced: syncedCount,
     failed: failedCount,
-    total: pending.length,
+    total,
   };
 }
 
@@ -220,6 +294,8 @@ export default {
   saveOfflineSurvey,
   getAllOfflineSurveys,
   getPendingSurveys,
+  queueFrontlineAction,
+  getPendingFrontlineActions,
   getPendingSyncCount,
   markSurveySynced,
   deleteOfflineSurvey,

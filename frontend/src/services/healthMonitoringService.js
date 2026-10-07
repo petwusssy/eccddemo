@@ -8,6 +8,7 @@
 import { centralDataStore } from './centralDataStore.js';
 import { getPhilippinesDate, addDaysPHT, getDaysAgoPHT } from '../utils/phTime.js';
 import { computeNutritionalStatus } from '../utils/whoGrowthStandards.js';
+import { queueFrontlineAction } from './offlineMappingStore.js';
 
 export const healthMonitoringService = {
   /**
@@ -198,9 +199,28 @@ export const healthMonitoringService = {
       heightCm: height,
       weightKg: weight,
       nutritionalStatus: payload.nutritionalStatus || 'Normal Weight for Age',
-      recordedBy: payload.recordedBy || 'CSWDO Day Care Worker',
+      recordedBy: payload.recordedBy || 'Child Development Teacher (CDT)',
       notes: payload.notes || '',
     });
+
+    // If offline, queue for backend synchronization
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        await queueFrontlineAction({
+          type: 'health',
+          endpoint: `/api/children/${childId}/health`,
+          method: 'POST',
+          payload: {
+            ...payload,
+            childId,
+            heightCm: height,
+            weightKg: weight,
+          },
+        });
+      } catch (e) {
+        console.warn('Failed to queue offline health action:', e);
+      }
+    }
 
     return {
       success: true,

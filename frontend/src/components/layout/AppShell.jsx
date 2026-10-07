@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
+import { OfflineSyncBanner } from '../ui/OfflineSyncBanner';
 
 export function AppShell({
   children,
@@ -19,6 +20,9 @@ export function AppShell({
 }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // Dedicated Frontline Offline capabilities exclusively for Child Development Teachers (CDTs)
+  const isCDT = user?.role === 'cdt' || user?.role === 'daycare_worker' || user?.role === 'field_worker';
 
   return (
     <div className="app-root">
@@ -50,6 +54,9 @@ export function AppShell({
 
           {/* Main Workspace */}
           <main className="main-content">
+            {/* Dedicated Frontline Offline Sync Indicator exclusively for Child Development Teachers */}
+            {isCDT && <OfflineSyncBanner />}
+
             {/* Contextual Page Header */}
             {(pageTitle || pageActions) && (
               <div className="page-header">

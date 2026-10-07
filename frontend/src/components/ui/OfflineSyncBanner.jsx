@@ -161,10 +161,10 @@ export function OfflineSyncBanner({ onSyncComplete }) {
             </div>
             <p className="text-xs opacity-90 mt-0.5">
               {!isOnline
-                ? 'Walang internet connection. Ang mga bagong survey records ay ligtas na naka-save sa iyong device (idb/IndexedDB).'
+                ? 'Walang internet connection. Ang mga bagong mapping, health, checklist, at enrollment records ay ligtas na naka-save sa iyong device (idb/IndexedDB).'
                 : pendingCount > 0
-                ? 'Mayroong naka-imbak na offline records na handa nang i-sync pabalik sa backend API.'
-                : 'All community mapping records are fully synchronized with the centralized database.'}
+                ? 'Mayroong naka-imbak na frontline offline records na handa nang i-sync pabalik sa backend API.'
+                : 'All frontline records are fully synchronized with the centralized database.'}
             </p>
           </div>
         </div>

@@ -14,6 +14,7 @@
 
 import { centralDataStore } from './centralDataStore.js';
 import { getPhilippinesDate } from '../utils/phTime.js';
+import { queueFrontlineAction } from './offlineMappingStore.js';
 
 export const enrollmentService = {
   /**
@@ -159,6 +160,23 @@ export const enrollmentService = {
       teacher: payload.teacher || 'Maria Santos, CDW I',
       status: payload.status || 'Enrolled',
     });
+
+    // If offline, queue for backend synchronization
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        await queueFrontlineAction({
+          type: 'enrollment',
+          endpoint: '/api/enrollments',
+          method: 'POST',
+          payload: {
+            ...payload,
+            enrollmentId: enrollment.id,
+          },
+        });
+      } catch (e) {
+        console.warn('Failed to queue offline enrollment action:', e);
+      }
+    }
 
     return {
       enrollment,

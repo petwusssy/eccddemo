@@ -562,9 +562,6 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
         </div>
       </div>
 
-      {/* Prominent Offline / Online Sync Banner with Pending Queue Counter & Sync Now button */}
-      <OfflineSyncBanner onSyncComplete={loadData} />
-
       {/* Community Mapping Bento Quick Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <div className="kpi-card card-primary" style={{ padding: 'var(--space-3) var(--space-4)' }}>

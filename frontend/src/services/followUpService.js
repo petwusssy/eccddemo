@@ -8,6 +8,7 @@
 
 import { centralDataStore } from './centralDataStore.js';
 import { getPhilippinesDate, addDaysPHT } from '../utils/phTime.js';
+import { queueFrontlineAction } from './offlineMappingStore.js';
 
 export const followUpService = {
   /**
@@ -135,6 +136,23 @@ export const followUpService = {
         },
       ],
     });
+
+    // If offline, queue for backend synchronization
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        await queueFrontlineAction({
+          type: 'followup',
+          endpoint: '/api/follow-ups',
+          method: 'POST',
+          payload: {
+            ...payload,
+            caseId: newCase.id,
+          },
+        });
+      } catch (e) {
+        console.warn('Failed to queue offline follow-up action:', e);
+      }
+    }
 
     return {
       success: true,
