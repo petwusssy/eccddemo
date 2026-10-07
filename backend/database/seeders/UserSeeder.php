@@ -14,51 +14,90 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Ensure Default Roles Exist
-        $adminRole = Role::firstOrCreate(
-            ['name' => 'cswdo_admin'],
+        // 1. Seed the Two Standard Roles
+        $adminRole = Role::updateOrCreate(
+            ['name' => 'eccd_admin'],
             [
-                'label' => 'CSWDO Administrator / Supervisor',
-                'description' => 'Full administrative access across all LGU barangays, centers, and system controls.',
+                'label' => 'ECCD Administrative',
+                'description' => 'Responsible for consolidating data, coordinating requirements, planning and organizing programs and services.',
                 'permissions' => ['*'],
             ]
         );
 
-        $workerRole = Role::firstOrCreate(
+        $cdtRole = Role::updateOrCreate(
+            ['name' => 'cdt'],
+            [
+                'label' => 'Child Development Teacher (CDT)',
+                'description' => 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
+                'permissions' => [
+                    'community-mapping',
+                    'children',
+                    'households',
+                    'enrollment',
+                    'health-monitoring',
+                    'eccd-checklist',
+                    'development-assessment',
+                    'follow-ups',
+                    'community-network',
+                ],
+            ]
+        );
+
+        // Alias support for legacy role records
+        Role::updateOrCreate(
+            ['name' => 'cswdo_admin'],
+            [
+                'label' => 'ECCD Administrative',
+                'description' => 'Responsible for consolidating data, coordinating requirements, planning and organizing programs and services.',
+                'permissions' => ['*'],
+            ]
+        );
+
+        Role::updateOrCreate(
             ['name' => 'daycare_worker'],
             [
-                'label' => 'Child Development Worker (CDW)',
-                'description' => 'Child Development Center management, enrollment, health monitoring, and checklist evaluations.',
-                'permissions' => ['daycare-centers', 'enrollment', 'health-monitoring', 'eccd-checklist', 'follow-ups', 'children'],
+                'label' => 'Child Development Teacher (CDT)',
+                'description' => 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
+                'permissions' => $cdtRole->permissions,
             ]
         );
 
-        Role::firstOrCreate(
+        Role::updateOrCreate(
             ['name' => 'field_worker'],
             [
-                'label' => 'Service Provider / Field Worker',
-                'description' => 'Community mapping, household profiling, child registration, and spot map management.',
-                'permissions' => ['community-mapping', 'children', 'households', 'resources', 'dashboard'],
+                'label' => 'Child Development Teacher (CDT)',
+                'description' => 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
+                'permissions' => $cdtRole->permissions,
             ]
         );
 
-        // 2. Admin User: admin@eccd.gov.ph / password
+        // 2. Admin User (ECCD Administrative): admin@eccd.gov.ph / password
         User::updateOrCreate(
             ['email' => 'admin@eccd.gov.ph'],
             [
-                'name' => 'CSWDO Administrator',
+                'name' => 'Ma. Elena D. Santos (ECCD Admin)',
                 'password' => Hash::make('password'),
                 'role_id' => $adminRole->id,
             ]
         );
 
-        // 3. Child Development Worker: worker@eccd.gov.ph / password
+        // 3. Frontline User (Child Development Teacher): cdt@eccd.gov.ph / password
+        User::updateOrCreate(
+            ['email' => 'cdt@eccd.gov.ph'],
+            [
+                'name' => 'Remedios D. Garcia, CDT',
+                'password' => Hash::make('password'),
+                'role_id' => $cdtRole->id,
+            ]
+        );
+
+        // Support existing worker@eccd.gov.ph
         User::updateOrCreate(
             ['email' => 'worker@eccd.gov.ph'],
             [
-                'name' => 'Maria C. Santos (CDW)',
+                'name' => 'Remedios D. Garcia, CDT',
                 'password' => Hash::make('password'),
-                'role_id' => $workerRole->id,
+                'role_id' => $cdtRole->id,
             ]
         );
     }

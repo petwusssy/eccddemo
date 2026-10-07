@@ -89,9 +89,8 @@ export function AuditLogsView({
       {/* =========================================================================
           2. ROLE SIMULATOR & GOVERNANCE TESTING BAR
           Allows testing role behavior:
-          - Field Worker: Cannot access system administration.
-          - Day Care Worker: Can only access assigned center and assigned children.
-          - CSWDO Admin: Can access organization-wide monitoring and reports.
+          - ECCD Administrative: Consolidates data, coordinates requirements, planning & organizing programs.
+          - Child Development Teacher (CDT): Frontline implementer, directly delivering activities and interventions.
           ========================================================================= */}
       <div className="gov-sim-bar">
         <div className="gov-sim-info">
@@ -102,35 +101,24 @@ export function AuditLogsView({
         <div className="gov-sim-buttons">
           <button
             type="button"
-            className={`gov-sim-btn ${user?.role === 'cswdo_admin' ? 'is-active' : ''}`}
+            className={`gov-sim-btn ${user?.role === 'eccd_admin' || user?.role === 'cswdo_admin' ? 'is-active' : ''}`}
             onClick={() => {
-              if (onSwitchRole) onSwitchRole('cswdo_admin');
-              handleSimulatedAction('Switched Role to CSWDO Admin', 'Governance', 'USR-CSWDO-001');
+              if (onSwitchRole) onSwitchRole('eccd_admin');
+              handleSimulatedAction('Switched Role to ECCD Administrative', 'Governance', 'USR-ECCD-ADMIN');
             }}
           >
-            CSWDO Admin (Full Org Access)
+            ECCD Administrative (Consolidation &amp; Planning)
           </button>
 
           <button
             type="button"
-            className={`gov-sim-btn ${user?.role === 'field_worker' ? 'is-active' : ''}`}
+            className={`gov-sim-btn ${user?.role === 'cdt' || user?.role === 'field_worker' || user?.role === 'daycare_worker' ? 'is-active' : ''}`}
             onClick={() => {
-              if (onSwitchRole) onSwitchRole('field_worker');
-              handleSimulatedAction('Switched Role to Field Worker', 'Governance', 'USR-CSWDO-014');
+              if (onSwitchRole) onSwitchRole('cdt');
+              handleSimulatedAction('Switched Role to Child Development Teacher (CDT)', 'Governance', 'USR-CDT-001');
             }}
           >
-            Service Provider / Field Worker
-          </button>
-
-          <button
-            type="button"
-            className={`gov-sim-btn ${user?.role === 'daycare_worker' ? 'is-active' : ''}`}
-            onClick={() => {
-              if (onSwitchRole) onSwitchRole('daycare_worker');
-              handleSimulatedAction('Switched Role to Day Care Worker', 'Governance', 'USR-CDC-027');
-            }}
-          >
-            Day Care Worker (Center Scoped)
+            Child Development Teacher (CDT - Frontline)
           </button>
         </div>
       </div>
@@ -211,9 +199,8 @@ export function AuditLogsView({
             className="gov-select"
           >
             <option value="all">All Roles</option>
-            <option value="CSWDO Admin">CSWDO Admin</option>
-            <option value="Service Provider">Service Provider</option>
-            <option value="Day Care Worker">Day Care Worker</option>
+            <option value="ECCD Administrative">ECCD Administrative</option>
+            <option value="Child Development Teacher (CDT)">Child Development Teacher (CDT)</option>
           </select>
 
           <select

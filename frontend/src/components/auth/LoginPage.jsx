@@ -469,8 +469,7 @@ function PrivacyNotice() {
       <Shield size={15} className="login-privacy-icon" />
       <div>
         <strong>Authorized Personnel Only.</strong> Access to this system is restricted
-        to accredited CSWDO officers, Child Development Workers, and designated
-        service providers. All activities are logged and auditable in compliance with
+        to accredited ECCD Administrative officers and Child Development Teachers (CDTs). All activities are logged and auditable in compliance with
         the Data Privacy Act of 2012 (RA 10173).
         <em> This is a prototype demonstration system.</em>
       </div>

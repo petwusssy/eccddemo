@@ -18,59 +18,88 @@
  */
 
 // --- Role Definitions (auth-implementation-patterns: RBAC) ---
+// Mandated 2 Roles:
+// 1. Child Development Teacher (CDT) — Frontline implementer delivering activities and interventions directly to children & families
+// 2. ECCD Administrative — Consolidates data, coordinates requirements, plans and organizes programs and services
 
 export const ROLES = {
-  ADMIN: 'cswdo_admin',
-  FIELD_WORKER: 'field_worker',
-  DAYCARE_WORKER: 'daycare_worker',
+  ADMIN: 'eccd_admin',
+  CDT: 'cdt',
+  // Backward compatibility alias keys:
+  FIELD_WORKER: 'cdt',
+  DAYCARE_WORKER: 'cdt',
 };
 
 export const ROLE_LABELS = {
-  [ROLES.ADMIN]: 'CSWDO Admin / Supervisor',
-  [ROLES.FIELD_WORKER]: 'Service Provider / Field Worker',
-  [ROLES.DAYCARE_WORKER]: 'Day Care Worker',
+  [ROLES.ADMIN]: 'ECCD Administrative',
+  [ROLES.CDT]: 'Child Development Teacher (CDT)',
+  // Backwards compatibility mappings
+  'cswdo_admin': 'ECCD Administrative',
+  'field_worker': 'Child Development Teacher (CDT)',
+  'daycare_worker': 'Child Development Teacher (CDT)',
 };
 
 // Role → default landing page after login
 export const ROLE_LANDING = {
   [ROLES.ADMIN]: 'dashboard',
-  [ROLES.FIELD_WORKER]: 'community-mapping',
-  [ROLES.DAYCARE_WORKER]: 'enrollment',
+  [ROLES.CDT]: 'community-mapping',
+  'cswdo_admin': 'dashboard',
+  'field_worker': 'community-mapping',
+  'daycare_worker': 'community-mapping',
 };
 
-// Role → permitted sidebar sections (role-based navigation)
+// Role → permitted sidebar sections (Strict role-based navigation & module boundaries)
 export const ROLE_PERMISSIONS = {
   [ROLES.ADMIN]: {
-    label: 'Full System Access',
-    sections: '*', // all sections
+    label: 'Data Consolidation & Planning Administration',
+    description: 'Responsible for consolidating data, coordinating requirements, planning and organizing programs and services.',
+    sections: '*', // Full access across consolidation dashboard, reports, planning, and system administration
   },
-  [ROLES.FIELD_WORKER]: {
-    label: 'Community & Child Registration',
+  [ROLES.CDT]: {
+    label: 'Frontline ECCD Programs & Direct Delivery',
+    description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
     sections: [
-      'dashboard',
       'children',
       'households',
       'community-mapping',
       'enrollment',
+      'health-monitoring',
+      'eccd-checklist',
+      'development-assessment',
       'follow-ups',
       'community-network',
-      'barangays',
-      'daycare-centers',
-      'workers',
     ],
+    // Strictly restricted from: 'dashboard' (Executive consolidation), 'reports' (Citywide submissions), 'audit-logs', 'settings'
   },
-  [ROLES.DAYCARE_WORKER]: {
-    label: 'Day Care Center Operations',
+  // Legacy aliases
+  'field_worker': {
+    label: 'Frontline ECCD Programs & Direct Delivery',
+    description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
     sections: [
-      'dashboard',
       'children',
+      'households',
+      'community-mapping',
       'enrollment',
       'health-monitoring',
       'eccd-checklist',
+      'development-assessment',
       'follow-ups',
       'community-network',
-      'daycare-centers',
-      'reports',
+    ],
+  },
+  'daycare_worker': {
+    label: 'Frontline ECCD Programs & Direct Delivery',
+    description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
+    sections: [
+      'children',
+      'households',
+      'community-mapping',
+      'enrollment',
+      'health-monitoring',
+      'eccd-checklist',
+      'development-assessment',
+      'follow-ups',
+      'community-network',
     ],
   },
 };
@@ -79,40 +108,59 @@ export const ROLE_PERMISSIONS = {
 
 const DEMO_ACCOUNTS = [
   {
-    id: 'USR-CSWDO-001',
+    id: 'USR-ADMIN-001',
     email: 'admin@eccdcare.demo',
     password: 'admin123',
     name: 'Ma. Elena D. Santos, RSW',
     role: ROLES.ADMIN,
-    designation: 'CSWDO Senior Social Worker / ECCD Focal',
-    agency: 'City Social Welfare & Development Office',
+    designation: 'ECCD Administrative Officer / CSWDO Supervisor',
+    agency: 'City Social Welfare & Development Office (CSWDO)',
     lgu: 'City of San Fernando, Pampanga',
     region: 'Region III — Central Luzon',
     avatarInitials: 'ES',
-    assignedBarangays: 'All 10 City Barangays (City-wide)',
+    assignedBarangays: 'All 35 Barangays (City-wide Consolidated Scope)',
     activeSchoolYear: 'SY 2026–2027',
+    description: 'Responsible for consolidating data, coordinating requirements, planning and organizing programs and services.',
   },
+  {
+    id: 'USR-CDT-002',
+    email: 'teacher@eccdcare.demo',
+    password: 'teacher123',
+    name: 'Remedios D. Garcia, CDT',
+    role: ROLES.CDT,
+    designation: 'Child Development Teacher (CDT)',
+    agency: 'San Jose Child Development Center I / CSWDO',
+    lgu: 'City of San Fernando, Pampanga',
+    region: 'Region III — Central Luzon',
+    avatarInitials: 'RG',
+    assignedBarangays: 'Brgy. San Jose, Brgy. Dolores, Brgy. San Isidro',
+    assignedCenter: 'San Jose Child Development Center I',
+    activeSchoolYear: 'SY 2026–2027',
+    description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
+  },
+  // Legacy aliases supported for quick login:
   {
     id: 'USR-CSWDO-014',
     email: 'fieldworker@eccdcare.demo',
     password: 'field123',
-    name: 'Rodolfo C. Manansala',
-    role: ROLES.FIELD_WORKER,
-    designation: 'Community Development Officer II',
-    agency: 'CSWDO — Community Development Section',
+    name: 'Rodolfo C. Manansala, CDT',
+    role: ROLES.CDT,
+    designation: 'Child Development Teacher (CDT)',
+    agency: 'CSWDO Frontline Community Section',
     lgu: 'City of San Fernando, Pampanga',
     region: 'Region III — Central Luzon',
     avatarInitials: 'RM',
-    assignedBarangays: 'Brgy. San Jose, Brgy. Dolores, Brgy. Lourdes',
+    assignedBarangays: 'Brgy. San Jose, Brgy. Dolores',
     activeSchoolYear: 'SY 2026–2027',
+    description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
   },
   {
     id: 'USR-CDC-027',
     email: 'daycare@eccdcare.demo',
     password: 'daycare123',
-    name: 'Remedios D. Garcia, CDW I',
-    role: ROLES.DAYCARE_WORKER,
-    designation: 'Accredited Child Development Worker I',
+    name: 'Remedios D. Garcia, CDT',
+    role: ROLES.CDT,
+    designation: 'Child Development Teacher (CDT)',
     agency: 'San Jose Child Development Center I',
     lgu: 'City of San Fernando, Pampanga',
     region: 'Region III — Central Luzon',
@@ -120,11 +168,15 @@ const DEMO_ACCOUNTS = [
     assignedBarangays: 'Brgy. San Jose',
     assignedCenter: 'San Jose Child Development Center I',
     activeSchoolYear: 'SY 2026–2027',
+    description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
   },
 ];
 
 export function getDemoAccountForRole(roleKey) {
-  return DEMO_ACCOUNTS.find(a => a.role === roleKey) || DEMO_ACCOUNTS[0];
+  if (roleKey === ROLES.ADMIN || roleKey === 'cswdo_admin' || roleKey === 'eccd_admin') {
+    return DEMO_ACCOUNTS[0];
+  }
+  return DEMO_ACCOUNTS[1];
 }
 
 // --- Session Storage Keys ---
@@ -358,14 +410,16 @@ export function hasPermission(user, sectionId) {
 
 /**
  * Get demo accounts list (passwords masked for display).
+ * Returns the two standard official roles.
  */
 export function getDemoAccounts() {
-  return DEMO_ACCOUNTS.map(({ email, password, name, role }) => ({
+  return [DEMO_ACCOUNTS[0], DEMO_ACCOUNTS[1]].map(({ email, password, name, role, designation }) => ({
     email,
     password: password.replace(/./g, '•').slice(0, -2) + password.slice(-2),
     passwordRaw: password,
     name,
     role,
     roleLabel: ROLE_LABELS[role],
+    designation,
   }));
 }

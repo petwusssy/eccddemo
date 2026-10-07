@@ -76,7 +76,7 @@ const getInitials = (name) => {
 export function EnrollmentView({ onNavigate }) {
   const { addToast } = useToast();
   const { user } = useAuth();
-  const isFieldWorker = user?.role === 'field_worker';
+  const canEnroll = user?.role === 'cdt' || user?.role === 'eccd_admin' || user?.role === 'daycare_worker' || user?.role === 'cswdo_admin' || user?.role === 'field_worker';
 
   // Active sub-view: 'directory' | 'not-enrolled' | 'enroll-wizard'
   const [activeTab, setActiveTab] = useState('directory');
@@ -737,7 +737,7 @@ export function EnrollmentView({ onNavigate }) {
 
                             {/* Actions */}
                             <TableCell className="notenr-col-action" style={{ textAlign: 'right' }}>
-                              {!isFieldWorker ? (
+                              {canEnroll ? (
                                 <Button
                                   variant="primary"
                                   size="sm"
@@ -749,7 +749,7 @@ export function EnrollmentView({ onNavigate }) {
                                 </Button>
                               ) : (
                                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  <Lock size={14} /> CDW Only
+                                  <Lock size={14} /> View Only
                                 </span>
                               )}
                             </TableCell>

@@ -86,8 +86,10 @@ const PATH_TO_SECTION = {
 
 const ROLE_LANDING_ROUTE = {
   [ROLES.ADMIN]: '/dashboard',
-  [ROLES.FIELD_WORKER]: '/mapping',
-  [ROLES.DAYCARE_WORKER]: '/enrollment',
+  [ROLES.CDT]: '/mapping',
+  'cswdo_admin': '/dashboard',
+  'field_worker': '/mapping',
+  'daycare_worker': '/mapping',
 };
 
 /**

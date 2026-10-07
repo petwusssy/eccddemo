@@ -28,11 +28,9 @@ export function UnauthorizedView({
           <div><strong>Security Scope:</strong> {user?.assignedBarangays || user?.assignedCenter || 'Restricted Scope'}</div>
           <div style={{ marginTop: '0.25rem', color: '#be123c' }}>
             <strong>Policy Rule:</strong>{' '}
-            {user?.role === 'field_worker'
-              ? 'Field Workers / Service Providers cannot access system administration, settings, or audit logs.'
-              : user?.role === 'daycare_worker'
-              ? 'Day Care Workers are restricted to assigned center operations and cohort records.'
-              : 'Access to this route requires elevated administrative permissions.'}
+            {user?.role === 'cdt' || user?.role === 'field_worker' || user?.role === 'daycare_worker'
+              ? 'Child Development Teachers (CDTs) serve as frontline implementers directly delivering activities and interventions to children and families. Consolidated dashboards, citywide reports, planning, and system administration are restricted to ECCD Administrative staff.'
+              : 'ECCD Administrative access is required to consolidate data, coordinate requirements, plan and organize programs and services.'}
           </div>
         </div>
 
@@ -51,9 +49,9 @@ export function UnauthorizedView({
               variant="outline"
               size="md"
               icon={RefreshCw}
-              onClick={() => onSwitchRole('cswdo_admin')}
+              onClick={() => onSwitchRole(user?.role === 'eccd_admin' ? 'cdt' : 'eccd_admin')}
             >
-              Switch to CSWDO Admin
+              Switch to {user?.role === 'eccd_admin' ? 'CDT (Frontline)' : 'ECCD Admin'}
             </Button>
           )}
         </div>
