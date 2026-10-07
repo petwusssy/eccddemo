@@ -157,7 +157,9 @@ export const communityMappingService = {
    */
   async getActivities() {
     try {
-      const res = await fetch(getApiUrl('/api/mapping/activities'), { headers: { Accept: 'application/json' } });
+      const res = await fetch(getApiUrl('/api/mapping/activities'), {
+        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+      });
       if (res.ok) {
         const json = await res.json();
         return json.data || json;
@@ -220,7 +222,7 @@ export const communityMappingService = {
     try {
       await fetch(getApiUrl('/api/mapping/activities'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
         body: JSON.stringify(newActivity),
       });
     } catch (e) { }
@@ -309,7 +311,7 @@ export const communityMappingService = {
     try {
       await fetch(getApiUrl('/api/households'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
         body: JSON.stringify(newHousehold),
       });
     } catch (e) { }
@@ -375,7 +377,7 @@ export const communityMappingService = {
     try {
       await fetch(getApiUrl('/api/children'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
         body: JSON.stringify(newChild),
       });
     } catch (e) { }

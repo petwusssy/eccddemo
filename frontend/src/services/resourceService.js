@@ -230,7 +230,9 @@ export const resourceService = {
     try {
       const qs = params.toString();
       const url = getApiUrl('/api/resources' + (qs ? `?${qs}` : ''));
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+      });
       if (res.ok) {
         const json = await res.json();
         return json.data.resources;
@@ -261,7 +263,9 @@ export const resourceService = {
   async getResourceById(id) {
     try {
       const url = getApiUrl(`/api/resources/${encodeURIComponent(id)}`);
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+      });
       if (res.ok) {
         const json = await res.json();
         return json.data;

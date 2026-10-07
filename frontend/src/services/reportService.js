@@ -122,7 +122,9 @@ export const reportService = {
     try {
       const qs = params.toString();
       const url = getApiUrl(`${cat.endpoint}${qs ? `?${qs}` : ''}`);
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+      });
       if (res.ok) {
         const json = await res.json();
         return json.data;
