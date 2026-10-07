@@ -19,9 +19,10 @@
 import { centralDataStore } from './centralDataStore.js';
 import { getPhilippinesDate, getPhilippinesDateTime } from '../utils/phTime.js';
 
-const BASE_URL =
+const rawBase =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
-  '/api';
+  '';
+const BASE_URL = rawBase.replace(/\/+$/, '').replace(/\/api$/, '');
 const SIMULATE_NETWORK_DELAY = 120; // ms
 
 class ApiClient {
