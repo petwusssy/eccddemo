@@ -27,6 +27,7 @@ import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '.
 import { useToast } from '../ui/Toast';
 import { userService } from '../../services/userService';
 import { centralDataStore } from '../../services/centralDataStore';
+import { getOfflineUserCredential, updateOfflineUserCredential } from '../../services/authService';
 import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
 
 export function UserManagementView({ currentUser, onNavigate }) {
@@ -38,6 +39,7 @@ export function UserManagementView({ currentUser, onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
+  const [revealedPasswords, setRevealedPasswords] = useState({});
 
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -120,6 +122,20 @@ export function UserManagementView({ currentUser, onNavigate }) {
     addToast('Password copied to clipboard!', 'info');
   };
 
+  const getActivePasswordForUser = (u) => {
+    const cred = getOfflineUserCredential(u?.email);
+    if (cred?.password) return cred.password;
+    if (u?.email === 'admin@eccd.gov.ph') return 'Eccd@$SULpX';
+    return 'password';
+  };
+
+  const toggleRevealPassword = (userId) => {
+    setRevealedPasswords((prev) => ({
+      ...prev,
+      [userId]: !prev[userId],
+    }));
+  };
+
   // Filtered users
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
@@ -200,8 +216,12 @@ export function UserManagementView({ currentUser, onNavigate }) {
 
     setIsSubmitting(true);
     try {
-      await userService.createUser(createForm);
-      addToast(`Account for ${createForm.name} created successfully!`, 'success');
+      const created = await userService.createUser(createForm);
+      updateOfflineUserCredential(createForm.email, createForm.password);
+      if (created?.id) {
+        setRevealedPasswords((prev) => ({ ...prev, [created.id]: true }));
+      }
+      addToast(`Account for ${createForm.name} created! Password: ${createForm.password}`, 'success');
       setIsCreateOpen(false);
       loadData();
     } catch (err) {
@@ -268,8 +288,11 @@ export function UserManagementView({ currentUser, onNavigate }) {
     setIsSubmitting(true);
     try {
       await userService.resetPassword(selectedUser.id, resetPasswordVal, selectedUser.email);
-      addToast(`Password for ${selectedUser.name} was reset successfully!`, 'success');
+      updateOfflineUserCredential(selectedUser.email, resetPasswordVal);
+      setRevealedPasswords((prev) => ({ ...prev, [selectedUser.id]: true }));
+      addToast(`Password for ${selectedUser.name} reset to: ${resetPasswordVal}`, 'success');
       setIsResetOpen(false);
+      loadData();
     } catch (err) {
       setFormError(err.message || 'Failed to reset password.');
     } finally {
@@ -298,17 +321,12 @@ export function UserManagementView({ currentUser, onNavigate }) {
 
   return (
     <div className="user-management-view" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-      {/* 1. Header Banner */}
+      {/* 1. Top Action Row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <ShieldCheck size={26} style={{ color: '#4f46e5' }} />
-            User Accounts &amp; Access Control Directory
-          </h2>
-          <p style={{ margin: '0.25rem 0 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
-            CSFP System Administration Console • Sya ang may hawak ng mga account ng ECCD Administrative officers at Child Development Teachers (CDTs).
-          </p>
-        </div>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <ShieldCheck size={22} style={{ color: '#4f46e5' }} />
+          Staff Accounts &amp; Access Directory
+        </h2>
 
         <Button
           variant="primary"
@@ -316,7 +334,7 @@ export function UserManagementView({ currentUser, onNavigate }) {
           onClick={handleOpenCreate}
           style={{
             background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
-            boxShadow: '0 4px 12px rgba(79, 70, 229, 0.35)',
+            boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
             border: 'none',
             fontWeight: 700,
           }}
@@ -325,124 +343,63 @@ export function UserManagementView({ currentUser, onNavigate }) {
         </Button>
       </div>
 
-      {/* 2. Enhanced Statistical KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-3)' }}>
-        {/* Total Users */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.06) 0%, var(--bg-surface) 100%)',
-            border: '1px solid rgba(79, 70, 229, 0.25)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.25rem',
-            position: 'relative',
-            overflow: 'hidden',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Total Registered Users
-            </span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(79, 70, 229, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Users size={16} style={{ color: '#4f46e5' }} />
-            </div>
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
-            {stats.total}
-          </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Active system credentials
-          </div>
-        </div>
+      {/* 2. Official Role Hierarchy & Distribution Table */}
+      <Card>
+        <CardBody style={{ padding: 0 }}>
+          <div style={{ overflowX: 'auto' }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableHeader>System Role Classification</TableHeader>
+                  <TableHeader>Operational Domain</TableHeader>
+                  <TableHeader style={{ textAlign: 'center' }}>Total Accounts</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                <TableRow>
+                  <TableCell>
+                    <Badge variant="danger">CSFP System Administrator</Badge>
+                  </TableCell>
+                  <TableCell style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Admin Console (/admin) • IT &amp; Security Authority
+                  </TableCell>
+                  <TableCell style={{ textAlign: 'center', fontWeight: 800, fontSize: '14px', color: '#b91c1c' }}>
+                    {stats.sysadmins} Account
+                  </TableCell>
+                </TableRow>
 
-        {/* CSFP SysAdmins */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, var(--bg-surface) 100%)',
-            border: '1px solid rgba(99, 102, 241, 0.25)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.25rem',
-            position: 'relative',
-            overflow: 'hidden',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              CSFP SysAdmins
-            </span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ShieldCheck size={16} style={{ color: '#4f46e5' }} />
-            </div>
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#4f46e5', lineHeight: 1.1 }}>
-            {stats.sysadmins}
-          </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Admin Console &amp; IT Root Authority
-          </div>
-        </div>
+                <TableRow>
+                  <TableCell>
+                    <Badge variant="warning">ECCD Administrative</Badge>
+                  </TableCell>
+                  <TableCell style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    ECCD Daycare Portal (/) • City-wide CSWDO Supervisory Head
+                  </TableCell>
+                  <TableCell style={{ textAlign: 'center', fontWeight: 800, fontSize: '14px', color: '#c2410c' }}>
+                    {stats.eccdAdmins} Account
+                  </TableCell>
+                </TableRow>
 
-        {/* ECCD Administrative Officers */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, rgba(234, 88, 12, 0.08) 0%, var(--bg-surface) 100%)',
-            border: '1px solid rgba(234, 88, 12, 0.25)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.25rem',
-            position: 'relative',
-            overflow: 'hidden',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#c2410c', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              ECCD Administrative
-            </span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(234, 88, 12, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Building2 size={16} style={{ color: '#c2410c' }} />
-            </div>
+                <TableRow>
+                  <TableCell>
+                    <Badge variant="success">Daycare Worker (CDT)</Badge>
+                  </TableCell>
+                  <TableCell style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    ECCD Daycare Portal (/) • Frontline Child Development Teachers
+                  </TableCell>
+                  <TableCell style={{ textAlign: 'center', fontWeight: 800, fontSize: '14px', color: '#15803d' }}>
+                    {stats.cdts} Accounts
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#c2410c', lineHeight: 1.1 }}>
-            {stats.eccdAdmins}
-          </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            CSWDO Operations (All 35 Barangays)
-          </div>
-        </div>
-
-        {/* Child Development Teachers */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, var(--bg-surface) 100%)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.25rem',
-            position: 'relative',
-            overflow: 'hidden',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              CDT Teachers
-            </span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Key size={16} style={{ color: '#059669' }} />
-            </div>
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#059669', lineHeight: 1.1 }}>
-            {stats.cdts}
-          </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Frontline Daycare Implementers
-          </div>
-        </div>
-      </div>
+        </CardBody>
+      </Card>
 
       {/* 3. Search & Filter Bar */}
       <Card>
-        <CardBody style={{ padding: '1rem' }}>
+        <CardBody style={{ padding: '0.875rem' }}>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: 1, minWidth: '280px' }}>
               <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
@@ -450,10 +407,10 @@ export function UserManagementView({ currentUser, onNavigate }) {
                 <input
                   type="text"
                   className="input"
-                  placeholder="Search staff by name, email, or center..."
+                  placeholder="Search staff by name or email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{ paddingLeft: '32px' }}
+                  style={{ paddingLeft: '34px' }}
                 />
               </div>
 
@@ -466,7 +423,7 @@ export function UserManagementView({ currentUser, onNavigate }) {
                 <option value="ALL">All Roles ({users.length})</option>
                 <option value="SYSADMIN">CSFP SysAdmins ({stats.sysadmins})</option>
                 <option value="ECCD_ADMIN">ECCD Administrative ({stats.eccdAdmins})</option>
-                <option value="CDT">Child Development Teachers ({stats.cdts})</option>
+                <option value="CDT">Daycare Workers / CDTs ({stats.cdts})</option>
               </select>
             </div>
 
@@ -480,39 +437,40 @@ export function UserManagementView({ currentUser, onNavigate }) {
       {/* 4. Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle subtitle="Manage access credentials, roles, and password resets">
+          <CardTitle>
             Staff Credentials &amp; Accounts Directory ({filteredUsers.length})
           </CardTitle>
         </CardHeader>
         <CardBody style={{ padding: 0 }}>
           <div style={{ overflowX: 'auto' }}>
             <Table>
-              <TableHeader>
+              <TableHead>
                 <TableRow>
-                  <TableHead>Staff Name &amp; Email</TableHead>
-                  <TableHead>System Role</TableHead>
-                  <TableHead>Assigned Facility / Barangay</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead style={{ textAlign: 'right' }}>Actions</TableHead>
+                  <TableHeader>Staff Name &amp; Email</TableHeader>
+                  <TableHeader>System Role</TableHeader>
+                  <TableHeader>Active Password</TableHeader>
+                  <TableHeader>Assigned Center / Jurisdiction</TableHeader>
+                  <TableHeader>Status</TableHeader>
+                  <TableHeader style={{ textAlign: 'right' }}>Actions</TableHeader>
                 </TableRow>
-              </TableHeader>
+              </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                    <TableCell colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                       Loading accounts directory...
                     </TableCell>
                   </TableRow>
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                    <TableCell colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                       No staff accounts found matching your query.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => {
-                    const isSuperAdmin = user.id === 1 || user.email === 'sysadmin@csfp.gov.ph';
-                    const isSelf = currentUser?.id === user.id || currentUser?.email === user.email;
+                    const isSelf = user.email === 'sysadmin@csfp.gov.ph';
+                    const isSuperAdmin = user.email === 'sysadmin@csfp.gov.ph';
                     const roleName = user.role?.name || (user.role_id === 1 ? 'sysadmin' : (user.role_id === 4 ? 'eccd_admin' : 'cdt'));
                     const isSysAdmin = roleName === 'sysadmin' || user.email === 'sysadmin@csfp.gov.ph';
                     const isEccdAdmin = (roleName === 'eccd_admin' || roleName === 'cswdo_admin' || user.role_id === 4 || user.email === 'admin@eccd.gov.ph') && !isSysAdmin;
@@ -540,20 +498,23 @@ export function UserManagementView({ currentUser, onNavigate }) {
                       ? 'linear-gradient(135deg, #7e191b, #c2410c)'
                       : 'linear-gradient(135deg, #0284c7, #059669)';
 
+                    const activePass = getActivePasswordForUser(user);
+                    const isPassVisible = Boolean(revealedPasswords[user.id]);
+
                     return (
                       <TableRow key={user.id}>
                         <TableCell>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <div
                               style={{
-                                width: '38px',
-                                height: '38px',
+                                width: '36px',
+                                height: '36px',
                                 borderRadius: '50%',
                                 background: avatarBg,
                                 color: '#ffffff',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
+                                justifyCenter: 'center',
                                 fontWeight: 700,
                                 fontSize: '13px',
                                 flexShrink: 0,
@@ -565,7 +526,7 @@ export function UserManagementView({ currentUser, onNavigate }) {
                               <div style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                 {user.name}
                                 {isSelf && (
-                                  <span style={{ fontSize: '10px', background: 'var(--color-primary-100)', color: 'var(--color-primary-800)', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                                  <span style={{ fontSize: '10px', background: '#fee2e2', color: '#b91c1c', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
                                     YOU
                                   </span>
                                 )}
@@ -586,27 +547,59 @@ export function UserManagementView({ currentUser, onNavigate }) {
                             </Badge>
                           ) : (
                             <Badge variant="success">
-                              Child Development Teacher (CDT)
+                              Daycare Worker (CDT)
                             </Badge>
                           )}
                         </TableCell>
 
+                        {/* Active Password Column with Unmask & Copy */}
+                        <TableCell>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <code
+                              style={{
+                                background: '#f1f5f9',
+                                border: '1px solid #cbd5e1',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                letterSpacing: isPassVisible ? '0' : '0.15em',
+                                color: isPassVisible ? '#0f172a' : '#64748b',
+                                fontFamily: 'monospace',
+                              }}
+                            >
+                              {isPassVisible ? activePass : '••••••••'}
+                            </code>
+                            <button
+                              type="button"
+                              className="btn-ghost"
+                              style={{ padding: '3px 5px', fontSize: '11px', cursor: 'pointer', borderRadius: '4px' }}
+                              onClick={() => toggleRevealPassword(user.id)}
+                              title={isPassVisible ? 'Hide password' : 'Show password'}
+                            >
+                              {isPassVisible ? <EyeOff size={14} style={{ color: '#64748b' }} /> : <Eye size={14} style={{ color: '#64748b' }} />}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-ghost"
+                              style={{ padding: '3px 5px', fontSize: '11px', cursor: 'pointer', borderRadius: '4px' }}
+                              onClick={() => handleCopyPassword(activePass)}
+                              title="Copy password"
+                            >
+                              <Copy size={14} style={{ color: '#64748b' }} />
+                            </button>
+                          </div>
+                        </TableCell>
+
                         <TableCell>
                           {isSysAdmin ? (
-                            <div>
-                              <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#4f46e5' }}>CSFP MIS Admin Console</div>
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>City-wide IT Infrastructure</div>
-                            </div>
+                            <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#4f46e5' }}>CSFP MIS Admin Console</span>
                           ) : isEccdAdmin ? (
-                            <div>
-                              <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#c2410c' }}>City Social Welfare &amp; Development</div>
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Consolidated 35 Barangays</div>
-                            </div>
+                            <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#c2410c' }}>City-wide CSWDO Daycare Operations</span>
                           ) : centerName ? (
-                            <div>
-                              <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>{centerName}</div>
-                              {barangayName && <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Brgy. {barangayName}</div>}
-                            </div>
+                            <span style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)' }}>
+                              {centerName} {barangayName ? `(Brgy. ${barangayName})` : ''}
+                            </span>
                           ) : (
                             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Unassigned Center</span>
                           )}

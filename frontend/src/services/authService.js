@@ -144,7 +144,7 @@ export const OFFICIAL_ACCOUNTS = [
   {
     id: 'USR-ADMIN-001',
     email: 'admin@eccd.gov.ph',
-    password: 'password',
+    password: 'Eccd@$SULpX',
     name: 'Ma. Elena D. Santos, RSW',
     role: ROLES.ADMIN,
     designation: 'ECCD Administrative Officer / CSWDO Supervisor',

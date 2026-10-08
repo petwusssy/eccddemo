@@ -330,20 +330,18 @@ function AuthenticatedApp() {
 
   const pageInfo = getPageInfo();
 
-  // Route Guard: Dedicated /admin console handling
-  const isSysAdmin = user?.role === 'sysadmin';
-  const isEccdAdmin = user?.role === 'eccd_admin' || user?.role === 'cswdo_admin' || user?.role === 'admin';
-  const isAdmin = isSysAdmin || isEccdAdmin;
+  // Route Guard: Dedicated /admin console handling (Strictly CSFP System Administrator)
+  const isSysAdmin = user?.role === 'sysadmin' || user?.email === 'sysadmin@csfp.gov.ph';
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   if (isAdminRoute) {
-    if (!isAdmin) {
+    if (!isSysAdmin) {
       return (
         <UnauthorizedView
           attemptedModule="admin-console"
           user={user}
           roleLabel={roleLabel}
-          onReturnToAllowed={() => navigate(ROLE_LANDING_ROUTE[user?.role] || '/dashboard')}
+          onReturnToAllowed={() => navigate('/dashboard')}
           onSwitchRole={(newRole) => {
             switchRole(newRole);
             navigate(ROLE_LANDING_ROUTE[newRole] || '/dashboard');

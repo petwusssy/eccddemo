@@ -99,39 +99,25 @@ export default function AdminShell({ user, onLogout }) {
   const getPageInfo = () => {
     switch (activeTab) {
       case 'users':
-        return {
-          title: 'User Accounts & Staff Directory',
-          subtitle: 'City MIS Access Control • Tagapamahala ng mga account ng ECCD Administrative officers at Child Development Teachers (CDTs).',
-        };
+        return { title: 'User Accounts & Staff Directory' };
       case 'roles':
-        return {
-          title: 'Role-Based Access Control (RBAC) Matrix',
-          subtitle: 'Operational boundaries between CSFP SYSADMIN (Console), ECCD Administrative (CSWDO Operations), and CDTs (Daycare Teachers).',
-        };
+        return { title: 'Role Permissions Matrix' };
       case 'audit-logs':
-        return {
-          title: 'Security Audit Trail & Compliance Logs',
-          subtitle: 'Tamper-evident activity logs, authentication attempts, credential changes, and system access history.',
-        };
+        return { title: 'Security Audit Trail' };
       case 'system-health':
-        return {
-          title: 'Server Infrastructure & Gateway Diagnostics',
-          subtitle: 'Live diagnostics for PHP Laravel Backend, MySQL Relational Database, Ngrok Gateway, and JWT Security.',
-        };
+        return { title: 'Server Infrastructure & Diagnostics' };
       default:
-        return {
-          title: 'CSFP System Administration Console',
-          subtitle: 'City Information & Communications Technology Office (CSFP MIS)',
-        };
+        return { title: 'CSFP System Administration Console' };
     }
   };
 
   const pageInfo = getPageInfo();
 
-  const isSysAdmin = user?.role === 'sysadmin' || user?.email === 'sysadmin@csfp.gov.ph';
-  const displayRoleLabel = isSysAdmin ? 'CSFP System Administrator' : 'ECCD Administrative';
-  const roleBadgeText = isSysAdmin ? 'SYSADMIN ROOT' : 'ECCD ADMIN';
-  const avatarInitials = user?.avatarInitials || (isSysAdmin ? 'SA' : 'EA');
+  const displayRoleLabel = 'CSFP System Administrator';
+  const roleBadgeText = 'SYSADMIN ROOT';
+  const avatarInitials = 'SA';
+  const adminName = 'CSFP MIS System Administrator';
+  const adminEmail = 'sysadmin@csfp.gov.ph';
 
   return (
     <div className="app-root admin-shell-root">
@@ -370,7 +356,7 @@ export default function AdminShell({ user, onLogout }) {
                   </div>
                   <div className="user-details">
                     <span className="user-name">
-                      {user?.name || (isSysAdmin ? 'CSFP MIS Administrator' : 'ECCD Admin')}
+                      {adminName}
                     </span>
                     <span className="user-role-badge sysadmin-role-badge">
                       {roleBadgeText}
@@ -384,10 +370,10 @@ export default function AdminShell({ user, onLogout }) {
                   <div className="profile-dropdown admin-profile-dropdown">
                     <div className="profile-dropdown-header">
                       <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 700, color: 'var(--color-primary-950)' }}>
-                        {user?.name || (isSysAdmin ? 'CSFP MIS Administrator' : 'Administrator')}
+                        {adminName}
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        {user?.email || (isSysAdmin ? 'sysadmin@csfp.gov.ph' : 'admin@eccd.gov.ph')}
+                        {adminEmail}
                       </div>
                       <div style={{ fontSize: '11px', color: '#c2410c', marginTop: '3px', fontWeight: 600 }}>
                         City Information &amp; Communications Technology Office
@@ -460,9 +446,6 @@ export default function AdminShell({ user, onLogout }) {
                     <h1 className="page-title">{pageInfo.title}</h1>
                     <span className="admin-root-pill">CSFP MIS</span>
                   </div>
-                  <p className="page-subtitle" style={{ margin: '0.25rem 0 0 0', color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                    {pageInfo.subtitle}
-                  </p>
                 </div>
 
                 <div className="page-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

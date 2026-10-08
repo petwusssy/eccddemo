@@ -28,7 +28,9 @@ export function UnauthorizedView({
           <div><strong>Security Scope:</strong> {user?.assignedBarangays || user?.assignedCenter || 'Restricted Scope'}</div>
           <div style={{ marginTop: '0.25rem', color: '#be123c' }}>
             <strong>Policy Rule:</strong>{' '}
-            {user?.role === 'cdt' || user?.role === 'field_worker' || user?.role === 'daycare_worker'
+            {attemptedModule === 'admin-console'
+              ? 'The Admin Console (/admin) is exclusive to the CSFP System Administrator (sysadmin@csfp.gov.ph). ECCD Administrative staff and CDTs manage day care operations on the main ECCD portal.'
+              : user?.role === 'cdt' || user?.role === 'field_worker' || user?.role === 'daycare_worker'
               ? 'Child Development Teachers (CDTs) serve as frontline implementers directly delivering activities and interventions to children and families. Consolidated dashboards, citywide reports, planning, and system administration are restricted to ECCD Administrative staff.'
               : 'ECCD Administrative access is required to consolidate data, coordinate requirements, plan and organize programs and services.'}
           </div>
@@ -44,7 +46,18 @@ export function UnauthorizedView({
             Return to Allowed Workspace
           </Button>
 
-          {onSwitchRole && (
+          {onSwitchRole && attemptedModule === 'admin-console' && (
+            <Button
+              variant="outline"
+              size="md"
+              icon={RefreshCw}
+              onClick={() => onSwitchRole('sysadmin')}
+            >
+              Log In as CSFP System Administrator
+            </Button>
+          )}
+
+          {onSwitchRole && attemptedModule !== 'admin-console' && (
             <Button
               variant="outline"
               size="md"

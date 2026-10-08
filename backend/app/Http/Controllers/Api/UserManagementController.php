@@ -289,11 +289,16 @@ class UserManagementController extends Controller
             ], 404);
         }
 
-        $validated = $request->validate([
-            'password' => 'required|string|min:6',
-        ]);
+        $password = $request->input('password') ?? $request->json('password') ?? $request->get('password');
+        if (empty($password) || strlen($password) < 6) {
+            return response()->json([
+                'ok' => false,
+                'status' => 422,
+                'error' => 'Password must be at least 6 characters.',
+            ], 422);
+        }
 
-        $user->password = Hash::make($validated['password']);
+        $user->password = Hash::make($password);
         $user->save();
 
         try {
