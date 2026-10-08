@@ -260,9 +260,6 @@ export function LoginPage({ isAdminPortal: propIsAdminPortal }) {
                 <span>CSFP SYSADMIN GATEWAY</span>
               </div>
               <h1 className="login-form-title" style={{ margin: 0 }}>System Administrator Sign In</h1>
-              <p className="login-form-subtitle" style={{ margin: '4px 0 0 0' }}>
-                City Information &amp; Communications Technology Office • CSFP MIS Admin Console
-              </p>
             </div>
           ) : (
             <h1 className="login-form-title">Welcome Back</h1>
@@ -431,10 +428,6 @@ function LoginLeftPanel() {
 
       <div className="login-left-wordmark">
         ANÁC
-      </div>
-
-      <div className="login-left-full-name">
-        Child Assessment, Registration &amp; Early-support System (ECCD CARE)
       </div>
 
       <div className="login-left-footer">
