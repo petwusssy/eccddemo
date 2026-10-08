@@ -450,9 +450,6 @@ export function DashboardOverview({ onNavigate }) {
                 <AlertTriangle size={18} style={{ color: 'var(--color-danger-primary)' }} />
                 Needs Attention: Active Intervention Cases
               </h2>
-              <Badge variant="danger" size="sm">
-                {attentionData?.highPriorityCount ?? 0} Urgent
-              </Badge>
             </div>
 
             {/* Filter Pills */}
@@ -661,44 +658,41 @@ export function DashboardOverview({ onNavigate }) {
           </CardHeader>
           <CardBody>
             {/* Visual Segmented Progress Bar */}
-            <div style={{ marginBottom: 'var(--space-2)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                <span>Total Identified: <strong>{(summary?.totalChildren ?? 0).toLocaleString()} children</strong></span>
-                <span>Annual CSWDO Target: <strong>{enrollment?.targetCohortComparison?.targetMetPercentage ?? 0}% Achieved</strong></span>
+            <div style={{ marginBottom: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                <span>Total Identified: <strong style={{ color: 'var(--text-primary)' }}>{(summary?.totalChildren ?? 0).toLocaleString()} children</strong></span>
+                <span>Annual CSWDO Target: <strong style={{ color: 'var(--text-primary)' }}>{enrollment?.targetCohortComparison?.targetMetPercentage ?? 0}% Achieved</strong></span>
               </div>
               <div className="enrollment-progress-bar" title="Enrollment Breakdown Progress Bar">
                 <div
                   className="enrollment-seg enrolled"
                   style={{ width: `${enrollment?.breakdown?.[0]?.percentage ?? 0}%` }}
-                >
-                  Enrolled ({enrollment?.breakdown?.[0]?.percentage ?? 0}%)
-                </div>
+                  title={`Enrolled: ${enrollment?.breakdown?.[0]?.count ?? 0} (${enrollment?.breakdown?.[0]?.percentage ?? 0}%)`}
+                />
                 <div
                   className="enrollment-seg not-enrolled"
                   style={{ width: `${enrollment?.breakdown?.[1]?.percentage ?? 0}%` }}
-                >
-                  Not Enrolled ({enrollment?.breakdown?.[1]?.percentage ?? 0}%)
-                </div>
+                  title={`Not Enrolled: ${enrollment?.breakdown?.[1]?.count ?? 0} (${enrollment?.breakdown?.[1]?.percentage ?? 0}%)`}
+                />
                 <div
                   className="enrollment-seg pending"
                   style={{ width: `${enrollment?.breakdown?.[2]?.percentage ?? 0}%` }}
-                >
-                  Pending ({enrollment?.breakdown?.[2]?.percentage ?? 0}%)
-                </div>
+                  title={`Pending / Unknown: ${enrollment?.breakdown?.[2]?.count ?? 0} (${enrollment?.breakdown?.[2]?.percentage ?? 0}%)`}
+                />
               </div>
             </div>
 
             {/* Three Breakdown Cards */}
             <div className="enrollment-cards-grid">
               {/* Enrolled Box */}
-              <div className="enrollment-stat-box" style={{ borderLeft: '3px solid var(--color-success-primary)' }}>
+              <div className="enrollment-stat-box enrolled">
                 <div className="enrollment-stat-header">
-                  <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold', color: 'var(--color-success-primary)' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-success-primary)', letterSpacing: '0.04em' }}>
                     ENROLLED
                   </span>
                   <Badge variant="success" size="sm">{enrollment?.breakdown?.[0]?.percentage ?? 0}%</Badge>
                 </div>
-                <div className="enrollment-stat-count">
+                <div className="enrollment-stat-count" style={{ color: 'var(--color-success-primary)' }}>
                   {enrollment?.breakdown?.[0]?.count !== undefined ? enrollment.breakdown[0].count.toLocaleString() : '0'}
                 </div>
                 <div className="enrollment-stat-sublist">
@@ -714,9 +708,9 @@ export function DashboardOverview({ onNavigate }) {
               </div>
 
               {/* Not Enrolled Box */}
-              <div className="enrollment-stat-box" style={{ borderLeft: '3px solid var(--color-danger-primary)' }}>
+              <div className="enrollment-stat-box not-enrolled">
                 <div className="enrollment-stat-header">
-                  <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold', color: 'var(--color-danger-primary)' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-danger-primary)', letterSpacing: '0.04em' }}>
                     NOT ENROLLED
                   </span>
                   <Badge variant="danger" size="sm">{enrollment?.breakdown?.[1]?.percentage ?? 0}%</Badge>
@@ -726,7 +720,7 @@ export function DashboardOverview({ onNavigate }) {
                 </div>
                 <div className="enrollment-stat-sublist">
                   <div className="enrollment-sub-item">
-                    <span style={{ color: 'var(--color-danger-primary)', fontWeight: '500' }}>Age 3–4 CDC Targets:</span>
+                    <span style={{ color: 'var(--color-danger-primary)', fontWeight: 500 }}>Age 3–4 CDC Targets:</span>
                     <strong>{enrollment?.breakdown?.[1]?.subcategories?.[0]?.count ?? 0}</strong>
                   </div>
                   <div className="enrollment-sub-item">
@@ -737,9 +731,9 @@ export function DashboardOverview({ onNavigate }) {
               </div>
 
               {/* Pending / Unknown Box */}
-              <div className="enrollment-stat-box" style={{ borderLeft: '3px solid var(--color-warning-primary)' }}>
+              <div className="enrollment-stat-box pending">
                 <div className="enrollment-stat-header">
-                  <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold', color: 'var(--color-warning-primary)' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-warning-primary)', letterSpacing: '0.04em' }}>
                     PENDING / UNKNOWN
                   </span>
                   <Badge variant="warning" size="sm">{enrollment?.breakdown?.[2]?.percentage ?? 0}%</Badge>
@@ -757,14 +751,6 @@ export function DashboardOverview({ onNavigate }) {
                     <strong>{enrollment?.breakdown?.[2]?.subcategories?.[1]?.count ?? 0}</strong>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Strategic Operational Note */}
-            <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3)', backgroundColor: 'var(--bg-canvas)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', display: 'flex', gap: 'var(--space-2)' }}>
-              <School size={15} style={{ color: 'var(--color-primary-600)', flexShrink: 0, marginTop: '2px' }} />
-              <div>
-                <strong>Operational Action:</strong> {summary?.totalChildren ? `${summary.notEnrolledChildren || 0} unenrolled children identified across mapped barangays.` : 'Clean operational slate. Map households or register children to begin tracking enrollment.'}
               </div>
             </div>
           </CardBody>
@@ -1017,7 +1003,6 @@ export function DashboardOverview({ onNavigate }) {
                   E. Recent Activity
                 </CardTitle>
               </div>
-              <Badge variant="primary" size="sm">Live Feed</Badge>
             </div>
           </CardHeader>
           <CardBody>
