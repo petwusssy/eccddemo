@@ -14,6 +14,7 @@
 
 import { getApiUrl } from './apiConfig';
 import { centralDataStore } from './centralDataStore';
+import { updateOfflineUserCredential } from './authService';
 
 const HEADERS = {
   Accept: 'application/json',
@@ -139,6 +140,14 @@ export const userService = {
         });
       } catch (_) {}
 
+      // Synchronize into credential store
+      if (payload.email && payload.password) {
+        updateOfflineUserCredential(payload.email, payload.password, {
+          name: payload.name,
+          roleId: payload.role_id,
+        });
+      }
+
       return json.data;
     } catch (err) {
       console.error('userService.createUser error:', err);
@@ -162,6 +171,13 @@ export const userService = {
         throw new Error(json.message || json.error || 'Failed to update user account.');
       }
 
+      if (payload.email && payload.password) {
+        updateOfflineUserCredential(payload.email, payload.password);
+        try {
+          centralDataStore.updateUserPassword(payload.email, payload.password);
+        } catch (_) {}
+      }
+
       return json.data;
     } catch (err) {
       console.error('userService.updateUser error:', err);
@@ -172,7 +188,7 @@ export const userService = {
   /**
    * Reset user password by IT Administrator.
    */
-  async resetPassword(id, newPassword) {
+  async resetPassword(id, newPassword, targetEmail = null) {
     try {
       const res = await fetch(getApiUrl(`/api/users/${id}/reset-password`), {
         method: 'POST',
@@ -185,9 +201,22 @@ export const userService = {
         throw new Error(json.message || json.error || 'Failed to reset password.');
       }
 
+      if (targetEmail) {
+        updateOfflineUserCredential(targetEmail, newPassword);
+        try {
+          centralDataStore.updateUserPassword(targetEmail, newPassword);
+        } catch (_) {}
+      }
+
       return json;
     } catch (err) {
       console.error('userService.resetPassword error:', err);
+      if (targetEmail) {
+        updateOfflineUserCredential(targetEmail, newPassword);
+        try {
+          centralDataStore.updateUserPassword(targetEmail, newPassword);
+        } catch (_) {}
+      }
       throw err;
     }
   },

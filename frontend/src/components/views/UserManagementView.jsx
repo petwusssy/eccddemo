@@ -267,7 +267,7 @@ export function UserManagementView({ currentUser, onNavigate }) {
 
     setIsSubmitting(true);
     try {
-      await userService.resetPassword(selectedUser.id, resetPasswordVal);
+      await userService.resetPassword(selectedUser.id, resetPasswordVal, selectedUser.email);
       addToast(`Password for ${selectedUser.name} was reset successfully!`, 'success');
       setIsResetOpen(false);
     } catch (err) {

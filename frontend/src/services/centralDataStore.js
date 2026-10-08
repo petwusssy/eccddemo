@@ -48,6 +48,13 @@ const STORAGE_KEY = 'eccd_care_central_datastore_v3';
 // Seed Roles
 export const SEED_ROLES = [
   {
+    id: 'ROLE-SYSADMIN',
+    name: 'sysadmin',
+    label: 'CSFP System Administrator',
+    description: 'City IT / MIS Administrator managing system access, tenant security, audit logs, and account provisioning in /admin.',
+    permissions: ['*'],
+  },
+  {
     id: 'ROLE-ADMIN',
     name: 'eccd_admin',
     label: 'ECCD Administrative',
@@ -86,10 +93,22 @@ export const SEED_DAY_CARE_CENTERS = [];
 // Seed Users & Workers
 export const SEED_USERS = [
   {
+    id: 'USR-SYS-001',
+    username: 'sysadmin.csfp',
+    name: 'CSFP MIS System Administrator',
+    email: 'sysadmin@csfp.gov.ph',
+    password: 'password',
+    roleId: 'ROLE-SYSADMIN',
+    role: 'sysadmin',
+    designation: 'City IT / MIS System Administrator',
+    status: 'Active',
+  },
+  {
     id: 'USR-001',
     username: 'admin.cswdo',
     name: 'Ma. Elena D. Santos, RSW',
     email: 'admin@eccd.gov.ph',
+    password: 'password',
     roleId: 'ROLE-ADMIN',
     role: 'eccd_admin',
     designation: 'ECCD Administrative Officer / CSWDO Supervisor',
@@ -100,10 +119,10 @@ export const SEED_USERS = [
     username: 'remedios.garcia',
     name: 'Remedios D. Garcia, CDT',
     email: 'cdt@eccd.gov.ph',
+    password: 'password',
     roleId: 'ROLE-CDT',
     role: 'cdt',
     designation: 'Child Development Teacher (CDT)',
-    status: 'Active',
   },
 ];
 
@@ -651,6 +670,18 @@ class CentralDataStore {
   // --- ENTITY COLLECTION GETTERS ---
   getRoles() { return this.data.roles; }
   getUsers() { return this.data.users; }
+  updateUserPassword(identifier, newPassword) {
+    if (!Array.isArray(this.data.users)) this.data.users = [];
+    const idx = this.data.users.findIndex(
+      (u) => String(u.id) === String(identifier) || u.email?.toLowerCase() === String(identifier).toLowerCase()
+    );
+    if (idx !== -1) {
+      this.data.users[idx].password = newPassword;
+      this.save();
+      return true;
+    }
+    return false;
+  }
   getWorkers() { return this.data.workers; }
   getBarangays() { return this.data.barangays; }
   getDayCareCenters() { return this.data.dayCareCenters; }

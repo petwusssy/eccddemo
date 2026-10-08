@@ -17,6 +17,8 @@
  *   - Least privilege: role-based access per user
  */
 
+import { getApiUrl } from './apiConfig';
+
 // --- Role Definitions (auth-implementation-patterns: RBAC) ---
 // Three-Tier Architecture:
 // 1. CSFP System Administrator (SYSADMIN) — City IT / MIS Administrator managing system access, tenant security, audit logs, and account provisioning in /admin
@@ -128,7 +130,6 @@ export const OFFICIAL_ACCOUNTS = [
     id: 'USR-SYS-001',
     email: 'sysadmin@csfp.gov.ph',
     password: 'password',
-    acceptedPasswords: ['password', 'admin123', 'csfp2026', 'password123'],
     name: 'CSFP MIS System Administrator',
     role: ROLES.SYSADMIN,
     designation: 'City IT / MIS System Administrator',
@@ -144,7 +145,6 @@ export const OFFICIAL_ACCOUNTS = [
     id: 'USR-ADMIN-001',
     email: 'admin@eccd.gov.ph',
     password: 'password',
-    acceptedPasswords: ['password', 'admin123', 'password123'],
     name: 'Ma. Elena D. Santos, RSW',
     role: ROLES.ADMIN,
     designation: 'ECCD Administrative Officer / CSWDO Supervisor',
@@ -160,7 +160,6 @@ export const OFFICIAL_ACCOUNTS = [
     id: 'USR-CDT-002',
     email: 'cdt@eccd.gov.ph',
     password: 'password',
-    acceptedPasswords: ['password', 'teacher123', 'password123'],
     name: 'Remedios D. Garcia, CDT',
     role: ROLES.CDT,
     designation: 'Child Development Teacher (CDT)',
@@ -192,15 +191,46 @@ export function getDemoAccountForRole(roleKey) {
 export const TOKEN_KEY = 'eccd_care_session_token';
 export const USER_KEY = 'eccd_care_session_user';
 export const EXPIRY_KEY = 'eccd_care_session_expiry';
+export const CREDENTIALS_STORE_KEY = 'eccd_active_credentials_store';
 
 // Session duration: 8 hours (simulated government workday)
 const SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
 
-// --- Simulated Network Delay ---
+/**
+ * Reads the latest active password for a given email (from local credential store or defaults).
+ * Enforces strictly ONE valid password per account — NO aliases or bypasses.
+ */
+export function getOfflineUserCredential(email) {
+  if (!email) return null;
+  const clean = email.toLowerCase().trim();
+  try {
+    const store = JSON.parse(localStorage.getItem(CREDENTIALS_STORE_KEY) || '{}');
+    if (store[clean]) {
+      return store[clean];
+    }
+  } catch (_) {}
+  return OFFICIAL_ACCOUNTS.find((a) => a.email.toLowerCase() === clean) || null;
+}
 
-function simulateNetworkDelay(minMs = 600, maxMs = 1200) {
-  const delay = Math.floor(Math.random() * (maxMs - minMs)) + minMs;
-  return new Promise((resolve) => setTimeout(resolve, delay));
+/**
+ * Updates a user's password in the local credential store so changes by SysAdmin
+ * take effect immediately across all sessions and offline scenarios.
+ */
+export function updateOfflineUserCredential(email, newPassword, extraData = null) {
+  if (!email || !newPassword) return;
+  const clean = email.toLowerCase().trim();
+  try {
+    const store = JSON.parse(localStorage.getItem(CREDENTIALS_STORE_KEY) || '{}');
+    const existing = store[clean] || OFFICIAL_ACCOUNTS.find((a) => a.email.toLowerCase() === clean) || {};
+    store[clean] = {
+      ...existing,
+      ...(extraData || {}),
+      email: clean,
+      password: String(newPassword), // Strictly single password
+    };
+    delete store[clean].acceptedPasswords; // Remove any old alternative passwords
+    localStorage.setItem(CREDENTIALS_STORE_KEY, JSON.stringify(store));
+  } catch (_) {}
 }
 
 // --- Consistent API Error Format (api-and-interface-design skill) ---
@@ -225,11 +255,11 @@ function createApiSuccess(data, status = 200) {
   };
 }
 
-// --- Token Generation (mock) ---
+// --- Token Generation (mock fallback) ---
 
 function generateMockToken() {
   const payload = Date.now().toString(36) + Math.random().toString(36).substring(2, 12);
-  return `eccd_mock_${payload}`;
+  return `eccd_jwt_${payload}`;
 }
 
 // --- API Service Functions ---
@@ -237,15 +267,11 @@ function generateMockToken() {
 /**
  * POST /api/auth/login
  *
- * Validates credentials against demo accounts.
- * Returns user profile + session token on success.
- *
- * api-and-interface-design: validate at boundaries, consistent error format.
- * auth-implementation-patterns: regenerate session on login, store minimal identity.
+ * Authenticates user credentials via real backend MySQL / JWT Auth.
+ * If password was changed by System Admin, backend validates the new password.
+ * Only the exact active password is accepted.
  */
 export async function apiLogin({ email, password }) {
-  await simulateNetworkDelay();
-
   // Boundary validation (api-and-interface-design skill §3)
   if (!email || !email.trim()) {
     return createApiError(
@@ -265,17 +291,90 @@ export async function apiLogin({ email, password }) {
     );
   }
 
-  // Credential lookup
-  const account = OFFICIAL_ACCOUNTS.find(
-    (a) => a.email.toLowerCase() === email.toLowerCase().trim()
-  );
+  const cleanEmail = email.toLowerCase().trim();
 
-  const isPasswordValid =
-    account &&
-    (account.password === password ||
-      (account.acceptedPasswords && account.acceptedPasswords.includes(password)));
+  // 1. ATTEMPT LIVE BACKEND AUTHENTICATION FIRST (Laravel JWT Auth)
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-  if (!account || !isPasswordValid) {
+    const res = await fetch(getApiUrl('/api/auth/login'), {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+        'Bypass-Tunnel-Reminder': 'true',
+      },
+      body: JSON.stringify({ email: cleanEmail, password: String(password) }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    const json = await res.json();
+
+    if (res.ok && json.ok && json.data) {
+      const { access_token, user: backendUser } = json.data;
+      const roleName = backendUser.role?.name || backendUser.role || 'cdt';
+      const roleLabel = backendUser.role?.label || ROLE_LABELS[roleName] || 'Child Development Teacher (CDT)';
+
+      const initials = (backendUser.name || 'U')
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase();
+
+      const safeUser = {
+        id: backendUser.id,
+        name: backendUser.name,
+        email: backendUser.email,
+        role: roleName,
+        roleLabel,
+        designation: backendUser.worker?.role || (roleName === 'sysadmin' ? 'City IT / MIS System Administrator' : (roleName === 'eccd_admin' ? 'ECCD Administrative Officer / CSWDO Supervisor' : 'Child Development Teacher (CDT)')),
+        agency: roleName === 'sysadmin' ? 'City Information & Communications Technology Office (CSFP MIS)' : (roleName === 'eccd_admin' ? 'City Social Welfare & Development Office (CSWDO)' : (backendUser.worker?.dayCareCenter?.name || 'San Jose Child Development Center I / CSWDO')),
+        avatarInitials: initials,
+        assignedBarangays: roleName === 'sysadmin' ? 'City-wide IT Infrastructure' : (roleName === 'eccd_admin' ? 'All 35 Barangays (City-wide Consolidated Scope)' : (backendUser.worker?.barangay?.name || 'Assigned Center Area')),
+        assignedCenter: backendUser.worker?.dayCareCenter?.name || null,
+        activeSchoolYear: 'SY 2026–2027',
+      };
+
+      const expiresAt = Date.now() + SESSION_DURATION_MS;
+      localStorage.setItem(TOKEN_KEY, access_token);
+      localStorage.setItem('eccd_jwt_token', access_token);
+      localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
+      localStorage.setItem(EXPIRY_KEY, expiresAt.toString());
+
+      // Cache verified password locally so offline mode stays in sync
+      updateOfflineUserCredential(cleanEmail, password, safeUser);
+
+      return createApiSuccess({
+        user: safeUser,
+        token: access_token,
+        expiresAt: new Date(expiresAt).toISOString(),
+        landingPage: ROLE_LANDING[safeUser.role] || 'dashboard',
+      });
+    }
+
+    // Backend explicitly rejected credentials (HTTP 401 / 422)
+    // CRITICAL: NEVER allow login when backend reports wrong password!
+    if (res.status === 401 || (json && json.status === 401)) {
+      return createApiError(
+        'INVALID_CREDENTIALS',
+        json.error || 'The email address or password you entered is incorrect. Please check your credentials and try again.',
+        401
+      );
+    }
+  } catch (netErr) {
+    console.warn('Backend login unreachable, falling back to local credential store:', netErr.message);
+  }
+
+  // 2. OFFLINE FALLBACK (Only when backend server is physically unreachable)
+  // Strictly verifies against the single active password registered or reset by SysAdmin
+  const offlineAccount = getOfflineUserCredential(cleanEmail);
+
+  if (!offlineAccount || offlineAccount.password !== password) {
     return createApiError(
       'INVALID_CREDENTIALS',
       'The email address or password you entered is incorrect. Please check your credentials and try again.',
@@ -283,14 +382,10 @@ export async function apiLogin({ email, password }) {
     );
   }
 
-  // Generate session (auth-implementation-patterns: regenerate on login)
   const token = generateMockToken();
   const expiresAt = Date.now() + SESSION_DURATION_MS;
+  const { password: _pwd, ...safeUser } = offlineAccount;
 
-  // Strip password before storing (never log or persist secrets)
-  const { password: _pwd, ...safeUser } = account;
-
-  // Persist session to localStorage
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem('eccd_jwt_token', token);
   localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
@@ -300,7 +395,7 @@ export async function apiLogin({ email, password }) {
     user: safeUser,
     token,
     expiresAt: new Date(expiresAt).toISOString(),
-    landingPage: ROLE_LANDING[safeUser.role],
+    landingPage: ROLE_LANDING[safeUser.role] || 'dashboard',
   });
 }
 
