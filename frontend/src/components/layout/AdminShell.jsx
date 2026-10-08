@@ -9,7 +9,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Database,
   Activity,
   Server,
   ChevronDown,
@@ -30,7 +29,6 @@ import AdminRolesView from '../views/AdminRolesView';
 import AuditLogsView from '../views/AuditLogsView';
 import AdminSystemHealthView from '../views/AdminSystemHealthView';
 import Tooltip from '../ui/Tooltip';
-import { isBackendConnected } from '../../services/apiConfig';
 import '../../styles/admin-console.css';
 
 /**
@@ -50,7 +48,6 @@ export default function AdminShell({ user, onLogout }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [dbConnected, setDbConnected] = useState(isBackendConnected());
 
   const profileRef = useRef(null);
 
@@ -325,22 +322,7 @@ export default function AdminShell({ user, onLogout }) {
                 <span className="sysadmin-pulse-dot" />
               </div>
 
-              {/* Live Database Indicator */}
-              <div className="sysadmin-status-pill" title="Connected to MySQL / MariaDB Relational Database">
-                <Database size={13} style={{ color: '#22c55e' }} />
-                <span>MySQL Live</span>
-              </div>
 
-              {/* Return to ECCD Portal Quick Button */}
-              <button
-                type="button"
-                className="sysadmin-return-portal-btn"
-                onClick={handleReturnToPortal}
-                title="Switch back to ECCD Daycare Child Portal (/dashboard)"
-              >
-                <ArrowLeft size={14} />
-                <span>Return to ECCD Portal</span>
-              </button>
 
               {/* SysAdmin User Profile Dropdown */}
               <div className="header-action-wrapper" ref={profileRef}>
