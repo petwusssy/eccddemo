@@ -56,8 +56,6 @@ const navigationSections = [
   {
     title: 'SYSTEM',
     items: [
-      { id: 'users', label: 'User Accounts', path: '/users', icon: UserCog },
-      { id: 'audit-logs', label: 'Audit Logs', path: '/audit-logs', icon: FileClock },
       { id: 'settings', label: 'Settings', path: '/settings', icon: Settings },
     ],
   },

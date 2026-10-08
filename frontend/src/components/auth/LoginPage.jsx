@@ -24,11 +24,9 @@ import {
   CheckCircle2,
   Clock,
   ShieldAlert,
-  Info,
   LogIn,
 } from 'lucide-react';
 import { useAuth, AUTH_STATUS } from './AuthProvider';
-import { getDemoAccounts } from '../../services/authService';
 import { Button } from '../ui/Button';
 import { Checkbox } from '../ui/Checkbox';
 import '../../styles/login.css';
@@ -52,8 +50,6 @@ export function LoginPage() {
   const [forgotSubmitting, setForgotSubmitting] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState('');
   const [forgotError, setForgotError] = useState('');
-
-  const demoAccounts = getDemoAccounts();
 
   // --- Login Form Submission ---
 
@@ -122,14 +118,7 @@ export function LoginPage() {
     }
   };
 
-  // --- Quick Demo Login ---
 
-  const handleDemoLogin = (account) => {
-    setEmail(account.email);
-    setPassword(account.passwordRaw);
-    setFormError('');
-    setFieldErrors({});
-  };
 
   // --- Forgot Password View ---
 
@@ -394,33 +383,6 @@ export function LoginPage() {
 
           {/* Privacy Notice (ui-a11y: inform user about data handling) */}
           <PrivacyNotice />
-
-          {/* Demo Accounts Quick Login */}
-          <div className="demo-accounts-panel">
-            <div className="demo-accounts-header">
-              <Info size={13} />
-              <span>Prototype Demo Accounts</span>
-            </div>
-
-            {demoAccounts.map((account) => (
-              <div key={account.email} className="demo-account-row">
-                <div className="demo-account-info">
-                  <span className="demo-account-email">{account.email}</span>
-                  <span className="demo-account-role">
-                    {account.roleLabel} — {account.name}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  className="btn btn-outline btn-sm demo-login-btn"
-                  onClick={() => handleDemoLogin(account)}
-                >
-                  Use
-                </button>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>

@@ -21,6 +21,7 @@ import { ToastProvider } from './components/ui/Toast';
 import { AuthProvider, useAuth, AUTH_STATUS } from './components/auth/AuthProvider';
 import { LoginPage } from './components/auth/LoginPage';
 import AppShell from './components/layout/AppShell';
+import AdminShell from './components/layout/AdminShell';
 import DashboardOverview from './components/views/DashboardOverview';
 import CommunityMappingView from './components/views/CommunityMappingView';
 import ChildManagementView from './components/views/ChildManagementView';
@@ -64,8 +65,9 @@ const ROUTE_MAP = {
   reports: '/reports',
   'audit-logs': '/audit-logs',
   settings: '/settings',
-  users: '/users',
-  'user-accounts': '/users',
+  users: '/admin',
+  'user-accounts': '/admin',
+  admin: '/admin',
 };
 
 const PATH_TO_SECTION = {
@@ -87,7 +89,8 @@ const PATH_TO_SECTION = {
   '/reports': 'reports',
   '/audit-logs': 'audit-logs',
   '/settings': 'settings',
-  '/users': 'users',
+  '/users': 'admin',
+  '/admin': 'admin',
 };
 
 const ROLE_LANDING_ROUTE = {
@@ -324,6 +327,28 @@ function AuthenticatedApp() {
 
   const pageInfo = getPageInfo();
 
+  // Route Guard: Dedicated /admin console handling
+  const isAdmin = user?.role === 'eccd_admin' || user?.role === 'cswdo_admin' || user?.role === 'admin';
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  if (isAdminRoute) {
+    if (!isAdmin) {
+      return (
+        <UnauthorizedView
+          attemptedModule="admin-console"
+          user={user}
+          roleLabel={roleLabel}
+          onReturnToAllowed={() => navigate(ROLE_LANDING_ROUTE[user?.role] || '/dashboard')}
+          onSwitchRole={(newRole) => {
+            switchRole(newRole);
+            navigate(ROLE_LANDING_ROUTE[newRole] || '/dashboard');
+          }}
+        />
+      );
+    }
+    return <AdminShell user={user} onLogout={logout} />;
+  }
+
   return (
     <AppShell
       activeItem={activeItem}
@@ -384,7 +409,7 @@ function AuthenticatedApp() {
               }
             />
             <Route path="/settings" element={<SettingsView onNavigate={handleNavigate} />} />
-            <Route path="/users" element={<UserManagementView currentUser={user} onNavigate={handleNavigate} />} />
+            <Route path="/users" element={<Navigate to="/admin" replace />} />
             <Route path="/resources" element={<ModulePlaceholder moduleId="resources" onNavigate={handleNavigate} />} />
             <Route path="*" element={<Navigate to={ROLE_LANDING_ROUTE[user?.role] || '/dashboard'} replace />} />
           </Routes>

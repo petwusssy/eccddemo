@@ -107,13 +107,14 @@ export const ROLE_PERMISSIONS = {
   },
 };
 
-// --- Demo Accounts (synthetic, safe, non-production) ---
+// --- Official Production Accounts ---
 
-const DEMO_ACCOUNTS = [
+export const OFFICIAL_ACCOUNTS = [
   {
     id: 'USR-ADMIN-001',
-    email: 'admin@eccdcare.demo',
-    password: 'admin123',
+    email: 'admin@eccd.gov.ph',
+    password: 'password',
+    acceptedPasswords: ['password', 'admin123', 'password123'],
     name: 'Ma. Elena D. Santos, RSW',
     role: ROLES.ADMIN,
     designation: 'ECCD Administrative Officer / CSWDO Supervisor',
@@ -127,8 +128,9 @@ const DEMO_ACCOUNTS = [
   },
   {
     id: 'USR-CDT-002',
-    email: 'teacher@eccdcare.demo',
-    password: 'teacher123',
+    email: 'cdt@eccd.gov.ph',
+    password: 'password',
+    acceptedPasswords: ['password', 'teacher123', 'password123'],
     name: 'Remedios D. Garcia, CDT',
     role: ROLES.CDT,
     designation: 'Child Development Teacher (CDT)',
@@ -136,50 +138,20 @@ const DEMO_ACCOUNTS = [
     lgu: 'City of San Fernando, Pampanga',
     region: 'Region III — Central Luzon',
     avatarInitials: 'RG',
-    assignedBarangays: 'Brgy. San Jose, Brgy. Dolores, Brgy. San Isidro',
-    assignedCenter: 'San Jose Child Development Center I',
-    activeSchoolYear: 'SY 2026–2027',
-    description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
-  },
-  // Legacy aliases supported for quick login:
-  {
-    id: 'USR-CSWDO-014',
-    email: 'fieldworker@eccdcare.demo',
-    password: 'field123',
-    name: 'Rodolfo C. Manansala, CDT',
-    role: ROLES.CDT,
-    designation: 'Child Development Teacher (CDT)',
-    agency: 'CSWDO Frontline Community Section',
-    lgu: 'City of San Fernando, Pampanga',
-    region: 'Region III — Central Luzon',
-    avatarInitials: 'RM',
     assignedBarangays: 'Brgy. San Jose, Brgy. Dolores',
-    activeSchoolYear: 'SY 2026–2027',
-    description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
-  },
-  {
-    id: 'USR-CDC-027',
-    email: 'daycare@eccdcare.demo',
-    password: 'daycare123',
-    name: 'Remedios D. Garcia, CDT',
-    role: ROLES.CDT,
-    designation: 'Child Development Teacher (CDT)',
-    agency: 'San Jose Child Development Center I',
-    lgu: 'City of San Fernando, Pampanga',
-    region: 'Region III — Central Luzon',
-    avatarInitials: 'RG',
-    assignedBarangays: 'Brgy. San Jose',
     assignedCenter: 'San Jose Child Development Center I',
     activeSchoolYear: 'SY 2026–2027',
     description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
   },
 ];
 
+export const DEMO_ACCOUNTS = OFFICIAL_ACCOUNTS;
+
 export function getDemoAccountForRole(roleKey) {
   if (roleKey === ROLES.ADMIN || roleKey === 'cswdo_admin' || roleKey === 'eccd_admin') {
-    return DEMO_ACCOUNTS[0];
+    return OFFICIAL_ACCOUNTS[0];
   }
-  return DEMO_ACCOUNTS[1];
+  return OFFICIAL_ACCOUNTS[1];
 }
 
 // --- Session Storage Keys ---
@@ -261,11 +233,16 @@ export async function apiLogin({ email, password }) {
   }
 
   // Credential lookup
-  const account = DEMO_ACCOUNTS.find(
+  const account = OFFICIAL_ACCOUNTS.find(
     (a) => a.email.toLowerCase() === email.toLowerCase().trim()
   );
 
-  if (!account || account.password !== password) {
+  const isPasswordValid =
+    account &&
+    (account.password === password ||
+      (account.acceptedPasswords && account.acceptedPasswords.includes(password)));
+
+  if (!account || !isPasswordValid) {
     return createApiError(
       'INVALID_CREDENTIALS',
       'The email address or password you entered is incorrect. Please check your credentials and try again.',

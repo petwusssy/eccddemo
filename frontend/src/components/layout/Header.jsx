@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Menu,
   Search,
@@ -52,6 +53,7 @@ export function Header({
   roleLabel,
   isOffline: initialIsOffline,
 }) {
+  const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notifications, setNotifications] = useState(mockNotifications);
@@ -282,6 +284,33 @@ export function Header({
               <span>Live Cloud Sync</span>
             </button>
           )}
+
+          {/* Admin Console Switcher (Visible ONLY to Administrators) */}
+          {(displayUser.role === 'eccd_admin' || displayUser.role === 'cswdo_admin' || displayUser.role === 'admin') && (
+            <button
+              type="button"
+              onClick={() => navigate('/admin')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 11px',
+                borderRadius: '9999px',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.02em',
+                background: 'linear-gradient(135deg, #4338ca 0%, #312e81 100%)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 2px 5px rgba(49, 46, 129, 0.3)',
+                cursor: 'pointer',
+              }}
+              title="Open Dedicated CSWDO Admin Console (/admin)"
+            >
+              <Shield size={12} style={{ color: '#fbbf24' }} />
+              <span>Admin Console</span>
+            </button>
+          )}
         </div>
 
         {/* Notifications Popover */}
@@ -430,6 +459,21 @@ export function Header({
                 <Wifi size={15} />
                 <span>Backend Server Connection</span>
               </button>
+
+              {(displayUser.role === 'eccd_admin' || displayUser.role === 'cswdo_admin' || displayUser.role === 'admin') && (
+                <button
+                  type="button"
+                  className="profile-dropdown-item"
+                  style={{ color: '#4338ca', fontWeight: 600 }}
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/admin');
+                  }}
+                >
+                  <Shield size={15} style={{ color: '#4338ca' }} />
+                  <span>Open Admin Console (/admin)</span>
+                </button>
+              )}
 
               <button
                 type="button"
