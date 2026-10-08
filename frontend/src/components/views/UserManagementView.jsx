@@ -290,71 +290,145 @@ export function UserManagementView({ currentUser, onNavigate }) {
   return (
     <div className="user-management-view" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       {/* 1. Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <ShieldCheck size={26} color="var(--color-primary-800)" />
-            User Accounts &amp; Access Control
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <ShieldCheck size={26} style={{ color: '#4f46e5' }} />
+            User Accounts &amp; Access Control Directory
           </h2>
-          <p style={{ margin: '0.25rem 0 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--text-muted)' }}>
-            IT Administrator Portal • Manage staff login credentials, system roles, and Day Care Center assignments.
+          <p style={{ margin: '0.25rem 0 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
+            City Social Welfare &amp; Development Office • Provision staff credentials, roles, and facility assignments.
           </p>
         </div>
 
-        <Button variant="primary" icon={UserPlus} onClick={handleOpenCreate}>
-          + Create New User
+        <Button
+          variant="primary"
+          icon={UserPlus}
+          onClick={handleOpenCreate}
+          style={{
+            background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
+            boxShadow: '0 4px 12px rgba(79, 70, 229, 0.35)',
+            border: 'none',
+            fontWeight: 700,
+          }}
+        >
+          + Create Staff Account
         </Button>
       </div>
 
-      {/* 2. Statistical KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)' }}>
-        <Card>
-          <CardBody style={{ padding: '1rem' }}>
-            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+      {/* 2. Enhanced Statistical KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-3)' }}>
+        {/* Total Users */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.06) 0%, var(--bg-surface) 100%)',
+            border: '1px solid rgba(79, 70, 229, 0.25)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.25rem',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Total Registered Users
+            </span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(79, 70, 229, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Users size={16} style={{ color: '#4f46e5' }} />
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
-              {stats.total}
-            </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>All staff credentials</div>
-          </CardBody>
-        </Card>
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+            {stats.total}
+          </div>
+          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            Active system credentials
+          </div>
+        </div>
 
-        <Card>
-          <CardBody style={{ padding: '1rem' }}>
-            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, color: 'var(--color-primary-800)', textTransform: 'uppercase' }}>
+        {/* Administrative Officers */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, var(--bg-surface) 100%)',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.25rem',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Administrative Officers
+            </span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ShieldCheck size={16} style={{ color: '#dc2626' }} />
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--color-primary-900)', marginTop: '0.25rem' }}>
-              {stats.admins}
-            </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Full planning &amp; IT access</div>
-          </CardBody>
-        </Card>
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#dc2626', lineHeight: 1.1 }}>
+            {stats.admins}
+          </div>
+          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            Full system &amp; IT root access
+          </div>
+        </div>
 
-        <Card>
-          <CardBody style={{ padding: '1rem' }}>
-            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, color: 'var(--color-success-text)', textTransform: 'uppercase' }}>
+        {/* Child Development Teachers */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, var(--bg-surface) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.25rem',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Child Development Teachers
+            </span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Building2 size={16} style={{ color: '#059669' }} />
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#047857', marginTop: '0.25rem' }}>
-              {stats.cdts}
-            </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Frontline Day Care Workers</div>
-          </CardBody>
-        </Card>
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#059669', lineHeight: 1.1 }}>
+            {stats.cdts}
+          </div>
+          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            Frontline daycare implementers
+          </div>
+        </div>
 
-        <Card>
-          <CardBody style={{ padding: '1rem' }}>
-            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, color: '#0284c7', textTransform: 'uppercase' }}>
+        {/* Assigned to Centers */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.06) 0%, var(--bg-surface) 100%)',
+            border: '1px solid rgba(2, 132, 199, 0.25)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.25rem',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Assigned to Centers
+            </span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(2, 132, 199, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Key size={16} style={{ color: '#0284c7' }} />
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0369a1', marginTop: '0.25rem' }}>
-              {stats.withCenters}
-            </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Operating in Day Care facilities</div>
-          </CardBody>
-        </Card>
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0284c7', lineHeight: 1.1 }}>
+            {stats.withCenters}
+          </div>
+          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            Operating in Day Care facilities
+          </div>
+        </div>
       </div>
 
       {/* 3. Search & Filter Bar */}

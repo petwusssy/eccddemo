@@ -32,11 +32,12 @@ import { Checkbox } from '../ui/Checkbox';
 import '../../styles/login.css';
 import anacLogo from '../../assets/anac-logo.png';
 
-export function LoginPage() {
-  const { login, forgotPassword, status, sessionExpiredMessage, clearExpiredState } = useAuth();
+export function LoginPage({ isAdminPortal: propIsAdminPortal }) {
+  const isAdminPortal = propIsAdminPortal ?? (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin'));
+  const { login, logout, forgotPassword, status, sessionExpiredMessage, clearExpiredState } = useAuth();
 
   // Form state (react-patterns: useState for isolated form UI)
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(isAdminPortal ? 'admin@eccd.gov.ph' : '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -80,8 +81,16 @@ export function LoginPage() {
         } else {
           setFormError(result.error?.message || 'Authentication failed. Please try again.');
         }
+        return;
       }
-      // On success, AuthProvider updates status → App renders AppShell
+
+      // If user attempted to log in to /admin as a CDT:
+      if (isAdminPortal && result.data?.user?.role === 'cdt') {
+        await logout();
+        setFormError('Access Restricted: This console is strictly reserved for CSWDO Administrators. Please use the standard ECCD portal at "/" to sign in.');
+        return;
+      }
+      // On success, AuthProvider updates status → App renders AppShell or AdminShell
     } catch {
       setFormError('A network error occurred. Please check your connection and try again.');
     } finally {
@@ -243,7 +252,20 @@ export function LoginPage() {
             </div>
           )}
 
-          <h1 className="login-form-title">Welcome Back</h1>
+          {isAdminPortal ? (
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '3px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>
+                <Shield size={12} style={{ color: '#dc2626' }} />
+                <span>Executive Admin Gateway</span>
+              </div>
+              <h1 className="login-form-title" style={{ margin: 0 }}>Administrator Sign In</h1>
+              <p className="login-form-subtitle" style={{ margin: '4px 0 0 0' }}>
+                City Social Welfare &amp; Development Office • CSWDO Admin Console
+              </p>
+            </div>
+          ) : (
+            <h1 className="login-form-title">Welcome Back</h1>
+          )}
 
           {/* Credential Error Banner */}
           {formError && (
@@ -383,6 +405,14 @@ export function LoginPage() {
 
           {/* Privacy Notice (ui-a11y: inform user about data handling) */}
           <PrivacyNotice />
+
+          {isAdminPortal && (
+            <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '12px' }}>
+              <a href="/" style={{ color: 'var(--color-primary-700)', textDecoration: 'none', fontWeight: 600 }}>
+                ← Return to Standard ECCD Daycare Portal
+              </a>
+            </div>
+          )}
         </div>
       </div>
     </div>

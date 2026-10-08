@@ -433,6 +433,7 @@ function AuthenticatedApp() {
  */
 function AuthRouter() {
   const { status } = useAuth();
+  const location = useLocation();
 
   switch (status) {
     case AUTH_STATUS.LOADING:
@@ -448,7 +449,7 @@ function AuthRouter() {
 
     case AUTH_STATUS.UNAUTHENTICATED:
     default:
-      return <LoginPage />;
+      return <LoginPage isAdminPortal={location.pathname.startsWith('/admin')} />;
   }
 }
 

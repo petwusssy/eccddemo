@@ -11,11 +11,16 @@ import {
   Lock,
   ExternalLink,
   ChevronRight,
+  Database,
+  CheckCircle2,
+  Activity,
+  Server,
 } from 'lucide-react';
 import anacLogo from '../../assets/anac-logo.png';
 import UserManagementView from '../views/UserManagementView';
 import AdminRolesView from '../views/AdminRolesView';
 import AuditLogsView from '../views/AuditLogsView';
+import '../../styles/admin-console.css';
 
 /**
  * AdminShell — Dedicated Administration Console Layout
@@ -30,163 +35,78 @@ export default function AdminShell({ user, onLogout }) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-canvas)' }}>
-      {/* 1. Admin Console Masthead */}
-      <header
-        style={{
-          backgroundColor: '#0f172a',
-          color: '#ffffff',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1600px',
-            margin: '0 auto',
-            padding: '0 var(--space-6)',
-            height: '64px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
+    <div className="admin-shell-container">
+      {/* 1. Executive Masthead */}
+      <header className="admin-masthead">
+        <div className="admin-masthead-inner">
           {/* Left: Branding & Seal */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                cursor: 'pointer',
-              }}
-              onClick={handleReturnToPortal}
-            >
-              <div
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '3px',
-                }}
-              >
-                <img src={anacLogo} alt="ANÁC Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          <div className="admin-brand" onClick={handleReturnToPortal} title="Click to view ECCD Child Portal">
+            <div className="admin-logo-badge">
+              <img src={anacLogo} alt="ANÁC Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
+            <div className="admin-title-wrap">
+              <div className="admin-title-row">
+                <span className="admin-main-title">
+                  ANÁC ADMIN CONSOLE
+                </span>
+                <span className="admin-root-pill">
+                  Root Admin
+                </span>
               </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '0.04em', color: '#ffffff' }}>
-                    ANÁC ADMIN CONSOLE
-                  </span>
-                  <span
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      backgroundColor: '#dc2626',
-                      color: '#ffffff',
-                      padding: '2px 7px',
-                      borderRadius: '9999px',
-                      letterSpacing: '0.04em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Root Admin
-                  </span>
-                </div>
-                <div style={{ fontSize: '11px', color: '#94a3b8' }}>
-                  CSWDO • City Social Welfare & Development Office
-                </div>
+              <div className="admin-sub-title">
+                City Social Welfare &amp; Development Office • CSWDO MIS
               </div>
             </div>
           </div>
 
+          {/* Center Status Indicators */}
+          <div style={{ display: 'none', lg: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#94a3b8' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block', boxShadow: '0 0 8px #22c55e' }} />
+              <span>Database Online</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#94a3b8' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#38bdf8', display: 'inline-block', boxShadow: '0 0 8px #38bdf8' }} />
+              <span>CSWDO Secure Tunnel</span>
+            </div>
+          </div>
+
           {/* Right: Actions & User Info */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+          <div className="admin-masthead-actions">
             {/* Return to ECCD Child Portal Button */}
             <button
               type="button"
+              className="admin-return-btn"
               onClick={handleReturnToPortal}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '7px 14px',
-                borderRadius: 'var(--radius-full)',
-                fontSize: '12.5px',
-                fontWeight: 600,
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                color: '#ffffff',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-              }}
-              title="Switch back to standard ECCD Daycare Child Portal"
+              title="Switch back to regular ECCD Child Daycare Portal"
             >
               <ArrowLeft size={15} />
               <span>Return to ECCD Portal</span>
             </button>
 
-            {/* Admin Profile pill */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                paddingLeft: 'var(--space-3)',
-                borderLeft: '1px solid rgba(255, 255, 255, 0.15)',
-              }}
-            >
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: '#4338ca',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                }}
-              >
+            {/* Admin Profile Pill */}
+            <div className="admin-user-pill">
+              <div className="admin-avatar">
                 {user?.avatarInitials || 'AD'}
               </div>
               <div style={{ display: 'none', md: 'block' }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: '#f8fafc' }}>{user?.name || 'Administrator'}</div>
-                <div style={{ fontSize: '10px', color: '#94a3b8' }}>{user?.email || 'admin@eccd.gov.ph'}</div>
+                <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#f8fafc' }}>
+                  {user?.name || 'Administrator'}
+                </div>
+                <div style={{ fontSize: '10.5px', color: '#94a3b8' }}>
+                  {user?.email || 'admin@eccd.gov.ph'}
+                </div>
               </div>
 
               {/* Sign Out */}
               <button
                 type="button"
+                className="admin-logout-btn"
                 onClick={onLogout}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#ef4444',
-                  padding: '6px',
-                  borderRadius: 'var(--radius-md)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
                 title="Sign out of administrative session"
               >
-                <LogOut size={16} />
+                <LogOut size={14} />
+                <span>Sign Out</span>
               </button>
             </div>
           </div>
@@ -194,111 +114,51 @@ export default function AdminShell({ user, onLogout }) {
       </header>
 
       {/* 2. Admin Navigation Sub-bar */}
-      <nav
-        style={{
-          backgroundColor: '#1e293b',
-          borderBottom: '1px solid #334155',
-          padding: '0 var(--space-6)',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1600px',
-            margin: '0 auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            overflowX: 'auto',
-          }}
-        >
+      <nav className="admin-subnav">
+        <div className="admin-subnav-inner">
           <button
             type="button"
+            className={`admin-tab ${activeTab === 'users' ? 'is-active' : ''}`}
             onClick={() => setActiveTab('users')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 16px',
-              borderBottom: activeTab === 'users' ? '3px solid #38bdf8' : '3px solid transparent',
-              color: activeTab === 'users' ? '#38bdf8' : '#94a3b8',
-              backgroundColor: 'transparent',
-              borderTop: 'none',
-              borderLeft: 'none',
-              borderRight: 'none',
-              fontSize: '13px',
-              fontWeight: activeTab === 'users' ? 700 : 500,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
           >
             <Users size={16} />
             <span>User &amp; Staff Directory</span>
+            <span className="admin-tab-badge">Active</span>
           </button>
 
           <button
             type="button"
+            className={`admin-tab ${activeTab === 'roles' ? 'is-active' : ''}`}
             onClick={() => setActiveTab('roles')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 16px',
-              borderBottom: activeTab === 'roles' ? '3px solid #38bdf8' : '3px solid transparent',
-              color: activeTab === 'roles' ? '#38bdf8' : '#94a3b8',
-              backgroundColor: 'transparent',
-              borderTop: 'none',
-              borderLeft: 'none',
-              borderRight: 'none',
-              fontSize: '13px',
-              fontWeight: activeTab === 'roles' ? 700 : 500,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
           >
             <KeyRound size={16} />
             <span>Role Permissions Matrix</span>
+            <span className="admin-tab-badge">2 Roles</span>
           </button>
 
           <button
             type="button"
+            className={`admin-tab ${activeTab === 'audit-logs' ? 'is-active' : ''}`}
             onClick={() => setActiveTab('audit-logs')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 16px',
-              borderBottom: activeTab === 'audit-logs' ? '3px solid #38bdf8' : '3px solid transparent',
-              color: activeTab === 'audit-logs' ? '#38bdf8' : '#94a3b8',
-              backgroundColor: 'transparent',
-              borderTop: 'none',
-              borderLeft: 'none',
-              borderRight: 'none',
-              fontSize: '13px',
-              fontWeight: activeTab === 'audit-logs' ? 700 : 500,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
           >
             <FileClock size={16} />
             <span>Security Audit Trail</span>
+            <span className="admin-tab-badge">Live</span>
           </button>
         </div>
       </nav>
 
       {/* 3. Main Admin Content Area */}
-      <main
-        style={{
-          flex: 1,
-          maxWidth: '1600px',
-          width: '100%',
-          margin: '0 auto',
-          padding: 'var(--space-6)',
-        }}
-      >
+      <main className="admin-main-body">
         {activeTab === 'users' && <UserManagementView currentUser={user} onNavigate={navigate} />}
         {activeTab === 'roles' && <AdminRolesView />}
         {activeTab === 'audit-logs' && (
-          <AuditLogsView user={user} roleLabel="ECCD Administrative" onSwitchRole={() => {}} onTriggerSessionExpiry={() => {}} />
+          <AuditLogsView
+            user={user}
+            roleLabel="ECCD Administrative"
+            onSwitchRole={() => {}}
+            onTriggerSessionExpiry={() => {}}
+          />
         )}
       </main>
     </div>
