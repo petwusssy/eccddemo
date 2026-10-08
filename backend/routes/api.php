@@ -270,3 +270,65 @@ Route::delete('/enrollments/{id}', [EnrollmentController::class, 'destroy'])->na
 Route::delete('/health-monitoring/{id}', [HealthMonitoringController::class, 'destroy'])->name('health-monitoring.destroy');
 Route::delete('/follow-ups/{id}', [FollowUpController::class, 'destroy'])->name('follow-ups.destroy');
 Route::delete('/resources/{id}', [ResourceController::class, 'destroy'])->name('resources.destroy');
+
+/*
+|--------------------------------------------------------------------------
+| System & Database Reset API Endpoint (1-Click Fresh State for Demo)
+|--------------------------------------------------------------------------
+*/
+Route::post('/system/reset-demo-data', function () {
+    try {
+        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+        \App\Models\Child::truncate();
+        \App\Models\Household::truncate();
+        \App\Models\Enrollment::truncate();
+        \App\Models\HealthMonitoring::truncate();
+        \App\Models\DevelopmentAssessment::truncate();
+        \App\Models\FollowUp::truncate();
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('health_records')) {
+            \Illuminate\Support\Facades\DB::table('health_records')->truncate();
+        }
+        if (\Illuminate\Support\Facades\Schema::hasTable('interventions')) {
+            \Illuminate\Support\Facades\DB::table('interventions')->truncate();
+        }
+        if (\Illuminate\Support\Facades\Schema::hasTable('mapping_activity_workers')) {
+            \Illuminate\Support\Facades\DB::table('mapping_activity_workers')->truncate();
+        }
+        if (\Illuminate\Support\Facades\Schema::hasTable('mapping_activities')) {
+            \App\Models\MappingActivity::truncate();
+        }
+        if (\Illuminate\Support\Facades\Schema::hasTable('audit_logs')) {
+            \App\Models\AuditLog::truncate();
+        }
+
+        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        // Re-seed default mapping activity and barangays
+        $bSeeder = new \Database\Seeders\BarangaySeeder();
+        $bSeeder->run();
+
+        // Re-seed default users and roles
+        $uSeeder = new \Database\Seeders\UserSeeder();
+        $uSeeder->run();
+
+        return response()->json([
+            'ok' => true,
+            'status' => 200,
+            'message' => 'Database successfully reset to 0 operational records.',
+            'data' => [
+                'children' => 0,
+                'households' => 0,
+                'enrollments' => 0,
+            ],
+        ]);
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        return response()->json([
+            'ok' => false,
+            'status' => 500,
+            'error' => 'Reset failed: ' . $e->getMessage(),
+        ], 500);
+    }
+});

@@ -24,6 +24,7 @@ import { Badge } from '../ui/Badge';
 import { useToast } from '../ui/Toast';
 import { centralDataStore } from '../../services/centralDataStore';
 import { apiClient } from '../../services/apiClient';
+import { getApiUrl } from '../../services/apiConfig';
 
 export function SettingsView({ onNavigate }) {
   const { addToast } = useToast();
@@ -31,14 +32,67 @@ export function SettingsView({ onNavigate }) {
   const [apiMockMode, setApiMockMode] = useState(true);
   const [isResetting, setIsResetting] = useState(false);
 
-  const handleResetDemoData = () => {
-    if (window.confirm('Reset all demo data to official CSWDO factory defaults? Any local field edits will be refreshed.')) {
-      setIsResetting(true);
+  const handleResetDemoData = async () => {
+    if (!window.confirm('WARNING: Are you sure you want to completely RESET ALL DATA to 0 (clean slate)?\n\nThis will wipe all children, households, enrollments, and health assessments from MySQL database, LocalStorage, and Browser Storage.')) {
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      // 1. Reset MySQL backend database to 0
+      try {
+        const res = await fetch(getApiUrl('/api/system/reset-demo-data'), {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'Bypass-Tunnel-Reminder': 'true',
+          },
+        });
+        if (res.ok) {
+          console.log('MySQL Database reset successfully.');
+        }
+      } catch (backendErr) {
+        console.warn('Backend reset call notice:', backendErr);
+      }
+
+      // 2. Wipe IndexedDB offline storage
+      try {
+        if (typeof indexedDB !== 'undefined') {
+          indexedDB.deleteDatabase('eccd_care_offline_db');
+        }
+      } catch (_) {}
+
+      // 3. Clear all cached keys from localStorage
+      try {
+        localStorage.removeItem('eccd_care_central_datastore_v3');
+        localStorage.removeItem('eccd_care_central_datastore_v2');
+        localStorage.removeItem('eccd_care_central_datastore_v1');
+        localStorage.removeItem('eccd_mapping_households_data_v2');
+        localStorage.removeItem('eccd_mapping_children_data_v2');
+        localStorage.removeItem('eccd_children_360_data_v2');
+      } catch (_) {}
+
+      // 4. Force centralDataStore to 0 records and save
+      centralDataStore.reset();
+      centralDataStore.data.children = [];
+      centralDataStore.data.households = [];
+      centralDataStore.data.enrollments = [];
+      centralDataStore.data.healthMonitorings = [];
+      centralDataStore.data.developmentAssessments = [];
+      centralDataStore.data.followUps = [];
+      centralDataStore.save();
+
+      addToast('Success: All database records and browser storage have been reset to 0!', 'success');
+
+      // 5. Hard reload to cleanly re-mount all views with 0 records
       setTimeout(() => {
-        centralDataStore.reset();
-        setIsResetting(false);
-        addToast('ECCD CARE demo database reset to factory state', 'success');
-      }, 800);
+        window.location.reload();
+      }, 700);
+    } catch (err) {
+      addToast('Reset failed: ' + err.message, 'error');
+      setIsResetting(false);
     }
   };
 
