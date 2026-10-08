@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DocumentUploadController;
+use App\Http\Controllers\Api\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -245,20 +246,17 @@ Route::prefix('governance')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| User Management REST Endpoints
+| Roles & User Management REST Endpoints (IT Admin & System Control)
 |--------------------------------------------------------------------------
 */
+Route::get('/roles', [UserManagementController::class, 'roles']);
 Route::prefix('users')->group(function () {
-    Route::get('/', function () {
-        return response()->json(['ok' => true, 'status' => 200, 'data' => \App\Models\User::with('role')->get()]);
-    });
-    Route::get('/{id}', function ($id) {
-        $user = \App\Models\User::with(['role', 'worker'])->find($id);
-        if (!$user) {
-            return response()->json(['ok' => false, 'status' => 404, 'error' => 'User not found'], 404);
-        }
-        return response()->json(['ok' => true, 'status' => 200, 'data' => $user]);
-    });
+    Route::get('/', [UserManagementController::class, 'index']);
+    Route::post('/', [UserManagementController::class, 'store']);
+    Route::get('/{id}', [UserManagementController::class, 'show']);
+    Route::put('/{id}', [UserManagementController::class, 'update']);
+    Route::post('/{id}/reset-password', [UserManagementController::class, 'resetPassword']);
+    Route::delete('/{id}', [UserManagementController::class, 'destroy']);
 });
 
 /*

@@ -32,6 +32,7 @@ import CommunityView from './components/views/CommunityView';
 import ReportsView from './components/views/ReportsView';
 import AuditLogsView from './components/views/AuditLogsView';
 import SettingsView from './components/views/SettingsView';
+import UserManagementView from './components/views/UserManagementView';
 import UnauthorizedView from './components/governance/UnauthorizedView';
 import SessionExpiryModal from './components/governance/SessionExpiryModal';
 import { ROLES, ROLE_LANDING } from './services/authService';
@@ -63,6 +64,8 @@ const ROUTE_MAP = {
   reports: '/reports',
   'audit-logs': '/audit-logs',
   settings: '/settings',
+  users: '/users',
+  'user-accounts': '/users',
 };
 
 const PATH_TO_SECTION = {
@@ -84,6 +87,7 @@ const PATH_TO_SECTION = {
   '/reports': 'reports',
   '/audit-logs': 'audit-logs',
   '/settings': 'settings',
+  '/users': 'users',
 };
 
 const ROLE_LANDING_ROUTE = {
@@ -302,6 +306,14 @@ function AuthenticatedApp() {
           ],
         };
 
+      case 'users':
+        return {
+          breadcrumbs: [
+            { label: 'System' },
+            { label: 'User Accounts' },
+          ],
+        };
+
       default:
         return {
           title: 'ANÁC System',
@@ -372,6 +384,7 @@ function AuthenticatedApp() {
               }
             />
             <Route path="/settings" element={<SettingsView onNavigate={handleNavigate} />} />
+            <Route path="/users" element={<UserManagementView currentUser={user} onNavigate={handleNavigate} />} />
             <Route path="/resources" element={<ModulePlaceholder moduleId="resources" onNavigate={handleNavigate} />} />
             <Route path="*" element={<Navigate to={ROLE_LANDING_ROUTE[user?.role] || '/dashboard'} replace />} />
           </Routes>
