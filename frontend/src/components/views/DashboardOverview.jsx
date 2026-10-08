@@ -103,9 +103,6 @@ export function DashboardOverview({ onNavigate }) {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // First ensure central store has latest records from server
-      await centralDataStore.syncWithBackend().catch(() => {});
-
       const [sum, enr, mon, bar, att, act] = await Promise.all([
         dashboardService.getSummary(),
         dashboardService.getEnrollment(),
@@ -131,6 +128,9 @@ export function DashboardOverview({ onNavigate }) {
 
   useEffect(() => {
     loadDashboardData();
+    // Hydrate store from backend in background once on mount
+    centralDataStore.syncWithBackend().catch(() => {});
+
     const handleStoreUpdate = () => loadDashboardData();
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {

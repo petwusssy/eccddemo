@@ -338,7 +338,8 @@ class CentralDataStore {
       if (!Array.isArray(this.data.households)) this.data.households = [];
       serverHouseholds.forEach((sh) => {
         if (!sh) return;
-        const id = sh.id || sh.household_no || `HH-${Date.now()}`;
+        const id = sh.id || sh.household_no;
+        if (!id) return;
         const idx = this.data.households.findIndex((h) => h.id === id || h.household_no === id);
         const normalizedHh = {
           ...sh,
@@ -349,11 +350,20 @@ class CentralDataStore {
           status: sh.status || 'Completed',
         };
         if (idx >= 0) {
-          this.data.households[idx] = { ...this.data.households[idx], ...normalizedHh };
+          const existing = this.data.households[idx];
+          if (
+            existing.parentGuardian !== normalizedHh.parentGuardian ||
+            existing.barangay !== normalizedHh.barangay ||
+            existing.status !== normalizedHh.status ||
+            existing.childrenCount !== normalizedHh.childrenCount
+          ) {
+            this.data.households[idx] = { ...existing, ...normalizedHh };
+            changed = true;
+          }
         } else {
           this.data.households.unshift(normalizedHh);
+          changed = true;
         }
-        changed = true;
       });
     }
 
@@ -361,7 +371,8 @@ class CentralDataStore {
       if (!Array.isArray(this.data.children)) this.data.children = [];
       serverChildren.forEach((sc) => {
         if (!sc) return;
-        const id = sc.id || sc.eccd_id || `ECCD-${Date.now()}`;
+        const id = sc.id || sc.eccd_id;
+        if (!id) return;
         const idx = this.data.children.findIndex((c) => c.id === id || c.eccd_id === id);
         const ageY = parseInt(sc.ageYears ?? 3, 10);
         const ageM = parseInt(sc.ageMonths ?? 0, 10);
@@ -385,11 +396,22 @@ class CentralDataStore {
           developmentStatus: sc.developmentStatus || sc.development_status || 'Pending Initial Assessment',
         };
         if (idx >= 0) {
-          this.data.children[idx] = { ...this.data.children[idx], ...normalizedChild };
+          const existing = this.data.children[idx];
+          if (
+            existing.fullName !== normalizedChild.fullName ||
+            existing.enrollmentStatus !== normalizedChild.enrollmentStatus ||
+            existing.healthStatus !== normalizedChild.healthStatus ||
+            existing.developmentStatus !== normalizedChild.developmentStatus ||
+            existing.barangay !== normalizedChild.barangay ||
+            existing.ageYears !== normalizedChild.ageYears
+          ) {
+            this.data.children[idx] = { ...existing, ...normalizedChild };
+            changed = true;
+          }
         } else {
           this.data.children.unshift(normalizedChild);
+          changed = true;
         }
-        changed = true;
       });
     }
 
@@ -401,8 +423,15 @@ class CentralDataStore {
   /**
    * Hydrates centralDataStore from live MySQL backend API.
    * Guarantees that records mapped on another device appear across all clients.
+   * Includes re-entrancy lock and throttle to prevent API loop storm.
    */
-  async syncWithBackend() {
+  async syncWithBackend(force = false) {
+    if (this._isSyncing) return;
+    const now = Date.now();
+    if (!force && this._lastSyncTime && now - this._lastSyncTime < 10000) {
+      return;
+    }
+    this._isSyncing = true;
     try {
       const [childRes, hhRes] = await Promise.allSettled([
         fetch(getApiUrl('/api/children'), {
@@ -433,6 +462,9 @@ class CentralDataStore {
       }
     } catch (err) {
       console.warn('CentralDataStore: backend sync notice:', err.message);
+    } finally {
+      this._lastSyncTime = Date.now();
+      this._isSyncing = false;
     }
   }
 

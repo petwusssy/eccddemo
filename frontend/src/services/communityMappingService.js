@@ -285,23 +285,10 @@ export const communityMappingService = {
 
   /**
    * GET /api/households
+   * Single Source of Truth: centralDataStore.js (backend sync handled centrally)
    */
   async getHouseholds() {
-    try {
-      const res = await fetch(getApiUrl('/api/households'), {
-        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
-      });
-      if (res.ok) {
-        const json = await res.json();
-        const serverHouseholds = json.data || (Array.isArray(json) ? json : []);
-        if (Array.isArray(serverHouseholds) && serverHouseholds.length > 0) {
-          centralDataStore.mergeRecordsFromServer([], serverHouseholds);
-        }
-      }
-    } catch (e) {
-      // Offline fallback
-    }
-    return centralDataStore.getHouseholds();
+    return centralDataStore.getHouseholds() || [];
   },
 
   /**
