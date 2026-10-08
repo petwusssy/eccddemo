@@ -53,15 +53,7 @@ const AVAILABLE_CENTERS = [
 
 const formatChildName = (name) => {
   if (!name) return '—';
-  if (name === name.toUpperCase() && name.length > 2) {
-    return name
-      .toLowerCase()
-      .split(' ')
-      .filter(Boolean)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
-  }
-  return name;
+  return String(name).toUpperCase();
 };
 
 const getInitials = (name) => {
@@ -627,7 +619,7 @@ export function EnrollmentView({ onNavigate }) {
                         const initials = getInitials(child.childName);
                         const formattedName = formatChildName(child.childName);
                         const guardianDisplay = child.parentGuardian
-                          ? `Guardian: ${child.parentGuardian}${child.contactNumber ? ` (${child.contactNumber})` : ''}`
+                          ? `Guardian: ${String(child.parentGuardian).toUpperCase()}${child.contactNumber ? ` (${child.contactNumber})` : ''}`
                           : null;
 
                         return (

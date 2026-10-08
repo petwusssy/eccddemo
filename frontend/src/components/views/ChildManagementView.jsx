@@ -660,11 +660,11 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                             {child.firstName?.[0] || ''}{child.lastName?.[0] || ''}
                           </div>
                           <div style={{ minWidth: 0 }}>
-                            <div style={{ fontWeight: '600', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontWeight: '600', color: 'var(--text-primary)', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>
                               {child.fullName}
                             </div>
                             <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginTop: '2px' }}>
-                              {[child.sex, child.parentGuardian && `Guardian: ${child.parentGuardian}`].filter(Boolean).join(' • ') || '—'}
+                              {[child.sex, child.parentGuardian && `Guardian: ${String(child.parentGuardian).toUpperCase()}`].filter(Boolean).join(' • ') || '—'}
                             </div>
                           </div>
                         </div>
@@ -802,7 +802,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
 
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
+                    <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', margin: 0, letterSpacing: '-0.02em', color: '#ffffff', textTransform: 'uppercase' }}>
                       {childProfile.fullName}
                     </h1>
                     <span className="child-id-pill" style={{ color: '#ffffff' }}>
@@ -835,7 +835,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                     <span>•</span>
                     <span className="child-demo-item">
                       <Users size={16} />
-                      Guardian: {childProfile.parentGuardian || 'N/A'}
+                      Guardian: {childProfile.parentGuardian ? String(childProfile.parentGuardian).toUpperCase() : 'N/A'}
                       {(childProfile.guardianRelationship || childProfile.guardianContact || childProfile.contactNumber) ? ` (${childProfile.guardianRelationship || childProfile.guardianContact || childProfile.contactNumber})` : ''}
                     </span>
                   </div>
@@ -1417,7 +1417,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                     </div>
                     <div>
                       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Primary Guardian:</span>
-                      <div style={{ fontWeight: '600' }}>
+                      <div style={{ fontWeight: '600', textTransform: 'uppercase' }}>
                         {hh.parentGuardian || childProfile.parentGuardian || '—'}
                         {(hh.guardianRelationship || childProfile.guardianRelationship) ? ` (${hh.guardianRelationship || childProfile.guardianRelationship})` : ''}
                       </div>

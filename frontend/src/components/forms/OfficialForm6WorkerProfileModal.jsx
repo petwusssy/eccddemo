@@ -422,24 +422,36 @@ export function OfficialForm6WorkerProfileModal({
                 <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1e293b', marginBottom: '6px' }}>Contact Details</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
                   <Input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="Home Nos."
                     value={formData.contactHome}
-                    onChange={(e) => handleFieldChange('contactHome', e.target.value)}
+                    onChange={(e) => handleFieldChange('contactHome', e.target.value.replace(/\D/g, ''))}
                   />
                   <Input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="Office Nos."
                     value={formData.contactOffice}
-                    onChange={(e) => handleFieldChange('contactOffice', e.target.value)}
+                    onChange={(e) => handleFieldChange('contactOffice', e.target.value.replace(/\D/g, ''))}
                   />
                   <Input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="Mobile Nos."
                     value={formData.contactMobile}
-                    onChange={(e) => handleFieldChange('contactMobile', e.target.value)}
+                    onChange={(e) => handleFieldChange('contactMobile', e.target.value.replace(/\D/g, ''))}
                   />
                   <Input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="Fax Number"
                     value={formData.contactFax}
-                    onChange={(e) => handleFieldChange('contactFax', e.target.value)}
+                    onChange={(e) => handleFieldChange('contactFax', e.target.value.replace(/\D/g, ''))}
                   />
                   <Input
                     placeholder="Email Address"

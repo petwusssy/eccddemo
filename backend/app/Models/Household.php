@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +34,13 @@ class Household extends Model
         'is_ip' => 'boolean',
         'mapped_date' => 'date',
     ];
+
+    protected function parentGuardian(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => is_null($value) ? null : mb_strtoupper(trim((string)$value), 'UTF-8')
+        );
+    }
 
     public function children(): HasMany
     {

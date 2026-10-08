@@ -28,6 +28,30 @@ export function Input({
   const hasLeftIcon = Boolean(resolvedLeftIcon);
   const hasRightIcon = Boolean((onClear && value) || rightIcon);
 
+  const isPhone = type === 'tel' || type === 'phone' || props.isPhone || Boolean(label && /(contact|phone|telephone|mobile)/i.test(label));
+  const isUppercase = props.uppercase || props.isUppercase || false;
+
+  const resolvedType = isPhone ? 'tel' : type;
+  const resolvedInputMode = props.inputMode || (isPhone ? 'numeric' : undefined);
+  const resolvedPattern = props.pattern || (isPhone ? '[0-9]*' : undefined);
+
+  const handleInputChange = (e) => {
+    if (!onChange) return;
+    if (isPhone) {
+      // Automatic numeric keyboard + filter to digits only (0-9)
+      const digitsOnly = e.target.value.replace(/\D/g, '');
+      e.target.value = digitsOnly;
+    } else if (isUppercase) {
+      e.target.value = e.target.value.toUpperCase();
+    }
+    onChange(e);
+  };
+
+  const inputStyle = {
+    ...(props.style || {}),
+    ...(isUppercase ? { textTransform: 'uppercase' } : {}),
+  };
+
   return (
     <div className={`form-group ${wrapperClassName}`}>
       {label && (
@@ -46,11 +70,14 @@ export function Input({
 
         <input
           id={inputId}
-          type={type}
+          type={resolvedType}
+          inputMode={resolvedInputMode}
+          pattern={resolvedPattern}
           placeholder={placeholder}
           value={value}
-          onChange={onChange}
+          onChange={handleInputChange}
           disabled={disabled}
+          style={inputStyle}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${inputId}-error` : helper ? `${inputId}-helper` : undefined}
           className={`input ${hasLeftIcon ? 'has-left-icon' : ''} ${hasRightIcon ? 'has-right-icon' : ''} ${error ? 'is-invalid' : ''} ${className}`}

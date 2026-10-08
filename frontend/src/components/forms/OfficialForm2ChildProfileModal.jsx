@@ -244,18 +244,21 @@ export function OfficialForm2ChildProfileModal({
               <div className="official-grid-5">
                 <Input
                   label="Last Name"
+                  uppercase
                   value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value.toUpperCase() })}
                 />
                 <Input
                   label="First Name"
+                  uppercase
                   value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value.toUpperCase() })}
                 />
                 <Input
                   label="Middle Initial"
+                  uppercase
                   value={formData.middleInitial}
-                  onChange={(e) => setFormData({ ...formData, middleInitial: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, middleInitial: e.target.value.toUpperCase() })}
                 />
                 <Input
                   type="date"
@@ -835,8 +838,9 @@ export function OfficialForm2ChildProfileModal({
                 <div>
                   <Input
                     label="Name of Respondent *"
+                    uppercase
                     value={formData.nameOfRespondent}
-                    onChange={(e) => setFormData({ ...formData, nameOfRespondent: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, nameOfRespondent: e.target.value.toUpperCase() })}
                   />
                 </div>
                 <div>

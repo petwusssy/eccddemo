@@ -322,6 +322,9 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
 
     const childObj = {
       ...currentChildInput,
+      firstName: currentChildInput.firstName.trim().toUpperCase(),
+      middleName: (currentChildInput.middleName || '').trim().toUpperCase(),
+      lastName: currentChildInput.lastName.trim().toUpperCase(),
       tempId: `TMP-${Date.now()}`,
       ageYears,
       ageMonths: ageMonths % 12,
@@ -406,8 +409,8 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
 
     const householdPayload = {
       id: householdForm.id,
-      parentGuardian: householdForm.parentGuardian,
-      contactNumber: householdForm.contactNumber,
+      parentGuardian: String(householdForm.parentGuardian || '').trim().toUpperCase(),
+      contactNumber: householdForm.contactNumber ? householdForm.contactNumber.replace(/\D/g, '') : '',
       address: `${householdForm.address}, ${householdForm.purok}`,
       barangay: householdForm.barangay,
       mappingActivityId: householdForm.activityId,
@@ -795,16 +798,20 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                     <Input
                       label="Parent / Guardian Full Name"
                       placeholder="e.g. Maria Santos Dela Cruz"
+                      uppercase
                       value={householdForm.parentGuardian}
-                      onChange={(e) => setHouseholdForm({ ...householdForm, parentGuardian: e.target.value })}
+                      onChange={(e) => setHouseholdForm({ ...householdForm, parentGuardian: e.target.value.toUpperCase() })}
                       required
                     />
 
                     <Input
                       label="Contact Number"
-                      placeholder="e.g. 0917-555-0142"
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="e.g. 09171234567"
                       value={householdForm.contactNumber}
-                      onChange={(e) => setHouseholdForm({ ...householdForm, contactNumber: e.target.value })}
+                      onChange={(e) => setHouseholdForm({ ...householdForm, contactNumber: e.target.value.replace(/\D/g, '') })}
                       leftIcon={<Phone size={14} />}
                     />
                   </div>
@@ -858,21 +865,24 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                     <Input
                       label="First Name"
                       placeholder="e.g. Juan"
+                      uppercase
                       value={currentChildInput.firstName}
-                      onChange={(e) => setCurrentChildInput({ ...currentChildInput, firstName: e.target.value })}
+                      onChange={(e) => setCurrentChildInput({ ...currentChildInput, firstName: e.target.value.toUpperCase() })}
                       required
                     />
                     <Input
                       label="Middle Name"
                       placeholder="e.g. Bautista"
+                      uppercase
                       value={currentChildInput.middleName}
-                      onChange={(e) => setCurrentChildInput({ ...currentChildInput, middleName: e.target.value })}
+                      onChange={(e) => setCurrentChildInput({ ...currentChildInput, middleName: e.target.value.toUpperCase() })}
                     />
                     <Input
                       label="Last Name"
                       placeholder="e.g. Dela Cruz"
+                      uppercase
                       value={currentChildInput.lastName}
-                      onChange={(e) => setCurrentChildInput({ ...currentChildInput, lastName: e.target.value })}
+                      onChange={(e) => setCurrentChildInput({ ...currentChildInput, lastName: e.target.value.toUpperCase() })}
                       required
                     />
                   </div>

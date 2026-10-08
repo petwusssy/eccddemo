@@ -26,7 +26,7 @@ class ChildManagementService
         $hasFollowUp = (bool) $child->has_open_follow_up;
 
         $hhNo = $child->household?->household_no ?? 'HH-2026-0101';
-        $guardian = $child->household?->parent_guardian ?? '';
+        $guardian = mb_strtoupper((string)($child->household?->parent_guardian ?? ''), 'UTF-8');
         $address = $child->household?->address ?? '';
         $contact = $child->household?->contact_number ?? '';
         $brgyName = $child->barangay?->name ?? 'San Isidro';
@@ -34,10 +34,10 @@ class ChildManagementService
         return [
             'id' => $child->eccd_id,
             'eccd_id' => $child->eccd_id,
-            'firstName' => $child->first_name,
-            'middleName' => $child->middle_name ?? '',
-            'lastName' => $child->last_name,
-            'fullName' => trim($child->first_name . ' ' . $child->middle_name . ' ' . $child->last_name . ' ' . $child->suffix),
+            'firstName' => mb_strtoupper((string)$child->first_name, 'UTF-8'),
+            'middleName' => mb_strtoupper((string)($child->middle_name ?? ''), 'UTF-8'),
+            'lastName' => mb_strtoupper((string)$child->last_name, 'UTF-8'),
+            'fullName' => mb_strtoupper(trim($child->first_name . ' ' . $child->middle_name . ' ' . $child->last_name . ' ' . $child->suffix), 'UTF-8'),
             'birthDate' => $birthDate ? $birthDate->toDateString() : '2023-01-01',
             'ageYears' => (int) $ageYears,
             'ageMonths' => (int) $ageMonths,
@@ -313,12 +313,17 @@ class ChildManagementService
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('DB createChild in ChildManagementService error: ' . $e->getMessage());
 
+            $firstName = mb_strtoupper((string)($data['firstName'] ?? $data['first_name'] ?? 'Child'), 'UTF-8');
+            $middleName = mb_strtoupper((string)($data['middleName'] ?? $data['middle_name'] ?? ''), 'UTF-8');
+            $lastName = mb_strtoupper((string)($data['lastName'] ?? $data['last_name'] ?? 'Record'), 'UTF-8');
+            $parentGuardian = mb_strtoupper((string)($data['parentGuardian'] ?? $data['parent_guardian'] ?? ''), 'UTF-8');
+
             $newChild = [
                 'id' => $uniqueId,
-                'firstName' => $data['firstName'] ?? '',
-                'middleName' => $data['middleName'] ?? '',
-                'lastName' => $data['lastName'] ?? '',
-                'fullName' => trim(($data['firstName'] ?? '') . ' ' . ($data['middleName'] ?? '') . ' ' . ($data['lastName'] ?? '')),
+                'firstName' => $firstName,
+                'middleName' => $middleName,
+                'lastName' => $lastName,
+                'fullName' => trim("{$firstName} {$middleName} {$lastName}"),
                 'birthDate' => $data['birthDate'] ?? '2023-01-01',
                 'ageYears' => (int) ($data['ageYears'] ?? 3),
                 'ageMonths' => (int) ($data['ageMonths'] ?? 0),
@@ -331,7 +336,7 @@ class ChildManagementService
                 'purok' => $data['purok'] ?? 'Purok 1',
                 'address' => $data['address'] ?? '',
                 'householdId' => $data['householdId'] ?? 'HH-2026-0101',
-                'parentGuardian' => $data['parentGuardian'] ?? '',
+                'parentGuardian' => $parentGuardian,
                 'guardianRelationship' => $data['guardianRelationship'] ?? 'Mother',
                 'contactNumber' => $data['contactNumber'] ?? '',
                 'emergencyContact' => $data['emergencyContact'] ?? '',

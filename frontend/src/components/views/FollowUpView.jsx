@@ -34,15 +34,7 @@ import { TableHead, TableBody, TableRow, TableHeader, TableCell } from '../ui/Ta
 
 const formatChildName = (name) => {
   if (!name) return '—';
-  if (name === name.toUpperCase() && name.length > 2) {
-    return name
-      .toLowerCase()
-      .split(' ')
-      .filter(Boolean)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
-  }
-  return name;
+  return String(name).toUpperCase();
 };
 
 const getInitials = (name) => {
@@ -827,11 +819,13 @@ export function FollowUpView({ onNavigate }) {
                 <div className="dev-form-group">
                   <label className="dev-form-label">Worker Contact Number</label>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     className="dev-input"
                     value={createForm.workerContact}
-                    onChange={(e) => setCreateForm({ ...createForm, workerContact: e.target.value })}
-                    placeholder="e.g. 0917-555-0142"
+                    onChange={(e) => setCreateForm({ ...createForm, workerContact: e.target.value.replace(/\D/g, '') })}
+                    placeholder="e.g. 09175550142"
                   />
                 </div>
               </div>

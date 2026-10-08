@@ -340,8 +340,8 @@ class CommunityMappingService
 
             $fallback = [
                 'id' => $id ?? 'HH-2026-0101',
-                'parentGuardian' => $data['parentGuardian'] ?? 'N/A',
-                'contactNumber' => $data['contactNumber'] ?? '',
+                'parentGuardian' => mb_strtoupper((string)($data['parentGuardian'] ?? $data['parent_guardian'] ?? 'N/A'), 'UTF-8'),
+                'contactNumber' => $data['contactNumber'] ?? $data['contact_number'] ?? '',
                 'address' => $data['address'] ?? '',
                 'barangay' => $barangayName,
                 'mappingActivityId' => $data['mappingActivityId'] ?? 'ACT-MAP-2026-001',
@@ -538,17 +538,22 @@ class CommunityMappingService
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('DB createChild error: ' . $e->getMessage());
 
+            $firstNameUpper = mb_strtoupper((string)($data['firstName'] ?? $data['first_name'] ?? 'Child'), 'UTF-8');
+            $middleNameUpper = mb_strtoupper((string)($data['middleName'] ?? $data['middle_name'] ?? ''), 'UTF-8');
+            $lastNameUpper = mb_strtoupper((string)($data['lastName'] ?? $data['last_name'] ?? 'Record'), 'UTF-8');
+            $parentUpper = mb_strtoupper((string)($data['parentGuardian'] ?? $data['parent_guardian'] ?? ''), 'UTF-8');
+
             $newChild = [
                 'id' => $uniqueId,
-                'firstName' => $data['firstName'] ?? '',
-                'middleName' => $data['middleName'] ?? '',
-                'lastName' => $data['lastName'] ?? '',
+                'firstName' => $firstNameUpper,
+                'middleName' => $middleNameUpper,
+                'lastName' => $lastNameUpper,
                 'birthDate' => $data['birthDate'] ?? '2023-01-01',
                 'sex' => $data['sex'] ?? 'Female',
                 'ageYears' => (int) ($data['ageYears'] ?? 3),
                 'ageMonths' => (int) ($data['ageMonths'] ?? 0),
                 'householdId' => $data['householdId'] ?? 'HH-2026-0101',
-                'parentGuardian' => $data['parentGuardian'] ?? '',
+                'parentGuardian' => $parentUpper,
                 'barangay' => $data['barangay'] ?? 'San Isidro',
                 'enrollmentStatus' => $data['enrollmentStatus'] ?? 'Not Enrolled',
                 'matched' => false,

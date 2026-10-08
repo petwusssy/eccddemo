@@ -294,6 +294,9 @@ export function MobileFieldWorker({ onNavigate }) {
 
     const newChild = {
       ...childForm,
+      firstName: childForm.firstName.trim().toUpperCase(),
+      middleName: (childForm.middleName || '').trim().toUpperCase(),
+      lastName: childForm.lastName.trim().toUpperCase(),
       tempId: `TMP-${Date.now()}`,
       ageYears,
       ageMonths: ageMonths % 12,
@@ -399,8 +402,8 @@ export function MobileFieldWorker({ onNavigate }) {
       const fullAddress = `${householdForm.address}, ${selectedPurok}, ${selectedBarangay}`;
       const createdHh = await communityMappingService.createHousehold({
         id: householdForm.id,
-        parentGuardian: householdForm.parentGuardian,
-        contactNumber: householdForm.contactNumber,
+        parentGuardian: String(householdForm.parentGuardian || '').trim().toUpperCase(),
+        contactNumber: householdForm.contactNumber ? householdForm.contactNumber.replace(/\D/g, '') : '',
         address: fullAddress,
         barangay: selectedBarangay,
         purok: selectedPurok,
@@ -834,9 +837,10 @@ export function MobileFieldWorker({ onNavigate }) {
                 <input
                   type="text"
                   className="mobile-touch-input"
-                  placeholder="e.g., Maria Dela Cruz"
+                  style={{ textTransform: 'uppercase' }}
+                  placeholder="e.g., MARIA DELA CRUZ"
                   value={householdForm.parentGuardian}
-                  onChange={(e) => setHouseholdForm({ ...householdForm, parentGuardian: e.target.value })}
+                  onChange={(e) => setHouseholdForm({ ...householdForm, parentGuardian: e.target.value.toUpperCase() })}
                 />
               </div>
 
@@ -844,10 +848,12 @@ export function MobileFieldWorker({ onNavigate }) {
                 <label className="mobile-input-label">Contact / Mobile Number</label>
                 <input
                   type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   className="mobile-touch-input"
-                  placeholder="e.g., 0917-123-4567"
+                  placeholder="e.g., 09171234567"
                   value={householdForm.contactNumber}
-                  onChange={(e) => setHouseholdForm({ ...householdForm, contactNumber: e.target.value })}
+                  onChange={(e) => setHouseholdForm({ ...householdForm, contactNumber: e.target.value.replace(/\D/g, '') })}
                 />
               </div>
 
@@ -980,9 +986,10 @@ export function MobileFieldWorker({ onNavigate }) {
                     <input
                       type="text"
                       className="mobile-touch-input"
-                      placeholder="e.g., Juan"
+                      style={{ textTransform: 'uppercase' }}
+                      placeholder="e.g., JUAN"
                       value={childForm.firstName}
-                      onChange={(e) => setChildForm({ ...childForm, firstName: e.target.value })}
+                      onChange={(e) => setChildForm({ ...childForm, firstName: e.target.value.toUpperCase() })}
                     />
                   </div>
 
@@ -991,9 +998,10 @@ export function MobileFieldWorker({ onNavigate }) {
                     <input
                       type="text"
                       className="mobile-touch-input"
-                      placeholder="e.g., Santos"
+                      style={{ textTransform: 'uppercase' }}
+                      placeholder="e.g., SANTOS"
                       value={childForm.middleName}
-                      onChange={(e) => setChildForm({ ...childForm, middleName: e.target.value })}
+                      onChange={(e) => setChildForm({ ...childForm, middleName: e.target.value.toUpperCase() })}
                     />
                   </div>
 
@@ -1002,9 +1010,10 @@ export function MobileFieldWorker({ onNavigate }) {
                     <input
                       type="text"
                       className="mobile-touch-input"
-                      placeholder="e.g., Dela Cruz"
+                      style={{ textTransform: 'uppercase' }}
+                      placeholder="e.g., DELA CRUZ"
                       value={childForm.lastName}
-                      onChange={(e) => setChildForm({ ...childForm, lastName: e.target.value })}
+                      onChange={(e) => setChildForm({ ...childForm, lastName: e.target.value.toUpperCase() })}
                     />
                   </div>
 

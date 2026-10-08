@@ -328,6 +328,25 @@ class CentralDataStore {
       initialData.followUps = Array.from(casesByChild.values());
     }
 
+    // Ensure ALL CAPS for all names of children, parents, and guardians
+    if (Array.isArray(initialData.children)) {
+      initialData.children.forEach((c) => {
+        if (!c) return;
+        if (c.firstName) c.firstName = String(c.firstName).toUpperCase();
+        if (c.middleName) c.middleName = String(c.middleName).toUpperCase();
+        if (c.lastName) c.lastName = String(c.lastName).toUpperCase();
+        if (c.fullName) c.fullName = String(c.fullName).toUpperCase();
+        if (c.parentGuardian) c.parentGuardian = String(c.parentGuardian).toUpperCase();
+      });
+    }
+    if (Array.isArray(initialData.households)) {
+      initialData.households.forEach((h) => {
+        if (!h) return;
+        if (h.parentGuardian) h.parentGuardian = String(h.parentGuardian).toUpperCase();
+        if (h.parent_guardian) h.parent_guardian = String(h.parent_guardian).toUpperCase();
+      });
+    }
+
     return initialData;
   }
 
@@ -468,7 +487,7 @@ class CentralDataStore {
           ...sh,
           id,
           household_no: id,
-          parentGuardian: sh.parentGuardian || sh.parent_guardian || 'Parent / Guardian',
+          parentGuardian: String(sh.parentGuardian || sh.parent_guardian || 'Parent / Guardian').toUpperCase(),
           barangay: sh.barangay || 'San Isidro',
           status: sh.status || 'Completed',
         };
@@ -488,24 +507,29 @@ class CentralDataStore {
         if (!sc) return;
         const id = sc.id || sc.eccd_id;
         if (!id) return;
-        const normName = (sc.fullName || `${sc.firstName || sc.first_name || ''} ${sc.lastName || sc.last_name || ''}`).toLowerCase().trim().replace(/\s+/g, ' ');
+        const fnUpper = String(sc.firstName || sc.first_name || '').toUpperCase();
+        const lnUpper = String(sc.lastName || sc.last_name || '').toUpperCase();
+        const mnUpper = String(sc.middleName || sc.middle_name || '').toUpperCase();
+        const fullUpper = String(sc.fullName || `${fnUpper} ${lnUpper}`.trim() || 'CHILD RECORD').toUpperCase();
+        const pGuardUpper = String(sc.parentGuardian || sc.parent_guardian || '').toUpperCase();
+        const normName = (fullUpper || `${fnUpper} ${lnUpper}`).toLowerCase().trim().replace(/\s+/g, ' ');
         const ageY = parseInt(sc.ageYears ?? 3, 10);
         const ageM = parseInt(sc.ageMonths ?? 0, 10);
         const normalizedChild = {
           ...sc,
           id,
           eccd_id: id,
-          firstName: sc.firstName || sc.first_name || '',
-          lastName: sc.lastName || sc.last_name || '',
-          middleName: sc.middleName || sc.middle_name || '',
-          fullName: sc.fullName || `${sc.firstName || sc.first_name || ''} ${sc.lastName || sc.last_name || ''}`.trim() || 'Child Record',
+          firstName: fnUpper,
+          lastName: lnUpper,
+          middleName: mnUpper,
+          fullName: fullUpper,
           ageYears: isNaN(ageY) ? 3 : ageY,
           ageMonths: isNaN(ageM) ? 0 : ageM,
           ageDisplay: sc.ageDisplay || `${isNaN(ageY) ? 3 : ageY} yrs, ${isNaN(ageM) ? 0 : ageM} mos`,
           sex: sc.sex || 'Female',
           barangay: sc.barangay || 'San Isidro',
           householdId: sc.householdId || sc.household_id || 'HH-2026-0101',
-          parentGuardian: sc.parentGuardian || sc.parent_guardian || '',
+          parentGuardian: pGuardUpper,
           enrollmentStatus: sc.enrollmentStatus || sc.enrollment_status || 'Not Enrolled',
           healthStatus: sc.healthStatus || sc.health_status || 'Due for Monitoring',
           developmentStatus: sc.developmentStatus || sc.development_status || 'Pending Initial Assessment',
@@ -707,6 +731,8 @@ class CentralDataStore {
     return this.data.dayCareCenters.find((c) => c.id === centerId) || null;
   }
   createHousehold(payload) {
+    if (payload.parentGuardian) payload.parentGuardian = String(payload.parentGuardian).toUpperCase();
+    if (payload.parent_guardian) payload.parent_guardian = String(payload.parent_guardian).toUpperCase();
     const guardian = (payload.parentGuardian || payload.parent_guardian || '').toLowerCase().trim();
     const brgy = (payload.barangay || '').toLowerCase().trim();
     const existing = this.data.households.find((h) => {
@@ -740,6 +766,11 @@ class CentralDataStore {
   updateChild(childId, updates) {
     const existing = this.data.children.find((c) => c.id === childId);
     if (existing) {
+      if (updates.firstName) updates.firstName = String(updates.firstName).toUpperCase();
+      if (updates.middleName) updates.middleName = String(updates.middleName).toUpperCase();
+      if (updates.lastName) updates.lastName = String(updates.lastName).toUpperCase();
+      if (updates.parentGuardian) updates.parentGuardian = String(updates.parentGuardian).toUpperCase();
+      if (updates.fullName) updates.fullName = String(updates.fullName).toUpperCase();
       Object.assign(existing, updates, { updatedAt: getPhilippinesDateTime() });
       this.save();
       return existing;
@@ -749,6 +780,8 @@ class CentralDataStore {
   updateHousehold(householdId, updates) {
     const existing = this.data.households.find((h) => h.id === householdId);
     if (existing) {
+      if (updates.parentGuardian) updates.parentGuardian = String(updates.parentGuardian).toUpperCase();
+      if (updates.parent_guardian) updates.parent_guardian = String(updates.parent_guardian).toUpperCase();
       Object.assign(existing, updates, { updatedAt: getPhilippinesDateTime() });
       this.save();
       return existing;
@@ -961,6 +994,15 @@ class CentralDataStore {
    * Register or link child. NEVER duplicates if matching child ID exists.
    */
   registerChild(childPayload) {
+    if (childPayload.firstName) childPayload.firstName = String(childPayload.firstName).toUpperCase();
+    if (childPayload.middleName) childPayload.middleName = String(childPayload.middleName).toUpperCase();
+    if (childPayload.lastName) childPayload.lastName = String(childPayload.lastName).toUpperCase();
+    if (childPayload.parentGuardian) childPayload.parentGuardian = String(childPayload.parentGuardian).toUpperCase();
+    if (childPayload.fullName) {
+      childPayload.fullName = String(childPayload.fullName).toUpperCase();
+    } else {
+      childPayload.fullName = `${childPayload.firstName || ''} ${childPayload.middleName ? childPayload.middleName + ' ' : ''}${childPayload.lastName || ''}`.trim().toUpperCase();
+    }
     const normName = (childPayload.fullName || `${childPayload.firstName || ''} ${childPayload.lastName || ''}`).toLowerCase().trim().replace(/\s+/g, ' ');
     const existing = this.data.children.find((c) => {
       if (childPayload.id && (c.id === childPayload.id || c.eccd_id === childPayload.id)) return true;
@@ -990,7 +1032,10 @@ class CentralDataStore {
     const newChild = {
       ...childPayload,
       id: newId,
-      fullName: childPayload.fullName || `${childPayload.firstName || ''} ${childPayload.middleName ? childPayload.middleName + ' ' : ''}${childPayload.lastName || ''}`.trim(),
+      firstName: childPayload.firstName || '',
+      middleName: childPayload.middleName || '',
+      lastName: childPayload.lastName || '',
+      fullName: childPayload.fullName,
       ageYears: ageY,
       ageMonths: ageM,
       ageDisplay: childPayload.ageDisplay || `${ageY} yrs, ${ageM} mos`,

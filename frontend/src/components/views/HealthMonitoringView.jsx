@@ -34,15 +34,7 @@ import { TableHead, TableBody, TableRow, TableHeader, TableCell } from '../ui/Ta
 
 const formatChildName = (name) => {
   if (!name) return '—';
-  if (name === name.toUpperCase() && name.length > 2) {
-    return name
-      .toLowerCase()
-      .split(' ')
-      .filter(Boolean)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
-  }
-  return name;
+  return String(name).toUpperCase();
 };
 
 const getInitials = (fullName, firstName, lastName) => {

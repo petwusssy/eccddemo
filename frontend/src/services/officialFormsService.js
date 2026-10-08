@@ -102,7 +102,7 @@ export const officialFormsService = {
       household = households.find((h) => h.id === formData.householdId);
     } else {
       // Find by parent name and address
-      const parentName = formData.motherName || formData.fatherName || formData.guardianName;
+      const parentName = String(formData.motherName || formData.fatherName || formData.guardianName || 'PARENT / GUARDIAN').toUpperCase();
       const existingHh = households.find(
         (h) => h.parentGuardian?.toLowerCase() === parentName?.toLowerCase() &&
                h.barangay?.toLowerCase() === formData.barangay?.toLowerCase()
@@ -119,7 +119,7 @@ export const officialFormsService = {
           barangayId: formData.barangayId || 'BRGY-001',
           purok: formData.purok || 'Purok 1',
           address: formData.childAddress || formData.motherAddress || formData.fatherAddress || 'City of San Fernando',
-          parentGuardian: parentName || 'Parent / Guardian',
+          parentGuardian: parentName || 'PARENT / GUARDIAN',
           contactNumber: formData.motherContactHome || formData.fatherContactHome || formData.guardianPhone || '',
           is4Ps: formData.is4Ps || false,
           isIP: false,
@@ -144,7 +144,11 @@ export const officialFormsService = {
       ageMonths = Math.max(0, diffMonths % 12);
     }
 
-    const fullName = `${formData.childLastName || ''}, ${formData.childFirstName || ''} ${formData.childMiddleName || ''}`.trim().replace(/\s+/g, ' ');
+    const cFirst = String(formData.childFirstName || '').trim().toUpperCase();
+    const cMiddle = String(formData.childMiddleName || '').trim().toUpperCase();
+    const cLast = String(formData.childLastName || '').trim().toUpperCase();
+    const cSuffix = String(formData.childSuffix || '').trim().toUpperCase();
+    const fullName = `${cLast}${cLast && cFirst ? ', ' : ''}${cFirst}${cMiddle ? ` ${cMiddle}` : ''}${cSuffix ? ` ${cSuffix}` : ''}`.trim().replace(/\s+/g, ' ');
 
     // 3. Create persistent Child record
     const childRecord = centralDataStore.createChild({
@@ -154,10 +158,10 @@ export const officialFormsService = {
       barangay: household.barangay || 'San Isidro',
       dayCareCenterId: formData.dayCareCenterId || 'CDC-001',
       dayCareCenterName: formData.dayCareCenterName || 'San Isidro Child Development Center I',
-      firstName: formData.childFirstName,
-      middleName: formData.childMiddleName || '',
-      lastName: formData.childLastName,
-      suffix: formData.childSuffix || '',
+      firstName: cFirst,
+      middleName: cMiddle,
+      lastName: cLast,
+      suffix: cSuffix,
       fullName: fullName,
       birthDate: formData.childBirthDate || '2023-01-01',
       ageYears: ageYears,

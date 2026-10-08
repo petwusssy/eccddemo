@@ -259,18 +259,21 @@ export function OfficialForm1HomeProfileModal({
               <div className="official-grid-5">
                 <Input
                   label="Last Name"
+                  uppercase
                   value={formData.father.lastName}
-                  onChange={(e) => setFormData({ ...formData, father: { ...formData.father, lastName: e.target.value } })}
+                  onChange={(e) => setFormData({ ...formData, father: { ...formData.father, lastName: e.target.value.toUpperCase() } })}
                 />
                 <Input
                   label="First Name"
+                  uppercase
                   value={formData.father.firstName}
-                  onChange={(e) => setFormData({ ...formData, father: { ...formData.father, firstName: e.target.value } })}
+                  onChange={(e) => setFormData({ ...formData, father: { ...formData.father, firstName: e.target.value.toUpperCase() } })}
                 />
                 <Input
                   label="Middle Initial"
+                  uppercase
                   value={formData.father.middleInitial}
-                  onChange={(e) => setFormData({ ...formData, father: { ...formData.father, middleInitial: e.target.value } })}
+                  onChange={(e) => setFormData({ ...formData, father: { ...formData.father, middleInitial: e.target.value.toUpperCase() } })}
                 />
                 <Input
                   type="date"
@@ -394,18 +397,21 @@ export function OfficialForm1HomeProfileModal({
               <div className="official-grid-5">
                 <Input
                   label="Last Name"
+                  uppercase
                   value={formData.mother.lastName}
-                  onChange={(e) => setFormData({ ...formData, mother: { ...formData.mother, lastName: e.target.value } })}
+                  onChange={(e) => setFormData({ ...formData, mother: { ...formData.mother, lastName: e.target.value.toUpperCase() } })}
                 />
                 <Input
                   label="First Name"
+                  uppercase
                   value={formData.mother.firstName}
-                  onChange={(e) => setFormData({ ...formData, mother: { ...formData.mother, firstName: e.target.value } })}
+                  onChange={(e) => setFormData({ ...formData, mother: { ...formData.mother, firstName: e.target.value.toUpperCase() } })}
                 />
                 <Input
                   label="Middle Initial"
+                  uppercase
                   value={formData.mother.middleInitial}
-                  onChange={(e) => setFormData({ ...formData, mother: { ...formData.mother, middleInitial: e.target.value } })}
+                  onChange={(e) => setFormData({ ...formData, mother: { ...formData.mother, middleInitial: e.target.value.toUpperCase() } })}
                 />
                 <Input
                   type="date"

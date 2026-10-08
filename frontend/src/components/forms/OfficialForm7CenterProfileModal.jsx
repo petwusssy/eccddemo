@@ -342,14 +342,20 @@ export function OfficialForm7CenterProfileModal({
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
                   <Input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="Telephone Nos."
                     value={formData.telephoneNos}
-                    onChange={(e) => handleFieldChange('telephoneNos', e.target.value)}
+                    onChange={(e) => handleFieldChange('telephoneNos', e.target.value.replace(/\D/g, ''))}
                   />
                   <Input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="Fax No."
                     value={formData.faxNo}
-                    onChange={(e) => handleFieldChange('faxNo', e.target.value)}
+                    onChange={(e) => handleFieldChange('faxNo', e.target.value.replace(/\D/g, ''))}
                   />
                   <Input
                     placeholder="Email Add."

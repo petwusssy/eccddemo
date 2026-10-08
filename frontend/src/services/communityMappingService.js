@@ -306,7 +306,7 @@ export const communityMappingService = {
     const id = hhData.id || `HH-2026-${String(centralDataStore.getHouseholds().length + 101).padStart(4, '0')}`;
     const newHousehold = centralDataStore.createHousehold({
       id,
-      parentGuardian: hhData.parentGuardian || 'Parent / Guardian',
+      parentGuardian: String(hhData.parentGuardian || 'Parent / Guardian').toUpperCase(),
       contactNumber: hhData.contactNumber || '',
       address: hhData.address || '',
       barangay: hhData.barangay || 'San Isidro',
@@ -382,15 +382,15 @@ export const communityMappingService = {
     }
 
     const newChild = centralDataStore.registerChild({
-      firstName: childData.firstName,
-      middleName: childData.middleName || '',
-      lastName: childData.lastName,
+      firstName: String(childData.firstName || '').toUpperCase(),
+      middleName: String(childData.middleName || '').toUpperCase(),
+      lastName: String(childData.lastName || '').toUpperCase(),
       birthDate: childData.birthDate,
       sex: childData.sex || 'Female',
       ageYears: parseInt(childData.ageYears || 3, 10),
       ageMonths: parseInt(childData.ageMonths || 0, 10),
       householdId: childData.householdId,
-      parentGuardian: childData.parentGuardian || '',
+      parentGuardian: String(childData.parentGuardian || '').toUpperCase(),
       barangay: childData.barangay || 'San Isidro',
       enrollmentStatus: childData.enrollmentStatus || 'Not Enrolled',
       enrollmentCenter: childData.enrollmentCenter || null,

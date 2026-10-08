@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,6 +44,34 @@ class Child extends Model
         'birth_date' => 'date',
         'has_open_follow_up' => 'boolean',
     ];
+
+    protected function firstName(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => is_null($value) ? null : mb_strtoupper(trim((string)$value), 'UTF-8')
+        );
+    }
+
+    protected function middleName(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => (is_null($value) || trim((string)$value) === '') ? null : mb_strtoupper(trim((string)$value), 'UTF-8')
+        );
+    }
+
+    protected function lastName(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => is_null($value) ? null : mb_strtoupper(trim((string)$value), 'UTF-8')
+        );
+    }
+
+    protected function suffix(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => (is_null($value) || trim((string)$value) === '') ? null : mb_strtoupper(trim((string)$value), 'UTF-8')
+        );
+    }
 
     public function household(): BelongsTo
     {

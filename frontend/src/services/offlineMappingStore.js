@@ -56,6 +56,23 @@ export async function saveOfflineSurvey(surveyData) {
     updatedAt: new Date().toISOString(),
   };
 
+  if (record.household?.parentGuardian) {
+    record.household.parentGuardian = String(record.household.parentGuardian).toUpperCase();
+  }
+  if (record.parentGuardian) {
+    record.parentGuardian = String(record.parentGuardian).toUpperCase();
+  }
+  if (Array.isArray(record.children)) {
+    record.children.forEach((c) => {
+      if (!c) return;
+      if (c.firstName) c.firstName = String(c.firstName).toUpperCase();
+      if (c.middleName) c.middleName = String(c.middleName).toUpperCase();
+      if (c.lastName) c.lastName = String(c.lastName).toUpperCase();
+      if (c.fullName) c.fullName = String(c.fullName).toUpperCase();
+      if (c.parentGuardian) c.parentGuardian = String(c.parentGuardian).toUpperCase();
+    });
+  }
+
   await db.put(STORE_SURVEYS, record);
 
   // Notify active listeners

@@ -225,14 +225,16 @@ export function OfficialRegistrationFormModal({
                 <Input
                   label="Child First Name"
                   placeholder="e.g. Juan"
+                  uppercase
                   value={searchFirst}
-                  onChange={(e) => setSearchFirst(e.target.value)}
+                  onChange={(e) => setSearchFirst(e.target.value.toUpperCase())}
                 />
                 <Input
                   label="Child Last Name"
                   placeholder="e.g. Dela Cruz"
+                  uppercase
                   value={searchLast}
-                  onChange={(e) => setSearchLast(e.target.value)}
+                  onChange={(e) => setSearchLast(e.target.value.toUpperCase())}
                 />
                 <Input
                   type="date"
@@ -243,8 +245,9 @@ export function OfficialRegistrationFormModal({
                 <Input
                   label="Mother / Guardian Name (Optional)"
                   placeholder="e.g. Rosa Dela Cruz"
+                  uppercase
                   value={searchParent}
-                  onChange={(e) => setSearchParent(e.target.value)}
+                  onChange={(e) => setSearchParent(e.target.value.toUpperCase())}
                 />
               </div>
 
@@ -330,20 +333,23 @@ export function OfficialRegistrationFormModal({
             <div className="official-grid-3">
               <Input
                 label="Last Name *"
+                uppercase
                 value={formData.childLastName}
-                onChange={(e) => setFormData({ ...formData, childLastName: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, childLastName: e.target.value.toUpperCase() })}
                 required
               />
               <Input
                 label="First Name *"
+                uppercase
                 value={formData.childFirstName}
-                onChange={(e) => setFormData({ ...formData, childFirstName: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, childFirstName: e.target.value.toUpperCase() })}
                 required
               />
               <Input
                 label="Middle Name / Initial"
+                uppercase
                 value={formData.childMiddleName}
-                onChange={(e) => setFormData({ ...formData, childMiddleName: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, childMiddleName: e.target.value.toUpperCase() })}
               />
             </div>
 
@@ -439,8 +445,9 @@ export function OfficialRegistrationFormModal({
             <div className="official-grid-3">
               <Input
                 label="Guardian Name *"
+                uppercase
                 value={formData.guardianName}
-                onChange={(e) => setFormData({ ...formData, guardianName: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, guardianName: e.target.value.toUpperCase() })}
                 required
               />
               <Input
@@ -464,8 +471,9 @@ export function OfficialRegistrationFormModal({
             <div className="official-grid-2">
               <Input
                 label="Mother's Full Name"
+                uppercase
                 value={formData.motherName}
-                onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, motherName: e.target.value.toUpperCase() })}
                 placeholder="First Middle Last"
               />
               <Input
@@ -486,15 +494,21 @@ export function OfficialRegistrationFormModal({
             <div className="official-grid-2" style={{ marginTop: 'var(--space-2)' }}>
               <Input
                 label="Mother Contact Number: Home"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.motherContactHome}
-                onChange={(e) => setFormData({ ...formData, motherContactHome: e.target.value })}
-                placeholder="Landline / Primary mobile"
+                onChange={(e) => setFormData({ ...formData, motherContactHome: e.target.value.replace(/\D/g, '') })}
+                placeholder="09171234567"
               />
               <Input
                 label="Mother Contact Number: Work"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.motherContactWork}
-                onChange={(e) => setFormData({ ...formData, motherContactWork: e.target.value })}
-                placeholder="Work phone / Office mobile"
+                onChange={(e) => setFormData({ ...formData, motherContactWork: e.target.value.replace(/\D/g, '') })}
+                placeholder="09171234567"
               />
             </div>
 
@@ -503,8 +517,9 @@ export function OfficialRegistrationFormModal({
             <div className="official-grid-2">
               <Input
                 label="Father's Full Name"
+                uppercase
                 value={formData.fatherName}
-                onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, fatherName: e.target.value.toUpperCase() })}
                 placeholder="First Middle Last"
               />
               <Input
@@ -525,15 +540,21 @@ export function OfficialRegistrationFormModal({
             <div className="official-grid-2" style={{ marginTop: 'var(--space-2)' }}>
               <Input
                 label="Father Contact Number: Home"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.fatherContactHome}
-                onChange={(e) => setFormData({ ...formData, fatherContactHome: e.target.value })}
-                placeholder="Landline / Primary mobile"
+                onChange={(e) => setFormData({ ...formData, fatherContactHome: e.target.value.replace(/\D/g, '') })}
+                placeholder="09171234567"
               />
               <Input
                 label="Father Contact Number: Work"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.fatherContactWork}
-                onChange={(e) => setFormData({ ...formData, fatherContactWork: e.target.value })}
-                placeholder="Work phone / Office mobile"
+                onChange={(e) => setFormData({ ...formData, fatherContactWork: e.target.value.replace(/\D/g, '') })}
+                placeholder="09171234567"
               />
             </div>
 
@@ -542,8 +563,9 @@ export function OfficialRegistrationFormModal({
             <div className="official-grid-2">
               <Input
                 label="Emergency Contact Name *"
+                uppercase
                 value={formData.emergencyName}
-                onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value.toUpperCase() })}
                 required
               />
               <Input
@@ -557,14 +579,20 @@ export function OfficialRegistrationFormModal({
             <div className="official-grid-2" style={{ marginTop: 'var(--space-2)' }}>
               <Input
                 label="Emergency Contact Number: Home *"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.emergencyContactHome}
-                onChange={(e) => setFormData({ ...formData, emergencyContactHome: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, emergencyContactHome: e.target.value.replace(/\D/g, '') })}
                 required
               />
               <Input
                 label="Emergency Contact Number: Work"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.emergencyContactWork}
-                onChange={(e) => setFormData({ ...formData, emergencyContactWork: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, emergencyContactWork: e.target.value.replace(/\D/g, '') })}
               />
             </div>
 
@@ -573,8 +601,9 @@ export function OfficialRegistrationFormModal({
               <div>
                 <Input
                   label="Accomplished by: Printed Name of Parent / Guardian *"
+                  uppercase
                   value={formData.parentGuardianSignatureName}
-                  onChange={(e) => setFormData({ ...formData, parentGuardianSignatureName: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, parentGuardianSignatureName: e.target.value.toUpperCase() })}
                   placeholder="Parent / Guardian Name"
                   required
                 />
