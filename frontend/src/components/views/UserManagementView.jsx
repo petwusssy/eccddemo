@@ -131,11 +131,16 @@ export function UserManagementView({ currentUser, onNavigate }) {
         (u.worker?.dayCareCenter?.name && u.worker.dayCareCenter.name.toLowerCase().includes(q)) ||
         (u.worker?.barangay?.name && u.worker.barangay.name.toLowerCase().includes(q));
 
-      const roleKey = u.role?.name || (u.role_id === 4 ? 'eccd_admin' : 'cdt');
+      const roleKey = u.role?.name || (u.role_id === 1 ? 'sysadmin' : (u.role_id === 4 ? 'eccd_admin' : 'cdt'));
+      const isSysAdmin = roleKey === 'sysadmin' || u.email === 'sysadmin@csfp.gov.ph';
+      const isEccdAdmin = (roleKey === 'eccd_admin' || roleKey === 'cswdo_admin' || u.role_id === 4 || u.email === 'admin@eccd.gov.ph') && !isSysAdmin;
+      const isCdt = !isSysAdmin && !isEccdAdmin;
+
       const matchRole =
         roleFilter === 'ALL' ||
-        (roleFilter === 'ADMIN' && (roleKey === 'eccd_admin' || roleKey === 'cswdo_admin')) ||
-        (roleFilter === 'CDT' && (roleKey === 'cdt' || roleKey === 'daycare_worker' || roleKey === 'field_worker'));
+        (roleFilter === 'SYSADMIN' && isSysAdmin) ||
+        (roleFilter === 'ECCD_ADMIN' && isEccdAdmin) ||
+        (roleFilter === 'CDT' && isCdt);
 
       return matchQuery && matchRole;
     });
@@ -144,14 +149,18 @@ export function UserManagementView({ currentUser, onNavigate }) {
   // Statistics
   const stats = useMemo(() => {
     const total = users.length;
-    const admins = users.filter((u) => {
+    const sysadmins = users.filter((u) => {
       const k = u.role?.name;
-      return k === 'eccd_admin' || k === 'cswdo_admin' || u.role_id === 4;
+      return k === 'sysadmin' || u.role_id === 1 || u.email === 'sysadmin@csfp.gov.ph';
     }).length;
-    const cdts = total - admins;
+    const eccdAdmins = users.filter((u) => {
+      const k = u.role?.name;
+      return (k === 'eccd_admin' || k === 'cswdo_admin' || u.role_id === 4 || u.email === 'admin@eccd.gov.ph') && u.email !== 'sysadmin@csfp.gov.ph';
+    }).length;
+    const cdts = Math.max(0, total - sysadmins - eccdAdmins);
     const withCenters = users.filter((u) => u.worker?.dayCareCenter || u.worker?.day_care_center_id).length;
 
-    return { total, admins, cdts, withCenters };
+    return { total, sysadmins, eccdAdmins, cdts, withCenters };
   }, [users]);
 
   // --- Handlers ---
@@ -297,7 +306,7 @@ export function UserManagementView({ currentUser, onNavigate }) {
             User Accounts &amp; Access Control Directory
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
-            City Social Welfare &amp; Development Office • Provision staff credentials, roles, and facility assignments.
+            CSFP System Administration Console • Sya ang may hawak ng mga account ng ECCD Administrative officers at Child Development Teachers (CDTs).
           </p>
         </div>
 
@@ -346,11 +355,11 @@ export function UserManagementView({ currentUser, onNavigate }) {
           </div>
         </div>
 
-        {/* Administrative Officers */}
+        {/* CSFP SysAdmins */}
         <div
           style={{
-            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, var(--bg-surface) 100%)',
-            border: '1px solid rgba(239, 68, 68, 0.25)',
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, var(--bg-surface) 100%)',
+            border: '1px solid rgba(99, 102, 241, 0.25)',
             borderRadius: 'var(--radius-lg)',
             padding: '1.25rem',
             position: 'relative',
@@ -359,18 +368,46 @@ export function UserManagementView({ currentUser, onNavigate }) {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Administrative Officers
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              CSFP SysAdmins
             </span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ShieldCheck size={16} style={{ color: '#dc2626' }} />
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ShieldCheck size={16} style={{ color: '#4f46e5' }} />
             </div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#dc2626', lineHeight: 1.1 }}>
-            {stats.admins}
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#4f46e5', lineHeight: 1.1 }}>
+            {stats.sysadmins}
           </div>
           <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Full system &amp; IT root access
+            Admin Console &amp; IT Root Authority
+          </div>
+        </div>
+
+        {/* ECCD Administrative Officers */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(234, 88, 12, 0.08) 0%, var(--bg-surface) 100%)',
+            border: '1px solid rgba(234, 88, 12, 0.25)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.25rem',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#c2410c', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              ECCD Administrative
+            </span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(234, 88, 12, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Building2 size={16} style={{ color: '#c2410c' }} />
+            </div>
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#c2410c', lineHeight: 1.1 }}>
+            {stats.eccdAdmins}
+          </div>
+          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            CSWDO Operations (All 35 Barangays)
           </div>
         </div>
 
@@ -388,45 +425,17 @@ export function UserManagementView({ currentUser, onNavigate }) {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Child Development Teachers
+              CDT Teachers
             </span>
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Building2 size={16} style={{ color: '#059669' }} />
+              <Key size={16} style={{ color: '#059669' }} />
             </div>
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: '#059669', lineHeight: 1.1 }}>
             {stats.cdts}
           </div>
           <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Frontline daycare implementers
-          </div>
-        </div>
-
-        {/* Assigned to Centers */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.06) 0%, var(--bg-surface) 100%)',
-            border: '1px solid rgba(2, 132, 199, 0.25)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.25rem',
-            position: 'relative',
-            overflow: 'hidden',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Assigned to Centers
-            </span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(2, 132, 199, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Key size={16} style={{ color: '#0284c7' }} />
-            </div>
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0284c7', lineHeight: 1.1 }}>
-            {stats.withCenters}
-          </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Operating in Day Care facilities
+            Frontline Daycare Implementers
           </div>
         </div>
       </div>
@@ -455,7 +464,8 @@ export function UserManagementView({ currentUser, onNavigate }) {
                 onChange={(e) => setRoleFilter(e.target.value)}
               >
                 <option value="ALL">All Roles ({users.length})</option>
-                <option value="ADMIN">Administrative Officers ({stats.admins})</option>
+                <option value="SYSADMIN">CSFP SysAdmins ({stats.sysadmins})</option>
+                <option value="ECCD_ADMIN">ECCD Administrative ({stats.eccdAdmins})</option>
                 <option value="CDT">Child Development Teachers ({stats.cdts})</option>
               </select>
             </div>
@@ -501,10 +511,13 @@ export function UserManagementView({ currentUser, onNavigate }) {
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => {
-                    const isSuperAdmin = user.id === 1;
+                    const isSuperAdmin = user.id === 1 || user.email === 'sysadmin@csfp.gov.ph';
                     const isSelf = currentUser?.id === user.id || currentUser?.email === user.email;
-                    const roleName = user.role?.name || (user.role_id === 4 ? 'eccd_admin' : 'cdt');
-                    const isAdmin = roleName === 'eccd_admin' || roleName === 'cswdo_admin';
+                    const roleName = user.role?.name || (user.role_id === 1 ? 'sysadmin' : (user.role_id === 4 ? 'eccd_admin' : 'cdt'));
+                    const isSysAdmin = roleName === 'sysadmin' || user.email === 'sysadmin@csfp.gov.ph';
+                    const isEccdAdmin = (roleName === 'eccd_admin' || roleName === 'cswdo_admin' || user.role_id === 4 || user.email === 'admin@eccd.gov.ph') && !isSysAdmin;
+                    const isCdt = !isSysAdmin && !isEccdAdmin;
+
                     const initials = (user.name || 'U')
                       .split(' ')
                       .filter(Boolean)
@@ -521,6 +534,12 @@ export function UserManagementView({ currentUser, onNavigate }) {
 
                     const barangayName = user.worker?.barangay?.name || user.worker?.barangayName;
 
+                    const avatarBg = isSysAdmin
+                      ? 'linear-gradient(135deg, #312e81, #4f46e5)'
+                      : isEccdAdmin
+                      ? 'linear-gradient(135deg, #7e191b, #c2410c)'
+                      : 'linear-gradient(135deg, #0284c7, #059669)';
+
                     return (
                       <TableRow key={user.id}>
                         <TableCell>
@@ -530,7 +549,7 @@ export function UserManagementView({ currentUser, onNavigate }) {
                                 width: '38px',
                                 height: '38px',
                                 borderRadius: '50%',
-                                background: isAdmin ? 'linear-gradient(135deg, #7e191b, #ba1607)' : 'linear-gradient(135deg, #0284c7, #0369a1)',
+                                background: avatarBg,
                                 color: '#ffffff',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -557,14 +576,32 @@ export function UserManagementView({ currentUser, onNavigate }) {
                         </TableCell>
 
                         <TableCell>
-                          <Badge variant={isAdmin ? 'danger' : 'success'}>
-                            {user.role?.label || (isAdmin ? 'ECCD Administrative' : 'Child Development Teacher (CDT)')}
-                          </Badge>
+                          {isSysAdmin ? (
+                            <Badge variant="danger">
+                              CSFP System Administrator
+                            </Badge>
+                          ) : isEccdAdmin ? (
+                            <Badge variant="warning">
+                              ECCD Administrative
+                            </Badge>
+                          ) : (
+                            <Badge variant="success">
+                              Child Development Teacher (CDT)
+                            </Badge>
+                          )}
                         </TableCell>
 
                         <TableCell>
-                          {isAdmin ? (
-                            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>City Social Welfare Division</span>
+                          {isSysAdmin ? (
+                            <div>
+                              <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#4f46e5' }}>CSFP MIS Admin Console</div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>City-wide IT Infrastructure</div>
+                            </div>
+                          ) : isEccdAdmin ? (
+                            <div>
+                              <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#c2410c' }}>City Social Welfare &amp; Development</div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Consolidated 35 Barangays</div>
+                            </div>
                           ) : centerName ? (
                             <div>
                               <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>{centerName}</div>
@@ -689,6 +726,9 @@ export function UserManagementView({ currentUser, onNavigate }) {
                     </option>
                   ))}
                 </select>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                  CSFP SYSADMIN can provision accounts for ECCD Administrative officers (CSWDO Head) and Child Development Teachers (CDTs).
+                </span>
               </div>
 
               {/* Day Care Center Assignment (If CDT) */}

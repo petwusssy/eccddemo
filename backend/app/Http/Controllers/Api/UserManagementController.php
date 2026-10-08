@@ -66,7 +66,17 @@ class UserManagementController extends Controller
      */
     public function roles()
     {
-        $roles = Role::orderBy('id', 'asc')->get();
+        $roles = Role::whereIn('name', ['sysadmin', 'eccd_admin', 'cdt'])
+            ->orderByRaw("CASE 
+                WHEN name = 'sysadmin' THEN 1 
+                WHEN name = 'eccd_admin' THEN 2 
+                WHEN name = 'cdt' THEN 3 
+                ELSE 4 END")
+            ->get();
+
+        if ($roles->isEmpty()) {
+            $roles = Role::orderBy('id', 'asc')->get();
+        }
 
         return response()->json([
             'ok' => true,
@@ -329,12 +339,12 @@ class UserManagementController extends Controller
             ], 403);
         }
 
-        // Prevent deleting the primary admin account (ID 1)
-        if ($user->id === 1) {
+        // Prevent deleting the primary admin account or sysadmin account
+        if ($user->id === 1 || $user->email === 'sysadmin@csfp.gov.ph' || $user->role?->name === 'sysadmin') {
             return response()->json([
                 'ok' => false,
                 'status' => 403,
-                'error' => 'The primary system administrator account cannot be deleted.',
+                'error' => 'The CSFP System Administrator account cannot be deleted.',
             ], 403);
         }
 

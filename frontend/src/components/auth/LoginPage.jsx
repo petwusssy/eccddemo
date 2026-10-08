@@ -37,7 +37,7 @@ export function LoginPage({ isAdminPortal: propIsAdminPortal }) {
   const { login, logout, forgotPassword, status, sessionExpiredMessage, clearExpiredState } = useAuth();
 
   // Form state (react-patterns: useState for isolated form UI)
-  const [email, setEmail] = useState(isAdminPortal ? 'admin@eccd.gov.ph' : '');
+  const [email, setEmail] = useState(isAdminPortal ? 'sysadmin@csfp.gov.ph' : '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -87,7 +87,7 @@ export function LoginPage({ isAdminPortal: propIsAdminPortal }) {
       // If user attempted to log in to /admin as a CDT:
       if (isAdminPortal && result.data?.user?.role === 'cdt') {
         await logout();
-        setFormError('Access Restricted: This console is strictly reserved for CSWDO Administrators. Please use the standard ECCD portal at "/" to sign in.');
+        setFormError('Access Restricted: This console is strictly reserved for CSFP System Administrators. Teachers and daycare workers, please use the standard ECCD portal at "/" to sign in.');
         return;
       }
       // On success, AuthProvider updates status → App renders AppShell or AdminShell
@@ -254,13 +254,13 @@ export function LoginPage({ isAdminPortal: propIsAdminPortal }) {
 
           {isAdminPortal ? (
             <div style={{ marginBottom: '1.25rem' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '3px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>
-                <Shield size={12} style={{ color: '#dc2626' }} />
-                <span>Executive Admin Gateway</span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#eef2ff', border: '1px solid #c7d2fe', color: '#4338ca', padding: '3px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>
+                <Shield size={12} style={{ color: '#4f46e5' }} />
+                <span>CSFP SYSADMIN GATEWAY</span>
               </div>
-              <h1 className="login-form-title" style={{ margin: 0 }}>Administrator Sign In</h1>
+              <h1 className="login-form-title" style={{ margin: 0 }}>System Administrator Sign In</h1>
               <p className="login-form-subtitle" style={{ margin: '4px 0 0 0' }}>
-                City Social Welfare &amp; Development Office • CSWDO Admin Console
+                City Information &amp; Communications Technology Office • CSFP MIS Admin Console
               </p>
             </div>
           ) : (

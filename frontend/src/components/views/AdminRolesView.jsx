@@ -10,22 +10,39 @@ import { Badge } from '../ui/Badge';
 export default function AdminRolesView() {
   const roles = [
     {
-      id: 'eccd_admin',
-      name: 'ECCD Administrative Officer',
-      badge: 'System Administrator',
+      id: 'sysadmin',
+      name: 'CSFP System Administrator',
+      badge: 'City IT / MIS Root Authority',
       badgeVariant: 'danger',
-      scope: 'City-wide (All 35 Barangays of City of San Fernando, Pampanga)',
-      description: 'Senior CSWDO official responsible for program management, city-wide consolidation, staff credential provisioning, and executive compliance reporting.',
+      scope: 'Dedicated Admin Console (/admin) • City-wide IT Infrastructure',
+      description: 'The primary system administrator operating the Admin Console. Sya ang may hawak at tagapamahala ng mga account ng ECCD Administrative officers at Child Development Teachers (CDTs). Controls user provisioning, password resets, and audit logs.',
       activeUsersCount: 1,
       permissions: [
-        { feature: 'Access Dedicated Admin Console (/admin)', allowed: true, note: 'Exclusive root access' },
-        { feature: 'Create & Provision Staff / Teacher Accounts', allowed: true, note: 'Generate initial passwords & assign centers' },
-        { feature: 'Reset Staff Passwords & Issue Credentials', allowed: true, note: 'Instant credential recovery' },
-        { feature: 'Assign Teachers to Day Care Centers', allowed: true, note: 'City-wide worker deployment' },
-        { feature: 'View All 35 Barangays & Centers Data', allowed: true, note: 'Consolidated city registry' },
-        { feature: 'Consolidated Form 8 & Form 9 Generation', allowed: true, note: 'City-wide submission export' },
-        { feature: 'View Security Audit Logs & System Trails', allowed: true, note: 'Full compliance tracking' },
+        { feature: 'Primary Host of Admin Console (/admin)', allowed: true, note: 'Exclusive root IT console access' },
+        { feature: 'Provision ECCD Administrative Accounts', allowed: true, note: 'Generates supervisor access' },
+        { feature: 'Provision Child Development Teacher (CDT) Accounts', allowed: true, note: 'Generates teacher access & centers' },
+        { feature: 'Reset Passwords & Manage Staff Credentials', allowed: true, note: 'Full credential authority' },
+        { feature: 'View Security Audit Trails & System Logs', allowed: true, note: 'Full compliance tracking' },
+        { feature: 'Direct Daycare Child Profiling Entry', allowed: false, note: 'Restricted (Operational CSWDO duty)' },
+        { feature: 'Form 8 & Form 9 Approval / Certification', allowed: false, note: 'Restricted (ECCD Admin supervisory duty)' },
+      ],
+    },
+    {
+      id: 'eccd_admin',
+      name: 'ECCD Administrative Officer',
+      badge: 'CSWDO Program Supervisor',
+      badgeVariant: 'warning',
+      scope: 'Main ECCD Portal (/) • All 35 Barangays of San Fernando',
+      description: 'Senior CSWDO official responsible for city-wide daycare operations, consolidating child developmental analytics, approving Form 8 & Form 9 submissions, and coordinating early childhood intervention programs.',
+      activeUsersCount: 1,
+      permissions: [
+        { feature: 'Access Dedicated Admin Console (/admin)', allowed: false, note: 'Managed by CSFP SYSADMIN' },
+        { feature: 'Citywide Child Data Consolidation & Monitoring', allowed: true, note: 'All 35 Barangays covered' },
+        { feature: 'Approve & Certify Form 8 & Form 9 Reports', allowed: true, note: 'Official CSWDO executive authority' },
+        { feature: 'Oversee Child Development Centers & Teachers', allowed: true, note: 'Programmatic supervision' },
+        { feature: 'Monitor Nutritional Status & Severe Malnutrition', allowed: true, note: 'City-wide early intervention' },
         { feature: 'Direct Child Profiling & Assessment Entry', allowed: true, note: 'Supervisory editing rights' },
+        { feature: 'System-wide User Credential Provisioning', allowed: false, note: 'Handled by CSFP SYSADMIN' },
       ],
     },
     {
@@ -33,18 +50,17 @@ export default function AdminRolesView() {
       name: 'Child Development Teacher (CDT)',
       badge: 'Frontline Implementer',
       badgeVariant: 'primary',
-      scope: 'Assigned Day Care Center & Target Barangay(s)',
-      description: 'Frontline child development worker delivering early education, developmental screening, and nutritional monitoring directly to children and families.',
+      scope: 'Main ECCD Portal (/) • Assigned Day Care Center & Target Barangay(s)',
+      description: 'Frontline child development worker delivering early education, developmental screening (ECCD Checklist), and nutritional monitoring directly to children and families in their assigned center.',
       activeUsersCount: 1,
       permissions: [
         { feature: 'Access Dedicated Admin Console (/admin)', allowed: false, note: 'Strictly restricted & blocked' },
-        { feature: 'Create & Provision Staff / Teacher Accounts', allowed: false, note: 'No user management access' },
-        { feature: 'Reset Staff Passwords & Issue Credentials', allowed: false, note: 'No credential authority' },
-        { feature: 'Assign Teachers to Day Care Centers', allowed: false, note: 'Assigned by Admin only' },
-        { feature: 'View All 35 Barangays & Centers Data', allowed: false, note: 'Filtered to assigned center' },
-        { feature: 'Consolidated Form 8 & Form 9 Generation', allowed: false, note: 'Center-level only' },
-        { feature: 'View Security Audit Logs & System Trails', allowed: false, note: 'Restricted' },
-        { feature: 'Direct Child Profiling & Assessment Entry', allowed: true, note: 'Core frontline daily duty' },
+        { feature: 'Direct Child Profiling & Demographics Entry', allowed: true, note: 'Core frontline daily duty' },
+        { feature: 'Conduct ECCD 7-Domain Checklist Assessment', allowed: true, note: 'Core frontline daily duty' },
+        { feature: 'Center-level Child Masterlist & Enrollment', allowed: true, note: 'Scoped to assigned center' },
+        { feature: 'Community Mapping & Household Profiling', allowed: true, note: 'Scoped to target barangay' },
+        { feature: 'City-wide Consolidated Form 8 & 9 Generation', allowed: false, note: 'Center-level submission only' },
+        { feature: 'User Provisioning & Password Overrides', allowed: false, note: 'No administrative access' },
       ],
     },
   ];
@@ -74,12 +90,12 @@ export default function AdminRolesView() {
             </h2>
           </div>
           <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: '#c7d2fe', maxWidth: '750px' }}>
-            Defines the operational boundaries between Executive Administration (CSWDO Head / IT Admin) and Frontline Field Implementers (Child Development Teachers).
+            Defines the operational boundaries between <strong>CSFP SYSADMIN</strong> (IT Admin Console), <strong>ECCD Administrative</strong> (CSWDO Daycare Operations), and <strong>Child Development Teachers</strong> (Frontline CDTs).
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <div style={{ background: 'rgba(255,255,255,0.1)', padding: '6px 14px', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>2</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>3</div>
             <div style={{ fontSize: '10px', textTransform: 'uppercase', color: '#cbd5e1' }}>Standard Roles</div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.1)', padding: '6px 14px', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>

@@ -47,14 +47,14 @@ export default function AdminShell({ user, onLogout }) {
             <div className="admin-title-wrap">
               <div className="admin-title-row">
                 <span className="admin-main-title">
-                  ANÁC ADMIN CONSOLE
+                  CSFP SYSADMIN CONSOLE
                 </span>
                 <span className="admin-root-pill">
-                  Root Admin
+                  Root IT Authority
                 </span>
               </div>
               <div className="admin-sub-title">
-                City Social Welfare &amp; Development Office • CSWDO MIS
+                City Information &amp; Communications Technology Office • CSFP MIS
               </div>
             </div>
           </div>
@@ -67,7 +67,7 @@ export default function AdminShell({ user, onLogout }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#94a3b8' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#38bdf8', display: 'inline-block', boxShadow: '0 0 8px #38bdf8' }} />
-              <span>CSWDO Secure Tunnel</span>
+              <span>CSFP Secure Tunnel</span>
             </div>
           </div>
 
@@ -78,7 +78,7 @@ export default function AdminShell({ user, onLogout }) {
               type="button"
               className="admin-return-btn"
               onClick={handleReturnToPortal}
-              title="Switch back to regular ECCD Child Daycare Portal"
+              title="Switch to regular ECCD Child Daycare Portal"
             >
               <ArrowLeft size={15} />
               <span>Return to ECCD Portal</span>
@@ -87,14 +87,14 @@ export default function AdminShell({ user, onLogout }) {
             {/* Admin Profile Pill */}
             <div className="admin-user-pill">
               <div className="admin-avatar">
-                {user?.avatarInitials || 'AD'}
+                {user?.avatarInitials || (user?.role === 'sysadmin' ? 'SA' : 'ES')}
               </div>
               <div style={{ display: 'none', md: 'block' }}>
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#f8fafc' }}>
-                  {user?.name || 'Administrator'}
+                  {user?.name || (user?.role === 'sysadmin' ? 'CSFP MIS System Administrator' : 'Administrator')}
                 </div>
                 <div style={{ fontSize: '10.5px', color: '#94a3b8' }}>
-                  {user?.email || 'admin@eccd.gov.ph'}
+                  {user?.email || (user?.role === 'sysadmin' ? 'sysadmin@csfp.gov.ph' : 'admin@eccd.gov.ph')}
                 </div>
               </div>
 
@@ -122,7 +122,7 @@ export default function AdminShell({ user, onLogout }) {
             onClick={() => setActiveTab('users')}
           >
             <Users size={16} />
-            <span>User &amp; Staff Directory</span>
+            <span>User Accounts &amp; Staff Directory</span>
             <span className="admin-tab-badge">Active</span>
           </button>
 
@@ -133,7 +133,7 @@ export default function AdminShell({ user, onLogout }) {
           >
             <KeyRound size={16} />
             <span>Role Permissions Matrix</span>
-            <span className="admin-tab-badge">2 Roles</span>
+            <span className="admin-tab-badge">3 Roles</span>
           </button>
 
           <button

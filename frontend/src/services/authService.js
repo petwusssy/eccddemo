@@ -18,31 +18,40 @@
  */
 
 // --- Role Definitions (auth-implementation-patterns: RBAC) ---
-// Mandated 2 Roles:
-// 1. Child Development Teacher (CDT) — Frontline implementer delivering activities and interventions directly to children & families
-// 2. ECCD Administrative — Consolidates data, coordinates requirements, plans and organizes programs and services
+// Three-Tier Architecture:
+// 1. CSFP System Administrator (SYSADMIN) — City IT / MIS Administrator managing system access, tenant security, audit logs, and account provisioning in /admin
+// 2. ECCD Administrative (ADMIN) — CSWDO Early Childhood Care Supervisor consolidating data, coordinating programs, Form 8 & 9 approvals across 35 barangays
+// 3. Child Development Teacher (CDT) — Frontline implementer delivering activities and developmental assessments directly to children & families
 
 export const ROLES = {
+  SYSADMIN: 'sysadmin',
   ADMIN: 'eccd_admin',
   CDT: 'cdt',
   // Backward compatibility alias keys:
   FIELD_WORKER: 'cdt',
   DAYCARE_WORKER: 'cdt',
+  CSWDO_ADMIN: 'eccd_admin',
 };
 
 export const ROLE_LABELS = {
+  [ROLES.SYSADMIN]: 'CSFP System Administrator',
   [ROLES.ADMIN]: 'ECCD Administrative',
   [ROLES.CDT]: 'Child Development Teacher (CDT)',
   // Backwards compatibility mappings
+  'sysadmin': 'CSFP System Administrator',
+  'eccd_admin': 'ECCD Administrative',
   'cswdo_admin': 'ECCD Administrative',
+  'cdt': 'Child Development Teacher (CDT)',
   'field_worker': 'Child Development Teacher (CDT)',
   'daycare_worker': 'Child Development Teacher (CDT)',
 };
 
 // Role → default landing page after login
 export const ROLE_LANDING = {
+  [ROLES.SYSADMIN]: 'admin',
   [ROLES.ADMIN]: 'dashboard',
   [ROLES.CDT]: 'community-mapping',
+  'sysadmin': 'admin',
   'cswdo_admin': 'dashboard',
   'field_worker': 'community-mapping',
   'daycare_worker': 'community-mapping',
@@ -50,10 +59,15 @@ export const ROLE_LANDING = {
 
 // Role → permitted sidebar sections (Strict role-based navigation & module boundaries)
 export const ROLE_PERMISSIONS = {
+  [ROLES.SYSADMIN]: {
+    label: 'CSFP System Administration & IT Governance',
+    description: 'City IT / MIS Administrator managing user provisioning, credentials, and security audit logs in the Admin Console.',
+    sections: '*',
+  },
   [ROLES.ADMIN]: {
-    label: 'Data Consolidation & Planning Administration',
-    description: 'Responsible for consolidating data, coordinating requirements, planning and organizing programs and services.',
-    sections: '*', // Full access across consolidation dashboard, reports, planning, and system administration
+    label: 'Data Consolidation & Program Administration',
+    description: 'Responsible for consolidating data, coordinating requirements, planning and organizing programs across all 35 barangays.',
+    sections: '*', // Full access across consolidation dashboard, reports, planning
   },
   [ROLES.CDT]: {
     label: 'Frontline ECCD Programs & Direct Delivery',
@@ -111,6 +125,22 @@ export const ROLE_PERMISSIONS = {
 
 export const OFFICIAL_ACCOUNTS = [
   {
+    id: 'USR-SYS-001',
+    email: 'sysadmin@csfp.gov.ph',
+    password: 'password',
+    acceptedPasswords: ['password', 'admin123', 'csfp2026', 'password123'],
+    name: 'CSFP MIS System Administrator',
+    role: ROLES.SYSADMIN,
+    designation: 'City IT / MIS System Administrator',
+    agency: 'City Information & Communications Technology Office (CSFP MIS)',
+    lgu: 'City of San Fernando, Pampanga',
+    region: 'Region III — Central Luzon',
+    avatarInitials: 'SA',
+    assignedBarangays: 'City-wide IT Infrastructure & System Administration',
+    activeSchoolYear: 'SY 2026–2027',
+    description: 'Primary administrator in the Admin Console (/admin), managing accounts for ECCD Administrative officers and Child Development Teachers.',
+  },
+  {
     id: 'USR-ADMIN-001',
     email: 'admin@eccd.gov.ph',
     password: 'password',
@@ -124,7 +154,7 @@ export const OFFICIAL_ACCOUNTS = [
     avatarInitials: 'ES',
     assignedBarangays: 'All 35 Barangays (City-wide Consolidated Scope)',
     activeSchoolYear: 'SY 2026–2027',
-    description: 'Responsible for consolidating data, coordinating requirements, planning and organizing programs and services.',
+    description: 'Responsible for consolidating data, coordinating requirements, planning and organizing programs and services across all 35 barangays.',
   },
   {
     id: 'USR-CDT-002',
@@ -148,10 +178,13 @@ export const OFFICIAL_ACCOUNTS = [
 export const DEMO_ACCOUNTS = OFFICIAL_ACCOUNTS;
 
 export function getDemoAccountForRole(roleKey) {
-  if (roleKey === ROLES.ADMIN || roleKey === 'cswdo_admin' || roleKey === 'eccd_admin') {
+  if (roleKey === ROLES.SYSADMIN || roleKey === 'sysadmin') {
     return OFFICIAL_ACCOUNTS[0];
   }
-  return OFFICIAL_ACCOUNTS[1];
+  if (roleKey === ROLES.ADMIN || roleKey === 'cswdo_admin' || roleKey === 'eccd_admin') {
+    return OFFICIAL_ACCOUNTS[1];
+  }
+  return OFFICIAL_ACCOUNTS[2];
 }
 
 // --- Session Storage Keys ---
@@ -393,7 +426,7 @@ export function hasPermission(user, sectionId) {
  * Returns the two standard official roles.
  */
 export function getDemoAccounts() {
-  return [DEMO_ACCOUNTS[0], DEMO_ACCOUNTS[1]].map(({ email, password, name, role, designation }) => ({
+  return DEMO_ACCOUNTS.map(({ email, password, name, role, designation }) => ({
     email,
     password: password.replace(/./g, '•').slice(0, -2) + password.slice(-2),
     passwordRaw: password,

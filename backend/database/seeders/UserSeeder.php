@@ -14,13 +14,35 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Seed the Two Standard Roles
+        // 1. Seed the Three Core Roles
+        $sysadminRole = Role::updateOrCreate(
+            ['name' => 'sysadmin'],
+            [
+                'label' => 'CSFP System Administrator',
+                'description' => 'City IT / MIS Administrator managing system access, tenant security, audit logs, and account provisioning for ECCD Administrative officers and Child Development Teachers.',
+                'permissions' => ['*'],
+            ]
+        );
+
         $adminRole = Role::updateOrCreate(
             ['name' => 'eccd_admin'],
             [
                 'label' => 'ECCD Administrative',
-                'description' => 'Responsible for consolidating data, coordinating requirements, planning and organizing programs and services.',
-                'permissions' => ['*'],
+                'description' => 'CSWDO Early Childhood Care Supervisor responsible for city-wide daycare operations, Form 8 & 9 approvals, and consolidated child developmental analytics across 35 barangays.',
+                'permissions' => [
+                    'dashboard',
+                    'children',
+                    'households',
+                    'community-mapping',
+                    'enrollment',
+                    'health-monitoring',
+                    'eccd-checklist',
+                    'development-assessment',
+                    'follow-ups',
+                    'community-network',
+                    'reports',
+                    'settings',
+                ],
             ]
         );
 
@@ -49,7 +71,7 @@ class UserSeeder extends Seeder
             [
                 'label' => 'ECCD Administrative',
                 'description' => 'Responsible for consolidating data, coordinating requirements, planning and organizing programs and services.',
-                'permissions' => ['*'],
+                'permissions' => $adminRole->permissions,
             ]
         );
 
@@ -71,17 +93,30 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // 2. Admin User (ECCD Administrative): admin@eccd.gov.ph / password
+        // 2. Seed 1: CSFP SYSADMIN (City IT / MIS Admin for Admin Console)
+        // Credentials: sysadmin@csfp.gov.ph / password
+        User::updateOrCreate(
+            ['email' => 'sysadmin@csfp.gov.ph'],
+            [
+                'name' => 'CSFP MIS System Administrator',
+                'password' => Hash::make('password'),
+                'role_id' => $sysadminRole->id,
+            ]
+        );
+
+        // 3. Seed 2: ECCD Administrative (CSWDO Daycare Operations & Supervisory Head)
+        // Credentials: admin@eccd.gov.ph / password
         User::updateOrCreate(
             ['email' => 'admin@eccd.gov.ph'],
             [
-                'name' => 'Ma. Elena D. Santos (ECCD Admin)',
+                'name' => 'Ma. Elena D. Santos, RSW (ECCD Admin)',
                 'password' => Hash::make('password'),
                 'role_id' => $adminRole->id,
             ]
         );
 
-        // 3. Frontline User (Child Development Teacher): cdt@eccd.gov.ph / password
+        // 4. Seed 3: Frontline User (Child Development Teacher)
+        // Credentials: cdt@eccd.gov.ph / password
         User::updateOrCreate(
             ['email' => 'cdt@eccd.gov.ph'],
             [

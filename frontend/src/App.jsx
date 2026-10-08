@@ -94,8 +94,11 @@ const PATH_TO_SECTION = {
 };
 
 const ROLE_LANDING_ROUTE = {
+  [ROLES.SYSADMIN]: '/admin',
   [ROLES.ADMIN]: '/dashboard',
   [ROLES.CDT]: '/mapping',
+  'sysadmin': '/admin',
+  'eccd_admin': '/dashboard',
   'cswdo_admin': '/dashboard',
   'field_worker': '/mapping',
   'daycare_worker': '/mapping',
@@ -328,7 +331,9 @@ function AuthenticatedApp() {
   const pageInfo = getPageInfo();
 
   // Route Guard: Dedicated /admin console handling
-  const isAdmin = user?.role === 'eccd_admin' || user?.role === 'cswdo_admin' || user?.role === 'admin';
+  const isSysAdmin = user?.role === 'sysadmin';
+  const isEccdAdmin = user?.role === 'eccd_admin' || user?.role === 'cswdo_admin' || user?.role === 'admin';
+  const isAdmin = isSysAdmin || isEccdAdmin;
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   if (isAdminRoute) {

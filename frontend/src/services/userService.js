@@ -48,9 +48,9 @@ export const userService = {
     const roles = centralDataStore.getRoles() || [];
     return localUsers.map((u) => {
       const role = roles.find((r) => r.id === u.roleId || r.name === u.role) || {
-        id: u.roleId || 1,
+        id: u.roleId || 5,
         name: u.role || 'cdt',
-        label: u.role === 'eccd_admin' ? 'ECCD Administrative' : 'Child Development Teacher (CDT)',
+        label: u.role === 'sysadmin' ? 'CSFP System Administrator' : (u.role === 'eccd_admin' ? 'ECCD Administrative' : 'Child Development Teacher (CDT)'),
       };
       return {
         id: u.id,
@@ -89,12 +89,18 @@ export const userService = {
       console.warn('userService: Backend /api/roles error, using local fallback:', e.message);
     }
 
-    return centralDataStore.getRoles() || [
+    return [
+      {
+        id: 1,
+        name: 'sysadmin',
+        label: 'CSFP System Administrator',
+        description: 'City IT / MIS Administrator managing system access, tenant security, audit logs, and account provisioning for ECCD Administrative officers and Child Development Teachers.',
+      },
       {
         id: 4,
         name: 'eccd_admin',
         label: 'ECCD Administrative',
-        description: 'Citywide data consolidation, planning, and system administration.',
+        description: 'CSWDO Early Childhood Care Supervisor responsible for city-wide daycare operations, Form 8 & 9 approvals, and consolidated child developmental analytics.',
       },
       {
         id: 5,
