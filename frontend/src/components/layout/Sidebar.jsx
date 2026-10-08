@@ -16,6 +16,7 @@ import {
   Lock,
   ChevronLeft,
   ChevronRight,
+  Menu,
 } from 'lucide-react';
 import Tooltip from '../ui/Tooltip';
 import anacLogo from '../../assets/anac-logo.png';
@@ -88,19 +89,43 @@ export function Sidebar({
         className={`app-sidebar ${isCollapsed ? 'is-collapsed' : ''} ${isMobileOpen ? 'is-mobile-open' : ''}`}
         aria-label="Sidebar navigation"
       >
-        {/* Sidebar Brand Header */}
+        {/* Sidebar Brand Header with Burger Toggle */}
         <div className="sidebar-header">
-          <div className="sidebar-brand">
-            <div className="sidebar-seal" title="ANÁC - City Social Welfare and Development Office">
-              <img src={anacLogo} alt="ANÁC Logo" className="sidebar-brand-logo" />
-            </div>
+          {!isCollapsed ? (
+            <>
+              <div className="sidebar-brand">
+                <div className="sidebar-seal" title="ANÁC - City Social Welfare and Development Office">
+                  <img src={anacLogo} alt="ANÁC Logo" className="sidebar-brand-logo" />
+                </div>
 
-            {!isCollapsed && (
-              <div className="sidebar-title-group">
-                <span className="sidebar-title">ANÁC</span>
+                <div className="sidebar-title-group">
+                  <span className="sidebar-title">ANÁC</span>
+                </div>
               </div>
-            )}
-          </div>
+
+              <button
+                type="button"
+                className="sidebar-header-toggle"
+                onClick={onToggleCollapse}
+                title="Collapse sidebar"
+                aria-label="Collapse sidebar"
+              >
+                <Menu size={18} />
+              </button>
+            </>
+          ) : (
+            <Tooltip text="Expand sidebar" position="right">
+              <button
+                type="button"
+                className="sidebar-header-toggle is-collapsed-toggle"
+                onClick={onToggleCollapse}
+                title="Expand sidebar"
+                aria-label="Expand sidebar"
+              >
+                <Menu size={20} />
+              </button>
+            </Tooltip>
+          )}
         </div>
 
         {/* Navigation Sections */}
@@ -173,25 +198,15 @@ export function Sidebar({
           ))}
         </nav>
 
-        {/* Sidebar Footer with Collapse Toggle */}
-        <div className="sidebar-footer">
-          {!isCollapsed && (
+        {/* Sidebar Footer */}
+        {!isCollapsed && (
+          <div className="sidebar-footer">
             <div className="sidebar-footer-text">
               <span style={{ fontWeight: 600, color: '#e2e8f0' }}>CSWDO Information System</span>
               <span>GovPH Standard • v1.0.0</span>
             </div>
-          )}
-
-          <button
-            type="button"
-            className="sidebar-footer-toggle"
-            onClick={onToggleCollapse}
-            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
-        </div>
+          </div>
+        )}
       </aside>
     </>
   );

@@ -136,25 +136,49 @@ export default function AdminShell({ user, onLogout }) {
           }`}
           aria-label="System Administration Sidebar"
         >
-          {/* Sidebar Brand Header */}
+          {/* Sidebar Brand Header with Burger Toggle */}
           <div className="sidebar-header">
-            <div className="sidebar-brand" onClick={handleReturnToPortal} style={{ cursor: 'pointer' }} title="Click to open ECCD Child Portal">
-              <div className="sidebar-seal" title="City Information and Communications Technology">
-                <img src={anacLogo} alt="ANÁC Seal" className="sidebar-brand-logo" />
-              </div>
-
-              {!isCollapsed && (
-                <div className="sidebar-title-group">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className="sidebar-title">ANÁC</span>
-                    <span className="sysadmin-chip-badge">SYSADMIN</span>
+            {!isCollapsed ? (
+              <>
+                <div className="sidebar-brand" onClick={handleReturnToPortal} style={{ cursor: 'pointer' }} title="Click to open ECCD Child Portal">
+                  <div className="sidebar-seal" title="City Information and Communications Technology">
+                    <img src={anacLogo} alt="ANÁC Seal" className="sidebar-brand-logo" />
                   </div>
-                  <span className="sidebar-subtitle" style={{ color: '#fca5a5' }}>
-                    CSFP MIS Root Console
-                  </span>
+
+                  <div className="sidebar-title-group">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="sidebar-title">ANÁC</span>
+                      <span className="sysadmin-chip-badge">SYSADMIN</span>
+                    </div>
+                    <span className="sidebar-subtitle" style={{ color: '#fca5a5' }}>
+                      CSFP MIS Root Console
+                    </span>
+                  </div>
                 </div>
-              )}
-            </div>
+
+                <button
+                  type="button"
+                  className="sidebar-header-toggle"
+                  onClick={() => setIsCollapsed(true)}
+                  title="Collapse sidebar"
+                  aria-label="Collapse sidebar"
+                >
+                  <Menu size={18} />
+                </button>
+              </>
+            ) : (
+              <Tooltip text="Expand sidebar" position="right">
+                <button
+                  type="button"
+                  className="sidebar-header-toggle is-collapsed-toggle"
+                  onClick={() => setIsCollapsed(false)}
+                  title="Expand sidebar"
+                  aria-label="Expand sidebar"
+                >
+                  <Menu size={20} />
+                </button>
+              </Tooltip>
+            )}
           </div>
 
           {/* Navigation Items */}
@@ -253,25 +277,15 @@ export default function AdminShell({ user, onLogout }) {
             </div>
           </nav>
 
-          {/* Sidebar Footer with Collapse Toggle */}
-          <div className="sidebar-footer">
-            {!isCollapsed && (
+          {/* Sidebar Footer */}
+          {!isCollapsed && (
+            <div className="sidebar-footer">
               <div className="sidebar-footer-text">
                 <span style={{ fontWeight: 600, color: '#f8fafc' }}>CSFP MIS Directorate</span>
                 <span style={{ color: '#cbd5e1' }}>Root IT Authority • v2.6.0</span>
               </div>
-            )}
-
-            <button
-              type="button"
-              className="sidebar-footer-toggle"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-            </button>
-          </div>
+            </div>
+          )}
         </aside>
 
         {/* 2. Main Work Area (Matches app-main structure) */}
