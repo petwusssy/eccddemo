@@ -203,25 +203,39 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       const hhData = await communityMappingService.getHouseholds();
       const offlineSurveys = await getAllOfflineSurveys();
 
-      // Format offline surveys and merge with server households
-      const offlineHouseholds = (offlineSurveys || []).map((s) => ({
-        id: s.householdId || s.id,
-        parentGuardian: s.household?.parentGuardian || s.parentGuardian || 'Offline Household Record',
-        address: s.household?.address || s.address || 'Field Survey',
-        barangay: s.household?.barangay || s.barangay || 'San Isidro',
-        contactNumber: s.household?.contactNumber || s.contactNumber || 'N/A',
-        childrenCount: s.children?.length || s.household?.childrenCount || 1,
-        mappedBy: s.mappedBy || 'Field Worker (PWA Offline)',
-        mappedDate: s.createdAt ? s.createdAt.slice(0, 10) : 'Recent',
-        status: s.syncStatus === 'pending' ? 'Pending Sync' : 'Completed',
-        syncStatus: s.syncStatus,
-        isOfflineRecord: true,
-        children: s.children || [],
-      }));
+      // Only include offline surveys that are truly pending sync and not already represented in server households
+      const pendingOfflineSurveys = (offlineSurveys || []).filter((s) => s.syncStatus === 'pending');
 
-      const existingIds = new Set((hhData || []).map((h) => h.id));
+      const existingGuardians = new Set(
+        (hhData || []).map((h) => `${(h.parentGuardian || h.parent_guardian || '').toLowerCase().trim()}|${(h.barangay || '').toLowerCase().trim()}`)
+      );
+      const existingIds = new Set((hhData || []).map((h) => h.id || h.household_no));
+
+      const trulyUnsyncedOffline = pendingOfflineSurveys
+        .filter((s) => {
+          const id = s.householdId || s.id;
+          const guardian = (s.household?.parentGuardian || s.parentGuardian || '').toLowerCase().trim();
+          const brgy = (s.household?.barangay || s.barangay || '').toLowerCase().trim();
+          const key = `${guardian}|${brgy}`;
+          return !existingIds.has(id) && (!guardian || !existingGuardians.has(key));
+        })
+        .map((s) => ({
+          id: s.householdId || s.id,
+          parentGuardian: s.household?.parentGuardian || s.parentGuardian || 'Offline Household Record',
+          address: s.household?.address || s.address || 'Field Survey',
+          barangay: s.household?.barangay || s.barangay || 'San Isidro',
+          contactNumber: s.household?.contactNumber || s.contactNumber || 'N/A',
+          childrenCount: s.children?.length || s.household?.childrenCount || 1,
+          mappedBy: s.mappedBy || 'Field Worker (PWA Offline)',
+          mappedDate: s.createdAt ? s.createdAt.slice(0, 10) : 'Recent',
+          status: 'Pending Sync',
+          syncStatus: 'pending',
+          isOfflineRecord: true,
+          children: s.children || [],
+        }));
+
       const mergedHouseholds = [
-        ...offlineHouseholds.filter((oh) => !existingIds.has(oh.id)),
+        ...trulyUnsyncedOffline,
         ...(hhData || []).map((h) => {
           const matchingOffline = (offlineSurveys || []).find((s) => s.householdId === h.id || s.id === h.id);
           if (matchingOffline) {
@@ -231,7 +245,22 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
         }),
       ];
 
-      setHouseholds(mergedHouseholds);
+      // Final strict deduplication by normalized guardian and barangay
+      const seenHouseholds = new Map();
+      const deduplicatedHouseholds = [];
+      mergedHouseholds.forEach((h) => {
+        const guardian = (h.parentGuardian || h.parent_guardian || '').toLowerCase().trim();
+        const brgy = (h.barangay || '').toLowerCase().trim();
+        const key = guardian && guardian !== 'offline household record' && guardian !== 'n/a'
+          ? `${guardian}|${brgy}`
+          : (h.id || Math.random());
+        if (!seenHouseholds.has(key)) {
+          seenHouseholds.set(key, h);
+          deduplicatedHouseholds.push(h);
+        }
+      });
+
+      setHouseholds(deduplicatedHouseholds);
 
       // Check for saved local draft
       const draft = communityMappingService.getDraft();

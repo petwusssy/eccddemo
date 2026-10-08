@@ -225,15 +225,13 @@ class ChildManagementService
      */
     public function createChild(array $data): array
     {
-        $count = \App\Models\Child::count() ?: count(self::$children);
-        $sequence = 1245 + $count;
-        $uniqueId = $data['id'] ?? $data['eccd_id'] ?? null;
-        if (!$uniqueId || str_starts_with((string)$uniqueId, 'TMP-') || str_starts_with((string)$uniqueId, 'OFFLINE-')) {
-            $uniqueId = 'ECCD-2026-' . str_pad((string) $sequence, 6, '0', STR_PAD_LEFT);
-        }
+        $firstName = trim($data['firstName'] ?? $data['first_name'] ?? '');
+        $lastName = trim($data['lastName'] ?? $data['last_name'] ?? '');
+        $rawBirthDate = $data['birthDate'] ?? $data['birth_date'] ?? '2023-01-01';
+        $birthDate = substr($rawBirthDate, 0, 10);
+        $hhNo = $data['householdId'] ?? $data['household_id'] ?? 'HH-2026-0101';
 
         try {
-            $hhNo = $data['householdId'] ?? $data['household_id'] ?? 'HH-2026-0101';
             $household = \App\Models\Household::where('household_no', $hhNo)->first();
             if (!$household) {
                 $barangay = \App\Models\Barangay::where('name', $data['barangay'] ?? 'San Isidro')->first() ?? \App\Models\Barangay::first();
@@ -248,19 +246,58 @@ class ChildManagementService
                 ]);
             }
 
-            $barangayId = $household->barangay_id ?? (\App\Models\Barangay::where('name', $data['barangay'] ?? '')->first()?->id ?? 1);
+            // 1. Strict Duplicate Check
+            $existingChild = null;
+            $checkId = $data['id'] ?? $data['eccd_id'] ?? null;
+            if ($checkId && !str_starts_with((string)$checkId, 'TMP-') && !str_starts_with((string)$checkId, 'OFFLINE-')) {
+                $existingChild = \App\Models\Child::where('eccd_id', $checkId)->first();
+            }
 
-            $rawBirthDate = $data['birthDate'] ?? $data['birth_date'] ?? '2023-01-01';
-            $birthDate = substr($rawBirthDate, 0, 10);
+            if (!$existingChild && $firstName && $lastName) {
+                $existingChild = \App\Models\Child::whereRaw('LOWER(TRIM(first_name)) = ?', [strtolower($firstName)])
+                    ->whereRaw('LOWER(TRIM(last_name)) = ?', [strtolower($lastName)])
+                    ->where(function ($q) use ($household, $birthDate) {
+                        if ($household) {
+                            $q->where('household_id', $household->id);
+                        }
+                        if ($birthDate) {
+                            $q->orWhere('birth_date', $birthDate);
+                        }
+                    })
+                    ->first();
+            }
+
+            if ($existingChild) {
+                if ($household) $existingChild->household_id = $household->id;
+                if (!empty($data['enrollmentStatus'])) $existingChild->enrollment_status = $data['enrollmentStatus'];
+                if (!empty($data['middleName'])) $existingChild->middle_name = $data['middleName'];
+                if ($birthDate) $existingChild->birth_date = $birthDate;
+                $existingChild->save();
+
+                return $this->formatChildModel($existingChild->load(['household', 'barangay']));
+            }
+
+            // 2. Generate standardized unique child ID
+            $maxChild = \App\Models\Child::where('eccd_id', 'like', 'ECCD-2026-%')->orderByDesc('eccd_id')->first();
+            $sequence = 1245;
+            if ($maxChild && preg_match('/ECCD-2026-(\d+)/', $maxChild->eccd_id, $matches)) {
+                $sequence = max(1245, ((int)$matches[1]) + 1);
+            }
+            $uniqueId = $data['id'] ?? $data['eccd_id'] ?? ('ECCD-2026-' . str_pad((string) $sequence, 6, '0', STR_PAD_LEFT));
+            if (str_starts_with((string)$uniqueId, 'TMP-') || str_starts_with((string)$uniqueId, 'OFFLINE-')) {
+                $uniqueId = 'ECCD-2026-' . str_pad((string) $sequence, 6, '0', STR_PAD_LEFT);
+            }
+
+            $barangayId = $household->barangay_id ?? (\App\Models\Barangay::where('name', $data['barangay'] ?? '')->first()?->id ?? 1);
 
             $childModel = \App\Models\Child::updateOrCreate(
                 ['eccd_id' => $uniqueId],
                 [
                     'household_id' => $household->id,
                     'barangay_id' => $barangayId,
-                    'first_name' => $data['firstName'] ?? $data['first_name'] ?? 'Child',
+                    'first_name' => $firstName ?: 'Child',
                     'middle_name' => $data['middleName'] ?? $data['middle_name'] ?? null,
-                    'last_name' => $data['lastName'] ?? $data['last_name'] ?? 'Record',
+                    'last_name' => $lastName ?: 'Record',
                     'birth_date' => $birthDate,
                     'sex' => (ucfirst(strtolower($data['sex'] ?? 'Female')) === 'Male') ? 'Male' : 'Female',
                     'blood_type' => $data['bloodType'] ?? $data['blood_type'] ?? null,

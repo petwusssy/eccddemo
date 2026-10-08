@@ -223,39 +223,58 @@ class CentralDataStore {
       };
     }
 
-    // Auto-migrate orphaned records from isolated storage keys
+    // Clear obsolete legacy keys so stale duplicates are permanently purged
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
-        const oldHhs = JSON.parse(window.localStorage.getItem('eccd_mapping_households_data_v2') || '[]');
-        if (Array.isArray(oldHhs)) {
-          oldHhs.forEach((hh) => {
-            if (!initialData.households.some((h) => h.id === hh.id)) {
-              initialData.households.unshift(hh);
-            }
-          });
-        }
-        const oldMapKids = JSON.parse(window.localStorage.getItem('eccd_mapping_children_data_v2') || '[]');
-        const old360Kids = JSON.parse(window.localStorage.getItem('eccd_children_360_data_v2') || '[]');
-        const combined = [...(Array.isArray(oldMapKids) ? oldMapKids : []), ...(Array.isArray(old360Kids) ? old360Kids : [])];
-        combined.forEach((k) => {
-          if (!initialData.children.some((c) => c.id === k.id)) {
-            const ageY = parseInt(k.ageYears || 3, 10);
-            const ageM = parseInt(k.ageMonths || 0, 10);
-            initialData.children.unshift({
-              ...k,
-              ageYears: ageY,
-              ageMonths: ageM,
-              ageDisplay: k.ageDisplay || `${ageY} yrs, ${ageM} mos`,
-              fullName: k.fullName || `${k.firstName || ''} ${k.lastName || ''}`.trim(),
-              enrollmentStatus: k.enrollmentStatus || 'Not Enrolled',
-              healthStatus: k.healthStatus || 'Due for Monitoring',
-              developmentStatus: k.developmentStatus || 'Pending Initial Assessment',
-            });
-          }
-        });
+        window.localStorage.removeItem('eccd_mapping_households_data_v2');
+        window.localStorage.removeItem('eccd_mapping_children_data_v2');
+        window.localStorage.removeItem('eccd_children_360_data_v2');
       }
-    } catch (migErr) {
-      console.warn('CentralDataStore: Migration notice:', migErr);
+    } catch (_) {}
+
+    // Deduplicate households in initial data
+    if (Array.isArray(initialData.households)) {
+      const seenHh = new Map();
+      initialData.households = initialData.households.filter((hh) => {
+        if (!hh) return false;
+        const guardian = (hh.parentGuardian || hh.parent_guardian || '').toLowerCase().trim();
+        const brgy = (hh.barangay || '').toLowerCase().trim();
+        const key = guardian && guardian !== 'parent / guardian' && guardian !== 'n/a'
+          ? `${guardian}|${brgy}`
+          : (hh.id || Math.random());
+        if (seenHh.has(key)) {
+          const existing = seenHh.get(key);
+          if (hh.id && !hh.id.startsWith('HH-2026-0') && existing.id && existing.id.startsWith('HH-2026-0')) {
+            existing.id = hh.id;
+            existing.household_no = hh.id;
+          }
+          return false;
+        }
+        seenHh.set(key, hh);
+        return true;
+      });
+    }
+
+    // Deduplicate children in initial data
+    if (Array.isArray(initialData.children)) {
+      const seenKids = new Map();
+      initialData.children = initialData.children.filter((k) => {
+        if (!k) return false;
+        const name = (k.fullName || `${k.firstName || ''} ${k.lastName || ''}`).toLowerCase().trim().replace(/\s+/g, ' ');
+        const key = name ? `${name}|${(k.householdId || '').trim() || (k.birthDate || '').trim()}` : (k.id || Math.random());
+        if (name && seenKids.has(key)) {
+          const existing = seenKids.get(key);
+          const currentCanonical = k.id && (k.id.includes('-001') || !k.id.includes('-00000'));
+          const existingTemp = !existing.id || existing.id.startsWith('TMP-') || existing.id.includes('-00000');
+          if (currentCanonical && existingTemp) {
+            existing.id = k.id;
+            existing.eccd_id = k.id;
+          }
+          return false;
+        }
+        seenKids.set(key, k);
+        return true;
+      });
     }
 
     // Consolidate follow-up cases by childId (1 case per child, merging timeline history)
@@ -327,6 +346,79 @@ class CentralDataStore {
     this.save();
   }
 
+  deduplicateHouseholds() {
+    if (!Array.isArray(this.data.households)) return false;
+    const seen = new Map();
+    const originalCount = this.data.households.length;
+    const clean = [];
+
+    this.data.households.forEach((hh) => {
+      if (!hh) return;
+      const guardian = (hh.parentGuardian || hh.parent_guardian || '').toLowerCase().trim();
+      const brgy = (hh.barangay || '').toLowerCase().trim();
+      const key = guardian && guardian !== 'parent / guardian' && guardian !== 'n/a'
+        ? `${guardian}|${brgy}`
+        : (hh.id || Math.random());
+
+      if (seen.has(key)) {
+        const existing = seen.get(key);
+        if (hh.id && !hh.id.startsWith('HH-2026-0') && existing.id && existing.id.startsWith('HH-2026-0')) {
+          existing.id = hh.id;
+          existing.household_no = hh.id;
+        }
+        Object.assign(existing, hh);
+      } else {
+        seen.set(key, hh);
+        clean.push(hh);
+      }
+    });
+
+    if (clean.length !== originalCount) {
+      this.data.households = clean;
+      return true;
+    }
+    return false;
+  }
+
+  deduplicateChildren() {
+    if (!Array.isArray(this.data.children)) return false;
+    const seen = new Map();
+    const originalCount = this.data.children.length;
+    const clean = [];
+
+    this.data.children.forEach((c) => {
+      if (!c) return;
+      const name = (c.fullName || `${c.firstName || ''} ${c.lastName || ''}`).toLowerCase().trim().replace(/\s+/g, ' ');
+      const hh = (c.householdId || '').trim();
+      const dob = (c.birthDate || '').trim();
+      const key = name ? `${name}|${hh || dob}` : (c.id || Math.random());
+
+      if (name && seen.has(key)) {
+        const existing = seen.get(key);
+        const currentIsCanonical = c.id && (c.id.includes('-001') || !c.id.includes('-00000'));
+        const existingIsTemp = !existing.id || existing.id.startsWith('TMP-') || existing.id.includes('-00000');
+        if (currentIsCanonical && existingIsTemp) {
+          existing.id = c.id;
+          existing.eccd_id = c.id;
+        }
+        Object.assign(existing, {
+          ...c,
+          id: existing.id,
+          eccd_id: existing.id,
+        });
+      } else {
+        seen.set(key, c);
+        clean.push(c);
+      }
+    });
+
+    if (clean.length !== originalCount) {
+      this.data.children = clean;
+      return true;
+    }
+    return false;
+  }
+
   /**
    * Merge live records received from MySQL backend API into local store.
    * Normalizes fields so UI views never crash on undefined properties.
@@ -340,7 +432,16 @@ class CentralDataStore {
         if (!sh) return;
         const id = sh.id || sh.household_no;
         if (!id) return;
-        const idx = this.data.households.findIndex((h) => h.id === id || h.household_no === id);
+        const guardian = (sh.parentGuardian || sh.parent_guardian || '').toLowerCase().trim();
+        const brgy = (sh.barangay || '').toLowerCase().trim();
+
+        const idx = this.data.households.findIndex((h) => {
+          if (h.id === id || h.household_no === id) return true;
+          const hGuardian = (h.parentGuardian || h.parent_guardian || '').toLowerCase().trim();
+          const hBrgy = (h.barangay || '').toLowerCase().trim();
+          return guardian && hGuardian && guardian === hGuardian && brgy === hBrgy;
+        });
+
         const normalizedHh = {
           ...sh,
           id,
@@ -350,16 +451,8 @@ class CentralDataStore {
           status: sh.status || 'Completed',
         };
         if (idx >= 0) {
-          const existing = this.data.households[idx];
-          if (
-            existing.parentGuardian !== normalizedHh.parentGuardian ||
-            existing.barangay !== normalizedHh.barangay ||
-            existing.status !== normalizedHh.status ||
-            existing.childrenCount !== normalizedHh.childrenCount
-          ) {
-            this.data.households[idx] = { ...existing, ...normalizedHh };
-            changed = true;
-          }
+          this.data.households[idx] = { ...this.data.households[idx], ...normalizedHh };
+          changed = true;
         } else {
           this.data.households.unshift(normalizedHh);
           changed = true;
@@ -373,7 +466,7 @@ class CentralDataStore {
         if (!sc) return;
         const id = sc.id || sc.eccd_id;
         if (!id) return;
-        const idx = this.data.children.findIndex((c) => c.id === id || c.eccd_id === id);
+        const normName = (sc.fullName || `${sc.firstName || sc.first_name || ''} ${sc.lastName || sc.last_name || ''}`).toLowerCase().trim().replace(/\s+/g, ' ');
         const ageY = parseInt(sc.ageYears ?? 3, 10);
         const ageM = parseInt(sc.ageMonths ?? 0, 10);
         const normalizedChild = {
@@ -395,25 +488,28 @@ class CentralDataStore {
           healthStatus: sc.healthStatus || sc.health_status || 'Due for Monitoring',
           developmentStatus: sc.developmentStatus || sc.development_status || 'Pending Initial Assessment',
         };
-        if (idx >= 0) {
-          const existing = this.data.children[idx];
-          if (
-            existing.fullName !== normalizedChild.fullName ||
-            existing.enrollmentStatus !== normalizedChild.enrollmentStatus ||
-            existing.healthStatus !== normalizedChild.healthStatus ||
-            existing.developmentStatus !== normalizedChild.developmentStatus ||
-            existing.barangay !== normalizedChild.barangay ||
-            existing.ageYears !== normalizedChild.ageYears
-          ) {
-            this.data.children[idx] = { ...existing, ...normalizedChild };
-            changed = true;
+
+        const idx = this.data.children.findIndex((c) => {
+          if (c.id === id || c.eccd_id === id) return true;
+          const cName = (c.fullName || `${c.firstName || ''} ${c.lastName || ''}`).toLowerCase().trim().replace(/\s+/g, ' ');
+          if (normName && cName && normName === cName) {
+            return true;
           }
+          return false;
+        });
+
+        if (idx >= 0) {
+          this.data.children[idx] = { ...this.data.children[idx], ...normalizedChild };
+          changed = true;
         } else {
           this.data.children.unshift(normalizedChild);
           changed = true;
         }
       });
     }
+
+    if (this.deduplicateHouseholds()) changed = true;
+    if (this.deduplicateChildren()) changed = true;
 
     if (changed) {
       this.save();
@@ -542,6 +638,24 @@ class CentralDataStore {
     return this.data.dayCareCenters.find((c) => c.id === centerId) || null;
   }
   createHousehold(payload) {
+    const guardian = (payload.parentGuardian || payload.parent_guardian || '').toLowerCase().trim();
+    const brgy = (payload.barangay || '').toLowerCase().trim();
+    const existing = this.data.households.find((h) => {
+      if (payload.id && (h.id === payload.id || h.household_no === payload.id)) return true;
+      if (guardian && guardian !== 'parent / guardian' && guardian !== 'n/a') {
+        const hGuardian = (h.parentGuardian || h.parent_guardian || '').toLowerCase().trim();
+        const hBrgy = (h.barangay || '').toLowerCase().trim();
+        if (guardian === hGuardian && brgy === hBrgy) return true;
+      }
+      return false;
+    });
+
+    if (existing) {
+      Object.assign(existing, payload, { updatedAt: getPhilippinesDateTime() });
+      this.save();
+      return existing;
+    }
+
     const newHousehold = {
       id: payload.id || `HH-2026-${String(this.data.households.length + 1).padStart(4, '0')}`,
       ...payload,
@@ -778,13 +892,24 @@ class CentralDataStore {
    * Register or link child. NEVER duplicates if matching child ID exists.
    */
   registerChild(childPayload) {
-    if (childPayload.id) {
-      const existing = this.data.children.find((c) => c.id === childPayload.id);
-      if (existing) {
-        Object.assign(existing, childPayload, { updatedAt: getPhilippinesDateTime() });
-        this.save();
-        return existing;
+    const normName = (childPayload.fullName || `${childPayload.firstName || ''} ${childPayload.lastName || ''}`).toLowerCase().trim().replace(/\s+/g, ' ');
+    const existing = this.data.children.find((c) => {
+      if (childPayload.id && (c.id === childPayload.id || c.eccd_id === childPayload.id)) return true;
+      if (normName) {
+        const cName = (c.fullName || `${c.firstName || ''} ${c.lastName || ''}`).toLowerCase().trim().replace(/\s+/g, ' ');
+        if (normName === cName) {
+          if (childPayload.householdId && c.householdId && childPayload.householdId === c.householdId) return true;
+          if (childPayload.birthDate && c.birthDate && childPayload.birthDate === c.birthDate) return true;
+          return true;
+        }
       }
+      return false;
+    });
+
+    if (existing) {
+      Object.assign(existing, childPayload, { updatedAt: getPhilippinesDateTime() });
+      this.save();
+      return existing;
     }
 
     // Generate persistent ECCD ID: ECCD-YYYY-NNNNNN

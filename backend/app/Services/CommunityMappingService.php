@@ -274,13 +274,30 @@ class CommunityMappingService
      */
     public function createHousehold(array $data): array
     {
-        $id = $data['id'] ?? $data['household_no'] ?? ('HH-2026-' . str_pad((string) (\App\Models\Household::count() + 101), 4, '0', STR_PAD_LEFT));
+        $id = $data['id'] ?? $data['household_no'] ?? null;
+        $parentGuardian = trim($data['parentGuardian'] ?? $data['parent_guardian'] ?? '');
         $barangayName = $data['barangay'] ?? 'San Isidro';
 
         try {
             $barangay = \App\Models\Barangay::where('name', $barangayName)->orWhere('code', $barangayName)->first() ?? \App\Models\Barangay::first();
             $activityCode = $data['mappingActivityId'] ?? 'ACT-MAP-2026-001';
             $activity = \App\Models\MappingActivity::where('code', $activityCode)->first() ?? \App\Models\MappingActivity::first();
+
+            $existing = null;
+            if ($id && !str_starts_with($id, 'SURVEY-') && !str_starts_with($id, 'OFFLINE-')) {
+                $existing = \App\Models\Household::where('household_no', $id)->first();
+            }
+            if (!$existing && $parentGuardian && $parentGuardian !== 'N/A' && $parentGuardian !== 'Offline Household Record') {
+                $existing = \App\Models\Household::whereRaw('LOWER(TRIM(parent_guardian)) = ?', [strtolower($parentGuardian)])
+                    ->where('barangay_id', $barangay?->id ?? 1)
+                    ->first();
+            }
+
+            if ($existing) {
+                $id = $existing->household_no;
+            } elseif (!$id || str_starts_with($id, 'SURVEY-') || str_starts_with($id, 'OFFLINE-')) {
+                $id = 'HH-2026-' . str_pad((string) (\App\Models\Household::count() + 101), 4, '0', STR_PAD_LEFT);
+            }
 
             $rawMappedDate = $data['mappedDate'] ?? $data['mapped_date'] ?? now()->toDateString();
             $mappedDate = substr($rawMappedDate, 0, 10);
@@ -292,7 +309,7 @@ class CommunityMappingService
                     'barangay_id' => $barangay?->id ?? 1,
                     'purok' => $data['purok'] ?? null,
                     'address' => $data['address'] ?? 'N/A',
-                    'parent_guardian' => $data['parentGuardian'] ?? $data['parent_guardian'] ?? 'N/A',
+                    'parent_guardian' => $parentGuardian ?: 'N/A',
                     'contact_number' => $data['contactNumber'] ?? $data['contact_number'] ?? null,
                     'is_4ps' => !empty($data['is4Ps']) || !empty($data['is_4ps']),
                     'is_ip' => !empty($data['isIP']) || !empty($data['is_ip']),
@@ -322,7 +339,7 @@ class CommunityMappingService
             \Illuminate\Support\Facades\Log::warning('DB createHousehold error: ' . $e->getMessage());
 
             $fallback = [
-                'id' => $id,
+                'id' => $id ?? 'HH-2026-0101',
                 'parentGuardian' => $data['parentGuardian'] ?? 'N/A',
                 'contactNumber' => $data['contactNumber'] ?? '',
                 'address' => $data['address'] ?? '',
@@ -393,44 +410,17 @@ class CommunityMappingService
 
     /**
      * Create or link child record in MySQL.
-     * Prevents duplicates if existing child ID is matched.
+     * Prevents duplicates if existing child ID or name/household is matched.
      */
     public function createChild(array $data): array
     {
-        // If client indicates "This is the same child", link existing ID without duplicating
-        if (!empty($data['existingChildId'])) {
-            try {
-                $existing = \App\Models\Child::where('eccd_id', $data['existingChildId'])->first();
-                if ($existing) {
-                    if (!empty($data['householdId'])) {
-                        $hh = \App\Models\Household::where('household_no', $data['householdId'])->first();
-                        if ($hh) $existing->household_id = $hh->id;
-                    }
-                    if (!empty($data['enrollmentStatus'])) {
-                        $existing->enrollment_status = $data['enrollmentStatus'];
-                    }
-                    $existing->save();
-                    return [
-                        'child' => [
-                            'id' => $existing->eccd_id,
-                            'firstName' => $existing->first_name,
-                            'lastName' => $existing->last_name,
-                            'householdId' => $data['householdId'] ?? 'HH-2026-0101',
-                        ],
-                        'isDuplicatePrevented' => true,
-                        'message' => 'Existing child record linked to household. No duplicate created.',
-                    ];
-                }
-            } catch (\Throwable $e) { }
-        }
-
-        // Generate standardized unique child ID: ECCD-2026-001245
-        $count = \App\Models\Child::count() ?: count(self::$children);
-        $sequence = 1245 + $count;
-        $uniqueId = $data['id'] ?? ('ECCD-2026-' . str_pad((string) $sequence, 6, '0', STR_PAD_LEFT));
+        $firstName = trim($data['firstName'] ?? $data['first_name'] ?? '');
+        $lastName = trim($data['lastName'] ?? $data['last_name'] ?? '');
+        $rawBirthDate = $data['birthDate'] ?? $data['birth_date'] ?? null;
+        $birthDate = $rawBirthDate ? substr($rawBirthDate, 0, 10) : null;
+        $hhNo = $data['householdId'] ?? $data['household_id'] ?? 'HH-2026-0101';
 
         try {
-            $hhNo = $data['householdId'] ?? 'HH-2026-0101';
             $household = \App\Models\Household::where('household_no', $hhNo)->first();
             if (!$household) {
                 $barangay = \App\Models\Barangay::where('name', $data['barangay'] ?? 'San Isidro')->first() ?? \App\Models\Barangay::first();
@@ -438,10 +428,71 @@ class CommunityMappingService
                     'household_no' => $hhNo,
                     'barangay_id' => $barangay?->id ?? 1,
                     'address' => $data['address'] ?? 'N/A',
-                    'parent_guardian' => $data['parentGuardian'] ?? 'Parent / Guardian',
+                    'parent_guardian' => $data['parentGuardian'] ?? $data['parent_guardian'] ?? 'Parent / Guardian',
                     'mapped_date' => now()->toDateString(),
                     'mapped_by' => 'Field Worker',
                 ]);
+            }
+
+            // 1. Strict Duplicate Check: by ID or by (first_name, last_name, household/DOB)
+            $existingChild = null;
+            $checkId = $data['existingChildId'] ?? $data['id'] ?? $data['eccd_id'] ?? null;
+            if ($checkId && !str_starts_with((string)$checkId, 'TMP-') && !str_starts_with((string)$checkId, 'OFFLINE-')) {
+                $existingChild = \App\Models\Child::where('eccd_id', $checkId)->first();
+            }
+
+            if (!$existingChild && $firstName && $lastName) {
+                $existingChild = \App\Models\Child::whereRaw('LOWER(TRIM(first_name)) = ?', [strtolower($firstName)])
+                    ->whereRaw('LOWER(TRIM(last_name)) = ?', [strtolower($lastName)])
+                    ->where(function ($q) use ($household, $birthDate) {
+                        if ($household) {
+                            $q->where('household_id', $household->id);
+                        }
+                        if ($birthDate) {
+                            $q->orWhere('birth_date', $birthDate);
+                        }
+                    })
+                    ->first();
+            }
+
+            // If existing child matched, update without duplicating or assigning a new ID
+            if ($existingChild) {
+                if ($household) $existingChild->household_id = $household->id;
+                if (!empty($data['enrollmentStatus'])) $existingChild->enrollment_status = $data['enrollmentStatus'];
+                if (!empty($data['middleName'])) $existingChild->middle_name = $data['middleName'];
+                if ($birthDate) $existingChild->birth_date = $birthDate;
+                $existingChild->save();
+
+                $existingData = [
+                    'id' => $existingChild->eccd_id,
+                    'eccd_id' => $existingChild->eccd_id,
+                    'firstName' => $existingChild->first_name,
+                    'middleName' => $existingChild->middle_name ?? '',
+                    'lastName' => $existingChild->last_name,
+                    'birthDate' => $existingChild->birth_date?->toDateString() ?? $birthDate ?? '2023-01-01',
+                    'sex' => $existingChild->sex,
+                    'householdId' => $household->household_no,
+                    'barangay' => $household->barangay?->name ?? 'San Isidro',
+                    'enrollmentStatus' => $existingChild->enrollment_status,
+                    'matched' => true,
+                ];
+
+                return [
+                    'child' => $existingData,
+                    'isDuplicatePrevented' => true,
+                    'message' => 'Existing child record linked to household. No duplicate created.',
+                ];
+            }
+
+            // 2. Generate standardized unique child ID: ECCD-2026-001245+
+            $maxChild = \App\Models\Child::where('eccd_id', 'like', 'ECCD-2026-%')->orderByDesc('eccd_id')->first();
+            $sequence = 1245;
+            if ($maxChild && preg_match('/ECCD-2026-(\d+)/', $maxChild->eccd_id, $matches)) {
+                $sequence = max(1245, ((int)$matches[1]) + 1);
+            }
+            $uniqueId = $data['id'] ?? $data['eccd_id'] ?? ('ECCD-2026-' . str_pad((string) $sequence, 6, '0', STR_PAD_LEFT));
+            if (str_starts_with((string)$uniqueId, 'TMP-') || str_starts_with((string)$uniqueId, 'OFFLINE-')) {
+                $uniqueId = 'ECCD-2026-' . str_pad((string) $sequence, 6, '0', STR_PAD_LEFT);
             }
 
             $barangayId = $household->barangay_id ?? (\App\Models\Barangay::where('name', $data['barangay'] ?? '')->first()?->id ?? 1);
@@ -451,10 +502,10 @@ class CommunityMappingService
                 [
                     'household_id' => $household->id,
                     'barangay_id' => $barangayId,
-                    'first_name' => $data['firstName'] ?? 'Child',
+                    'first_name' => $firstName ?: 'Child',
                     'middle_name' => $data['middleName'] ?? null,
-                    'last_name' => $data['lastName'] ?? 'Record',
-                    'birth_date' => $data['birthDate'] ?? '2023-01-01',
+                    'last_name' => $lastName ?: 'Record',
+                    'birth_date' => $birthDate ?? '2023-01-01',
                     'sex' => (ucfirst(strtolower($data['sex'] ?? 'Female')) === 'Male') ? 'Male' : 'Female',
                     'blood_type' => $data['bloodType'] ?? null,
                     'philsys_card_no' => $data['philSysNumber'] ?? null,
@@ -465,6 +516,7 @@ class CommunityMappingService
 
             $newChild = [
                 'id' => $childModel->eccd_id,
+                'eccd_id' => $childModel->eccd_id,
                 'firstName' => $childModel->first_name,
                 'middleName' => $childModel->middle_name ?? '',
                 'lastName' => $childModel->last_name,
