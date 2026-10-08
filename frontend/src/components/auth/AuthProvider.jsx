@@ -23,6 +23,9 @@ import {
   ROLE_LABELS,
   hasPermission,
   getDemoAccountForRole,
+  TOKEN_KEY,
+  USER_KEY,
+  EXPIRY_KEY,
 } from '../../services/authService';
 
 // Auth state enum (auth-implementation-patterns: explicit session states)
@@ -86,10 +89,24 @@ export function AuthProvider({ children }) {
 
   // Logout handler
   const logout = useCallback(async () => {
-    await apiLogout();
-    setUser(null);
-    setStatus(AUTH_STATUS.UNAUTHENTICATED);
-    setSessionExpiredMessage('');
+    try {
+      await apiLogout();
+    } catch (err) {
+      console.warn('apiLogout cleanup notice:', err);
+    } finally {
+      // Unconditionally wipe all session state and localStorage
+      try {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem('eccd_jwt_token');
+        localStorage.removeItem(USER_KEY);
+        localStorage.removeItem(EXPIRY_KEY);
+        sessionStorage.clear();
+      } catch (_) {}
+
+      setUser(null);
+      setStatus(AUTH_STATUS.UNAUTHENTICATED);
+      setSessionExpiredMessage('');
+    }
   }, []);
 
   // Forgot password handler

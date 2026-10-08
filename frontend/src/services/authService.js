@@ -262,6 +262,11 @@ function generateMockToken() {
   return `eccd_jwt_${payload}`;
 }
 
+function simulateNetworkDelay(minMs = 100, maxMs = 250) {
+  const delay = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+  return new Promise((resolve) => setTimeout(resolve, delay));
+}
+
 // --- API Service Functions ---
 
 /**
@@ -406,12 +411,38 @@ export async function apiLogin({ email, password }) {
  * auth-implementation-patterns: destroy session, clear all stored tokens.
  */
 export async function apiLogout() {
-  await simulateNetworkDelay(200, 400);
+  try {
+    const token = localStorage.getItem(TOKEN_KEY) || localStorage.getItem('eccd_jwt_token');
+    if (token) {
+      // Non-blocking backend token invalidation
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      fetch(getApiUrl('/api/auth/logout'), {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+        signal: controller.signal,
+      })
+        .catch(() => {})
+        .finally(() => clearTimeout(timeoutId));
+    }
+  } catch (_) {
+    // Non-blocking
+  }
 
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem('eccd_jwt_token');
-  localStorage.removeItem(USER_KEY);
-  localStorage.removeItem(EXPIRY_KEY);
+  // Defensively clear all auth tokens and session data unconditionally
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('eccd_jwt_token');
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(EXPIRY_KEY);
+    sessionStorage.clear();
+  } catch (_) {}
 
   return createApiSuccess({ message: 'Session terminated successfully.' });
 }

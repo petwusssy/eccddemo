@@ -462,11 +462,12 @@ export function Header({
               <button
                 type="button"
                 className="profile-dropdown-item is-danger"
-                onClick={() => {
+                onClick={async () => {
                   setShowProfileMenu(false);
                   if (onLogout) {
-                    onLogout();
+                    await onLogout();
                   }
+                  navigate('/');
                 }}
               >
                 <LogOut size={15} />

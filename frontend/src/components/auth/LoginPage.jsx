@@ -14,6 +14,7 @@
  */
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Shield,
   Eye,
@@ -408,9 +409,9 @@ export function LoginPage({ isAdminPortal: propIsAdminPortal }) {
 
           {isAdminPortal && (
             <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '12px' }}>
-              <a href="/" style={{ color: 'var(--color-primary-700)', textDecoration: 'none', fontWeight: 600 }}>
+              <Link to="/" style={{ color: 'var(--color-primary-700)', textDecoration: 'none', fontWeight: 600 }}>
                 ← Return to Standard ECCD Daycare Portal
-              </a>
+              </Link>
             </div>
           )}
         </div>
