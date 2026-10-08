@@ -34,7 +34,7 @@ import AuditLogsView from './components/views/AuditLogsView';
 import SettingsView from './components/views/SettingsView';
 import UnauthorizedView from './components/governance/UnauthorizedView';
 import SessionExpiryModal from './components/governance/SessionExpiryModal';
-import { ROLES } from './services/authService';
+import { ROLES, ROLE_LANDING } from './services/authService';
 import auditService from './services/auditService';
 
 import ModulePlaceholder from './components/views/ModulePlaceholder';
@@ -139,7 +139,7 @@ function AuthenticatedApp() {
 
   // Active navigation section derived directly from URL (or role landing when on root)
   const activeItem = location.pathname === '/'
-    ? (ROLE_LANDING[user?.role] || 'dashboard')
+    ? (ROLE_LANDING?.[user?.role] || 'dashboard')
     : (PATH_TO_SECTION[location.pathname] || 'dashboard');
 
   // Centralized navigation handler accepting route key or path
