@@ -435,10 +435,18 @@ class CentralDataStore {
     try {
       const [childRes, hhRes] = await Promise.allSettled([
         fetch(getApiUrl('/api/children'), {
-          headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+          headers: {
+            Accept: 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'Bypass-Tunnel-Reminder': 'true',
+          },
         }),
         fetch(getApiUrl('/api/households'), {
-          headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+          headers: {
+            Accept: 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'Bypass-Tunnel-Reminder': 'true',
+          },
         }),
       ]);
 

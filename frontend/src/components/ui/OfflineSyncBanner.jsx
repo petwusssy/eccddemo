@@ -30,6 +30,7 @@ import {
   clearCustomApiUrl,
   isUsingLocalhostOnRemote,
 } from '../../services/apiConfig';
+import { centralDataStore } from '../../services/centralDataStore';
 
 /**
  * OfflineSyncBanner
@@ -83,6 +84,8 @@ export function OfflineSyncBanner({ onSyncComplete }) {
 
     try {
       const result = await syncPendingSurveysToBackend();
+      // Pull latest server records for multi-device sync
+      await centralDataStore.syncWithBackend(true).catch(() => {});
       await refreshPendingCount();
       setLastSyncedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
@@ -204,10 +207,14 @@ export function OfflineSyncBanner({ onSyncComplete }) {
     setIsTestingUrl(true);
     setTestResult(null);
 
-    const testUrl = apiUrlInput.trim().replace(/\/+$/, '') + '/api/mapping/activities';
+    const testUrl = apiUrlInput.trim().replace(/\/+$/, '') + '/api/dashboard/summary';
     try {
       const res = await fetch(testUrl, {
-        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+        headers: {
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
       });
       if (res.ok) {
         setTestResult({ ok: true, message: 'Connected to backend server successfully!' });

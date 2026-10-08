@@ -17,13 +17,19 @@
  * 3. Localhost fallback http://127.0.0.1:8000
  * @returns {string} Normalized base URL without trailing slash
  */
-export const DEFAULT_PRODUCTION_TUNNEL_URL = 'https://huge-eggs-repair.loca.lt';
+export const DEFAULT_PRODUCTION_TUNNEL_URL = 'https://bulginess-encroach-revise.ngrok-free.dev';
 
 export function getApiBaseUrl() {
   if (typeof window !== 'undefined' && window.localStorage) {
     const customUrl = window.localStorage.getItem('eccd_backend_api_url');
     if (customUrl && typeof customUrl === 'string' && customUrl.trim() !== '') {
-      return customUrl.trim().replace(/\/+$/, '');
+      const clean = customUrl.trim().replace(/\/+$/, '');
+      // Automatically purge stale loca.lt tunnels
+      if (clean.includes('loca.lt')) {
+        window.localStorage.removeItem('eccd_backend_api_url');
+      } else {
+        return clean;
+      }
     }
   }
 
@@ -132,9 +138,13 @@ export async function checkBackendHealth(testUrl = null) {
   const base = testUrl ? testUrl.trim().replace(/\/+$/, '') : getApiBaseUrl();
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4000);
+    const timer = setTimeout(() => controller.abort(), 6000);
     const res = await fetch(`${base}/api/dashboard/summary`, {
-      headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+      headers: {
+        Accept: 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+        'Bypass-Tunnel-Reminder': 'true',
+      },
       signal: controller.signal,
     });
     clearTimeout(timer);

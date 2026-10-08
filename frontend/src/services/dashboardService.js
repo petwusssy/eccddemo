@@ -23,7 +23,11 @@ export const dashboardService = {
   async getSummary() {
     try {
       const res = await fetch(getApiUrl('/api/dashboard/summary'), {
-        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+        headers: {
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
       });
       if (res.ok) {
         const json = await res.json();

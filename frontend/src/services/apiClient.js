@@ -65,6 +65,7 @@ class ApiClient {
         const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
         const requestHeaders = {
           Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
           'Bypass-Tunnel-Reminder': 'true',
           ...headers,
         };

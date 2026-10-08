@@ -158,7 +158,11 @@ export const communityMappingService = {
   async getActivities() {
     try {
       const res = await fetch(getApiUrl('/api/mapping/activities'), {
-        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+        headers: {
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
       });
       if (res.ok) {
         const json = await res.json();
@@ -222,7 +226,11 @@ export const communityMappingService = {
     try {
       await fetch(getApiUrl('/api/mapping/activities'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
         body: JSON.stringify(newActivity),
       });
     } catch (e) { }
@@ -315,6 +323,7 @@ export const communityMappingService = {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
           'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify(newHousehold),
@@ -394,6 +403,7 @@ export const communityMappingService = {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
           'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify(newChild),

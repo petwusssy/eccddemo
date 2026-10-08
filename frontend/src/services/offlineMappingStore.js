@@ -193,6 +193,7 @@ export async function syncPendingSurveysToBackend() {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
           'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify(batchPayload),
@@ -256,6 +257,7 @@ export async function syncPendingSurveysToBackend() {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
           'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify(householdPayload),
@@ -277,6 +279,7 @@ export async function syncPendingSurveysToBackend() {
             headers: {
               'Content-Type': 'application/json',
               Accept: 'application/json',
+              'ngrok-skip-browser-warning': 'true',
               'Bypass-Tunnel-Reminder': 'true',
             },
             body: JSON.stringify({
@@ -312,6 +315,7 @@ export async function syncPendingSurveysToBackend() {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
           'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify(item.payload),
@@ -334,7 +338,11 @@ export async function syncPendingSurveysToBackend() {
   // 4. Double-Check & Cross-Check: Sync any children/households in centralDataStore missing on server
   try {
     const serverChildrenRes = await fetch(getApiUrl('/api/children'), {
-      headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+      headers: {
+        Accept: 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+        'Bypass-Tunnel-Reminder': 'true',
+      },
     });
 
     if (serverChildrenRes.ok) {
@@ -362,6 +370,7 @@ export async function syncPendingSurveysToBackend() {
               headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
+                'ngrok-skip-browser-warning': 'true',
                 'Bypass-Tunnel-Reminder': 'true',
               },
               body: JSON.stringify(hh),
@@ -375,6 +384,7 @@ export async function syncPendingSurveysToBackend() {
             headers: {
               'Content-Type': 'application/json',
               Accept: 'application/json',
+              'ngrok-skip-browser-warning': 'true',
               'Bypass-Tunnel-Reminder': 'true',
             },
             body: JSON.stringify({
