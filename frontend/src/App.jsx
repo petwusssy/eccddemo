@@ -40,6 +40,7 @@ import auditService from './services/auditService';
 import ModulePlaceholder from './components/views/ModulePlaceholder';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import { centralDataStore } from './services/centralDataStore';
+import { checkBackendHealth } from './services/apiConfig';
 import { Button } from './components/ui/Button';
 import { Printer, Loader2 } from 'lucide-react';
 import anacLogo from './assets/anac-logo.png';
@@ -132,9 +133,29 @@ function AuthenticatedApp() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Hydrate central data store from backend whenever authenticated
+  // Hydrate central data store from backend whenever authenticated, on focus, or periodic interval
   useEffect(() => {
-    centralDataStore.syncWithBackend().catch(() => {});
+    const doSync = () => {
+      checkBackendHealth()
+        .then((isAlive) => {
+          if (isAlive) {
+            centralDataStore.syncWithBackend().catch(() => {});
+          }
+        })
+        .catch(() => {});
+    };
+
+    doSync();
+
+    const interval = setInterval(doSync, 15000);
+    window.addEventListener('focus', doSync);
+    window.addEventListener('online', doSync);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', doSync);
+      window.removeEventListener('online', doSync);
+    };
   }, [user]);
 
   // Active navigation section derived directly from URL (or role landing when on root)

@@ -24,6 +24,7 @@ import {
   getPendingSyncCount,
   syncPendingSurveysToBackend,
 } from '../../services/offlineMappingStore';
+import { checkBackendHealth, isBackendConnected } from '../../services/apiConfig';
 
 /**
  * ECCD CARE — Application Header
@@ -59,6 +60,7 @@ export function Header({
   );
   const [pendingCount, setPendingCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [backendOk, setBackendOk] = useState(isBackendConnected());
 
   useEffect(() => {
     const updateStatus = async () => {
@@ -69,6 +71,8 @@ export function Header({
         const count = await getPendingSyncCount();
         setPendingCount(count);
       } catch (_) {}
+
+      checkBackendHealth().then((ok) => setBackendOk(ok)).catch(() => setBackendOk(false));
     };
 
     updateStatus();
@@ -76,17 +80,27 @@ export function Header({
     const handleOnline = () => { setIsOnline(true); updateStatus(); };
     const handleOffline = () => { setIsOnline(false); updateStatus(); };
     const handleStore = () => { updateStatus(); };
+    const handleBackendStatus = (e) => {
+      if (e.detail?.connected !== undefined) {
+        setBackendOk(e.detail.connected);
+      }
+    };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('eccd:offline-survey-updated', handleStore);
     window.addEventListener('eccd:offline-sync-completed', handleStore);
+    window.addEventListener('eccd:backend-status', handleBackendStatus);
+
+    const interval = setInterval(updateStatus, 15000);
 
     return () => {
+      clearInterval(interval);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('eccd:offline-survey-updated', handleStore);
       window.removeEventListener('eccd:offline-sync-completed', handleStore);
+      window.removeEventListener('eccd:backend-status', handleBackendStatus);
     };
   }, []);
 
@@ -225,10 +239,32 @@ export function Header({
               <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
               <span>Sync ({pendingCount})</span>
             </button>
+          ) : !backendOk ? (
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('eccd:open-server-settings'))}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '4px 9px',
+                borderRadius: '9999px',
+                fontSize: '11px',
+                fontWeight: 600,
+                background: '#fff1f2',
+                color: '#be123c',
+                border: '1px solid #fecdd3',
+                cursor: 'pointer',
+              }}
+              title="CSWDO backend is offline or tunnel disconnected. Click to open Server Settings."
+            >
+              <AlertTriangle size={12} style={{ color: '#e11d48' }} />
+              <span>Backend Offline</span>
+            </button>
           ) : (
             <button
               type="button"
-              onClick={handleHeaderSync}
+              onClick={() => window.dispatchEvent(new CustomEvent('eccd:open-server-settings'))}
               disabled={isSyncing}
               style={{
                 display: 'inline-flex',
@@ -243,10 +279,10 @@ export function Header({
                 border: '1px solid #a7f3d0',
                 cursor: 'pointer',
               }}
-              title="Click to double-check sync with backend database"
+              title="Connected to live CSWDO backend. Click to view Server Settings."
             >
               <Wifi size={12} style={{ color: '#059669' }} />
-              <span>Online</span>
+              <span>Live Cloud Sync</span>
             </button>
           )}
         </div>
@@ -384,6 +420,18 @@ export function Header({
               >
                 <MapPin size={15} />
                 <span>Barangay Jurisdiction</span>
+              </button>
+
+              <button
+                type="button"
+                className="profile-dropdown-item"
+                onClick={() => {
+                  setShowProfileMenu(false);
+                  window.dispatchEvent(new CustomEvent('eccd:open-server-settings'));
+                }}
+              >
+                <Wifi size={15} />
+                <span>Backend Server Connection</span>
               </button>
 
               <button

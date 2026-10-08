@@ -133,11 +133,16 @@ export function OfflineSyncBanner({ onSyncComplete }) {
       setTestResult(null);
     };
 
+    const handleOpenSettings = () => {
+      setIsSettingsOpen(true);
+    };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('eccd:offline-survey-updated', handleStoreChange);
     window.addEventListener('eccd:offline-sync-completed', handleStoreChange);
     window.addEventListener('eccd:api-url-changed', handleApiUrlChange);
+    window.addEventListener('eccd:open-server-settings', handleOpenSettings);
 
     // Heartbeat check every 15 seconds to ensure network status stays 100% accurate
     const interval = setInterval(() => {
@@ -154,6 +159,7 @@ export function OfflineSyncBanner({ onSyncComplete }) {
       window.removeEventListener('eccd:offline-survey-updated', handleStoreChange);
       window.removeEventListener('eccd:offline-sync-completed', handleStoreChange);
       window.removeEventListener('eccd:api-url-changed', handleApiUrlChange);
+      window.removeEventListener('eccd:open-server-settings', handleOpenSettings);
     };
   }, [addToast, handleSyncNow, refreshPendingCount]);
 

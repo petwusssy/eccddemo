@@ -3,6 +3,7 @@ import Header from './Header';
 import Sidebar from './Sidebar';
 import { OfflineSyncBanner } from '../ui/OfflineSyncBanner';
 import { getPendingSyncCount } from '../../services/offlineMappingStore';
+import { isBackendConnected, checkBackendHealth } from '../../services/apiConfig';
 
 export function AppShell({
   children,
@@ -23,6 +24,7 @@ export function AppShell({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
   const [hasPendingRecords, setHasPendingRecords] = useState(false);
+  const [backendAlive, setBackendAlive] = useState(isBackendConnected());
 
   // Frontline role detection
   const isCDT = user?.role === 'cdt' || user?.role === 'daycare_worker' || user?.role === 'field_worker';
@@ -36,6 +38,10 @@ export function AppShell({
         const count = await getPendingSyncCount();
         setHasPendingRecords(count > 0);
       } catch (_) {}
+
+      checkBackendHealth()
+        .then((alive) => setBackendAlive(alive))
+        .catch(() => setBackendAlive(false));
     };
 
     checkStatus();
@@ -43,22 +49,32 @@ export function AppShell({
     const handleOnline = () => { setIsOffline(false); checkStatus(); };
     const handleOffline = () => { setIsOffline(true); checkStatus(); };
     const handleStoreChange = () => { checkStatus(); };
+    const handleBackendStatus = (e) => {
+      if (e.detail?.connected !== undefined) {
+        setBackendAlive(e.detail.connected);
+      }
+    };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('eccd:offline-survey-updated', handleStoreChange);
     window.addEventListener('eccd:offline-sync-completed', handleStoreChange);
+    window.addEventListener('eccd:backend-status', handleBackendStatus);
+
+    const interval = setInterval(checkStatus, 15000);
 
     return () => {
+      clearInterval(interval);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('eccd:offline-survey-updated', handleStoreChange);
       window.removeEventListener('eccd:offline-sync-completed', handleStoreChange);
+      window.removeEventListener('eccd:backend-status', handleBackendStatus);
     };
   }, []);
 
-  // Show banner whenever: device is offline, has pending records, or in frontline/mapping workflows
-  const showOfflineBanner = isOffline || hasPendingRecords || isCDT || ['mapping', 'community-mapping', 'households'].includes(activeItem);
+  // Show banner whenever: device is offline, backend is unreachable, has pending records, or in frontline/mapping workflows
+  const showOfflineBanner = isOffline || !backendAlive || hasPendingRecords || isCDT || ['mapping', 'community-mapping', 'households'].includes(activeItem);
 
   return (
     <div className="app-root">

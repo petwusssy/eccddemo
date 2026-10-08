@@ -17,6 +17,8 @@
  * 3. Localhost fallback http://127.0.0.1:8000
  * @returns {string} Normalized base URL without trailing slash
  */
+export const DEFAULT_PRODUCTION_TUNNEL_URL = 'https://huge-eggs-repair.loca.lt';
+
 export function getApiBaseUrl() {
   if (typeof window !== 'undefined' && window.localStorage) {
     const customUrl = window.localStorage.getItem('eccd_backend_api_url');
@@ -34,14 +36,18 @@ export function getApiBaseUrl() {
     return envUrl.trim().replace(/\/+$/, '');
   }
 
-  // If running in browser on a mobile device or LAN host (e.g. 192.168.x.x)
+  // If running in browser on remote hosting (Vercel, GitHub Pages, etc.)
   if (typeof window !== 'undefined' && window.location) {
     const host = window.location.hostname;
+    const isCloudHosted = host.includes('vercel.app') || host.includes('github.io') || host.includes('netlify.app');
+    if (isCloudHosted) {
+      // Automatically route all devices (mobile phones, tablets, PCs) to live CSWDO backend tunnel
+      return DEFAULT_PRODUCTION_TUNNEL_URL;
+    }
+
     const isRemote = host !== 'localhost' && host !== '127.0.0.1';
     if (isRemote) {
-      // In dev mode, Vite runs on this host (e.g. port 5173) and proxies /api directly to the Laravel backend (127.0.0.1:8000).
-      // Using window.location.origin guarantees mobile phones make API requests to http://192.168.x.x:5173/api/...
-      // which Vite dev server seamlessly forwards to Laravel!
+      // In local dev LAN mode (e.g. 192.168.x.x:5173), Vite dev server proxies /api directly to Laravel
       return window.location.origin;
     }
   }
@@ -117,11 +123,56 @@ export function getApiUrl(endpoint = '', params = null) {
   return url;
 }
 
+let currentBackendConnected = true;
+
+/**
+ * Actively tests connectivity to backend endpoint with short timeout
+ */
+export async function checkBackendHealth(testUrl = null) {
+  const base = testUrl ? testUrl.trim().replace(/\/+$/, '') : getApiBaseUrl();
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`${base}/api/dashboard/summary`, {
+      headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    const ok = res.ok;
+    setBackendConnected(ok);
+    return ok;
+  } catch {
+    setBackendConnected(false);
+    return false;
+  }
+}
+
+export function isBackendConnected() {
+  return currentBackendConnected;
+}
+
+export function setBackendConnected(connected) {
+  if (currentBackendConnected !== connected) {
+    currentBackendConnected = connected;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('eccd:backend-status', {
+          detail: { connected, url: getApiBaseUrl() },
+        })
+      );
+    }
+  }
+}
+
 export default {
+  DEFAULT_PRODUCTION_TUNNEL_URL,
   getApiBaseUrl,
   API_BASE_URL,
   getApiUrl,
   setCustomApiUrl,
   clearCustomApiUrl,
   isUsingLocalhostOnRemote,
+  checkBackendHealth,
+  isBackendConnected,
+  setBackendConnected,
 };
