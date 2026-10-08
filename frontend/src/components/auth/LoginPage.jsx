@@ -145,10 +145,7 @@ export function LoginPage() {
 
             <div className="login-form-brand-badge">
               <img src={anacLogo} alt="ANÁC Logo" className="login-form-logo-img" />
-              <div className="login-form-brand-meta">
-                <span className="login-form-brand-title">ANÁC</span>
-                <span className="login-form-brand-sub">City Social Welfare &amp; Development Office</span>
-              </div>
+              <span className="login-form-brand-title">ANÁC</span>
             </div>
 
             <button
@@ -243,10 +240,7 @@ export function LoginPage() {
 
           <div className="login-form-brand-badge">
             <img src={anacLogo} alt="ANÁC Logo" className="login-form-logo-img" />
-            <div className="login-form-brand-meta">
-              <span className="login-form-brand-title">ANÁC</span>
-              <span className="login-form-brand-sub">City Social Welfare &amp; Development Office</span>
-            </div>
+            <span className="login-form-brand-title">ANÁC</span>
           </div>
 
           {/* Session Expired Banner */}
@@ -260,7 +254,7 @@ export function LoginPage() {
             </div>
           )}
 
-          <h1 className="login-form-title">Sign In to ANÁC</h1>
+          <h1 className="login-form-title">Welcome Back</h1>
 
           {/* Credential Error Banner */}
           {formError && (
@@ -394,7 +388,7 @@ export function LoginPage() {
               disabled={isSubmitting}
               icon={LogIn}
             >
-              {isSubmitting ? 'Authenticating...' : 'Sign In to ANÁC'}
+              {isSubmitting ? 'Authenticating...' : 'Sign In'}
             </Button>
           </form>
 
