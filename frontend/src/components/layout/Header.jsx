@@ -92,10 +92,7 @@ export function Header({
     window.addEventListener('eccd:offline-sync-completed', handleStore);
     window.addEventListener('eccd:backend-status', handleBackendStatus);
 
-    const interval = setInterval(updateStatus, 15000);
-
     return () => {
-      clearInterval(interval);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('eccd:offline-survey-updated', handleStore);

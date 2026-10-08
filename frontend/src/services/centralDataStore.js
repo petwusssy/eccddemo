@@ -180,33 +180,16 @@ export const SEED_RESOURCES = [
 class CentralDataStore {
   constructor() {
     this.data = this.loadInitial();
-    // Auto-hydrate and synchronize with backend when in browser
+    // Auto-hydrate once on app launch and when network connection is restored
     if (typeof window !== 'undefined') {
       setTimeout(() => {
-        this.syncWithBackend(true).catch(() => {});
-      }, 300);
+        this.syncWithBackend().catch(() => {});
+      }, 500);
 
-      // 1. Cross-device sync on tab visibility or window focus
-      window.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          this.syncWithBackend(true).catch(() => {});
-        }
-      });
-      window.addEventListener('focus', () => {
-        this.syncWithBackend(true).catch(() => {});
-      });
-
-      // 2. Wi-Fi / Network restore: immediately pull fresh records when coming back online
+      // Pull latest records when returning online after being offline
       window.addEventListener('online', () => {
-        this.syncWithBackend(true).catch(() => {});
+        this.syncWithBackend().catch(() => {});
       });
-
-      // 3. Periodic background sync heartbeat (every 15s) while tab is active
-      setInterval(() => {
-        if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-          this.syncWithBackend().catch(() => {});
-        }
-      }, 15000);
     }
   }
 
@@ -603,7 +586,7 @@ class CentralDataStore {
   async syncWithBackend(force = false) {
     if (this._isSyncing) return;
     const now = Date.now();
-    if (!force && this._lastSyncTime && now - this._lastSyncTime < 8000) {
+    if (!force && this._lastSyncTime && now - this._lastSyncTime < 60000) {
       return;
     }
     this._isSyncing = true;

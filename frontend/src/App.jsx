@@ -133,7 +133,7 @@ function AuthenticatedApp() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Hydrate central data store from backend whenever authenticated, on focus, or periodic interval
+  // Hydrate central data store from backend once on authentication or when connection restores
   useEffect(() => {
     const doSync = () => {
       checkBackendHealth()
@@ -145,15 +145,13 @@ function AuthenticatedApp() {
         .catch(() => {});
     };
 
-    doSync();
+    if (user) {
+      doSync();
+    }
 
-    const interval = setInterval(doSync, 15000);
-    window.addEventListener('focus', doSync);
     window.addEventListener('online', doSync);
 
     return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', doSync);
       window.removeEventListener('online', doSync);
     };
   }, [user]);

@@ -1348,15 +1348,26 @@ input[type="checkbox"]:focus-visible + .switch-track {
 /* --- Toasts --- */
 .toast-container {
   position: fixed;
-  bottom: 1.5rem;
+  top: 1.25rem;
   right: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   z-index: var(--z-toast);
-  max-width: 380px;
-  width: 100%;
+  max-width: 420px;
+  width: calc(100% - 2rem);
   pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto;
+    width: calc(100% - 1.5rem);
+    max-width: 420px;
+  }
 }
 
 .toast {
@@ -1369,7 +1380,7 @@ input[type="checkbox"]:focus-visible + .switch-track {
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  animation: toastSlideUp 200ms ease-out;
+  animation: toastSlideDown 200ms ease-out;
 }
 
 .toast-success {
@@ -1404,8 +1415,8 @@ input[type="checkbox"]:focus-visible + .switch-track {
   to { transform: translateX(0); }
 }
 
-@keyframes toastSlideUp {
-  from { opacity: 0; transform: translateY(12px); }
+@keyframes toastSlideDown {
+  from { opacity: 0; transform: translateY(-12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 

@@ -70,17 +70,21 @@ export function OfflineSyncBanner({ onSyncComplete }) {
     }
   }, []);
 
-  // Perform sync
-  const handleSyncNow = useCallback(async () => {
+  // Perform sync (isManual = true when user clicks 'Sync Now')
+  const handleSyncNow = useCallback(async (isManual = true) => {
     if (!navigator.onLine) {
-      addToast('Cannot sync while offline. Please connect to Wi-Fi or cellular network.', 'warning');
+      if (isManual) {
+        addToast('Cannot sync while offline. Please connect to Wi-Fi or cellular network.', 'warning');
+      }
       return;
     }
 
     if (isSyncing) return;
 
     setIsSyncing(true);
-    addToast('Synchronizing records with CSWDO backend server...', 'info');
+    if (isManual) {
+      addToast('Synchronizing records with CSWDO backend server...', 'info');
+    }
 
     try {
       const result = await syncPendingSurveysToBackend();
@@ -89,41 +93,48 @@ export function OfflineSyncBanner({ onSyncComplete }) {
       await refreshPendingCount();
       setLastSyncedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
-      if (result.synced > 0) {
-        addToast(
-          `Successfully synchronized ${result.synced} offline record(s) to central database!`,
-          'success'
-        );
-      } else if (result.failed > 0) {
-        addToast(`Sync finished with ${result.failed} error(s). Please retry.`, 'error');
-      } else {
-        addToast('Double-Check Complete: All records are verified and in sync with backend database.', 'success');
+      if (isManual) {
+        if (result.synced > 0) {
+          addToast(
+            `Successfully synchronized ${result.synced} offline record(s) to central database!`,
+            'success'
+          );
+        } else if (result.failed > 0) {
+          addToast(`Sync finished with ${result.failed} error(s). Please retry.`, 'error');
+        } else {
+          addToast('Double-Check Complete: All records are verified and in sync with backend database.', 'success');
+        }
       }
 
       if (onSyncComplete) onSyncComplete(result);
     } catch (err) {
       console.error('Sync error:', err);
-      addToast('Failed to sync records to backend: ' + (err.message || 'Network error'), 'error');
+      if (isManual) {
+        addToast('Failed to sync records to backend: ' + (err.message || 'Network error'), 'error');
+      }
     } finally {
       setIsSyncing(false);
     }
   }, [addToast, isSyncing, onSyncComplete, refreshPendingCount]);
+
+  const handleSyncRef = useRef(handleSyncNow);
+  handleSyncRef.current = handleSyncNow;
 
   useEffect(() => {
     refreshPendingCount();
 
     const handleOnline = () => {
       setIsOnline(true);
-      addToast('Internet connection restored! Checking pending records...', 'info');
-      refreshPendingCount().then(() => {
-        // Automatically sync queued records on network restore
-        handleSyncNow();
+      refreshPendingCount().then((count) => {
+        // Automatically sync queued records silently only when pending records exist
+        if (count && count > 0) {
+          handleSyncRef.current(false);
+        }
       });
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      addToast('Working offline. All new mapping data will save to IndexedDB.', 'warning');
       refreshPendingCount();
     };
 
@@ -147,16 +158,7 @@ export function OfflineSyncBanner({ onSyncComplete }) {
     window.addEventListener('eccd:api-url-changed', handleApiUrlChange);
     window.addEventListener('eccd:open-server-settings', handleOpenSettings);
 
-    // Heartbeat check every 15 seconds to ensure network status stays 100% accurate
-    const interval = setInterval(() => {
-      if (typeof navigator !== 'undefined') {
-        setIsOnline(navigator.onLine);
-      }
-      refreshPendingCount();
-    }, 15000);
-
     return () => {
-      clearInterval(interval);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('eccd:offline-survey-updated', handleStoreChange);
@@ -164,7 +166,7 @@ export function OfflineSyncBanner({ onSyncComplete }) {
       window.removeEventListener('eccd:api-url-changed', handleApiUrlChange);
       window.removeEventListener('eccd:open-server-settings', handleOpenSettings);
     };
-  }, [addToast, handleSyncNow, refreshPendingCount]);
+  }, [refreshPendingCount]);
 
   // Handle Export Bundle
   const handleExport = async () => {
@@ -345,7 +347,7 @@ export function OfflineSyncBanner({ onSyncComplete }) {
             <Button
               size="sm"
               variant={pendingCount > 0 && isOnline ? 'primary' : 'outline'}
-              onClick={handleSyncNow}
+              onClick={() => handleSyncNow(true)}
               disabled={isSyncing || !isOnline}
               title={!isOnline ? 'Connect to Wi-Fi to sync records' : 'Sync pending records or double-check server synchronization'}
               className="flex items-center gap-1.5 text-xs font-medium"

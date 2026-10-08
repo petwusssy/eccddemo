@@ -178,19 +178,7 @@ export function MobileFieldWorker({ onNavigate }) {
     window.addEventListener('eccd:offline-survey-updated', refreshPending);
     window.addEventListener('eccd:offline-sync-completed', refreshPending);
 
-    const interval = setInterval(() => {
-      if (typeof navigator !== 'undefined') {
-        if (!navigator.onLine && syncState !== 'offline') {
-          setSyncState('offline');
-        } else if (navigator.onLine && syncState === 'offline') {
-          setSyncState('online');
-          refreshPending();
-        }
-      }
-    }, 10000);
-
     return () => {
-      clearInterval(interval);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('eccd:offline-survey-updated', refreshPending);

@@ -130,31 +130,65 @@ export function getApiUrl(endpoint = '', params = null) {
 }
 
 let currentBackendConnected = true;
+let inFlightHealthCheck = null;
+let lastHealthCheckTime = 0;
+const HEALTH_CACHE_TTL = 30000; // 30 seconds cache
 
 /**
  * Actively tests connectivity to backend endpoint with short timeout
+ * Uses in-flight deduplication and 30-second TTL cache to prevent request flooding
  */
-export async function checkBackendHealth(testUrl = null) {
+export async function checkBackendHealth(testUrl = null, force = false) {
   const base = testUrl ? testUrl.trim().replace(/\/+$/, '') : getApiBaseUrl();
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6000);
-    const res = await fetch(`${base}/api/dashboard/summary`, {
-      headers: {
-        Accept: 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-        'Bypass-Tunnel-Reminder': 'true',
-      },
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    const ok = res.ok;
-    setBackendConnected(ok);
-    return ok;
-  } catch {
-    setBackendConnected(false);
-    return false;
+  const now = Date.now();
+
+  // If using default url and not forced, return cached status if still fresh
+  if (!testUrl && !force && (now - lastHealthCheckTime < HEALTH_CACHE_TTL)) {
+    return currentBackendConnected;
   }
+
+  // If an in-flight check is already pending for default URL, reuse the promise
+  if (!testUrl && inFlightHealthCheck) {
+    return inFlightHealthCheck;
+  }
+
+  const checkPromise = (async () => {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(`${base}/api/dashboard/summary`, {
+        headers: {
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      const ok = res.ok;
+      if (!testUrl) {
+        lastHealthCheckTime = Date.now();
+        setBackendConnected(ok);
+      }
+      return ok;
+    } catch {
+      if (!testUrl) {
+        lastHealthCheckTime = Date.now();
+        setBackendConnected(false);
+      }
+      return false;
+    } finally {
+      if (!testUrl) {
+        inFlightHealthCheck = null;
+      }
+    }
+  })();
+
+  if (!testUrl) {
+    inFlightHealthCheck = checkPromise;
+  }
+
+  return checkPromise;
 }
 
 export function isBackendConnected() {

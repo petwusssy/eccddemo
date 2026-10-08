@@ -61,10 +61,7 @@ export function AppShell({
     window.addEventListener('eccd:offline-sync-completed', handleStoreChange);
     window.addEventListener('eccd:backend-status', handleBackendStatus);
 
-    const interval = setInterval(checkStatus, 15000);
-
     return () => {
-      clearInterval(interval);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('eccd:offline-survey-updated', handleStoreChange);
@@ -74,7 +71,8 @@ export function AppShell({
   }, []);
 
   // Show banner whenever: device is offline, backend is unreachable, has pending records, or in frontline/mapping workflows
-  const showOfflineBanner = isOffline || !backendAlive || hasPendingRecords || isCDT || ['mapping', 'community-mapping', 'households'].includes(activeItem);
+  const isMappingSection = ['mapping', 'community-mapping', 'households'].includes(activeItem);
+  const showOfflineBanner = isOffline || !backendAlive || hasPendingRecords || (isCDT && isMappingSection);
 
   return (
     <div className="app-root">
