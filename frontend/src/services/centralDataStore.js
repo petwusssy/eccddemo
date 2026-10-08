@@ -180,11 +180,33 @@ export const SEED_RESOURCES = [
 class CentralDataStore {
   constructor() {
     this.data = this.loadInitial();
-    // Auto-hydrate from backend when in browser
+    // Auto-hydrate and synchronize with backend when in browser
     if (typeof window !== 'undefined') {
       setTimeout(() => {
-        this.syncWithBackend().catch(() => {});
-      }, 500);
+        this.syncWithBackend(true).catch(() => {});
+      }, 300);
+
+      // 1. Cross-device sync on tab visibility or window focus
+      window.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.syncWithBackend(true).catch(() => {});
+        }
+      });
+      window.addEventListener('focus', () => {
+        this.syncWithBackend(true).catch(() => {});
+      });
+
+      // 2. Wi-Fi / Network restore: immediately pull fresh records when coming back online
+      window.addEventListener('online', () => {
+        this.syncWithBackend(true).catch(() => {});
+      });
+
+      // 3. Periodic background sync heartbeat (every 15s) while tab is active
+      setInterval(() => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+          this.syncWithBackend().catch(() => {});
+        }
+      }, 15000);
     }
   }
 
@@ -423,7 +445,7 @@ class CentralDataStore {
    * Merge live records received from MySQL backend API into local store.
    * Normalizes fields so UI views never crash on undefined properties.
    */
-  mergeRecordsFromServer(serverChildren = [], serverHouseholds = []) {
+  mergeRecordsFromServer(serverChildren = [], serverHouseholds = [], serverEnrollments = []) {
     let changed = false;
 
     if (Array.isArray(serverHouseholds) && serverHouseholds.length > 0) {
@@ -508,6 +530,39 @@ class CentralDataStore {
       });
     }
 
+    if (Array.isArray(serverEnrollments) && serverEnrollments.length > 0) {
+      if (!Array.isArray(this.data.enrollments)) this.data.enrollments = [];
+      serverEnrollments.forEach((se) => {
+        if (!se) return;
+        const childId = se.childId || se.child_id;
+        const id = se.id || `ENR-${childId}`;
+        const idx = this.data.enrollments.findIndex(
+          (e) => (e.id && e.id === id) || (e.childId && childId && e.childId === childId)
+        );
+        const normEnr = {
+          ...se,
+          id,
+          childId,
+          status: se.status || 'Enrolled',
+        };
+        if (idx >= 0) {
+          this.data.enrollments[idx] = { ...this.data.enrollments[idx], ...normEnr };
+        } else {
+          this.data.enrollments.unshift(normEnr);
+        }
+        changed = true;
+
+        // Ensure child in local data is marked as Enrolled
+        if (childId && Array.isArray(this.data.children)) {
+          const c = this.data.children.find((k) => k.id === childId || k.eccd_id === childId);
+          if (c && c.enrollmentStatus !== 'Enrolled') {
+            c.enrollmentStatus = 'Enrolled';
+            changed = true;
+          }
+        }
+      });
+    }
+
     if (this.deduplicateHouseholds()) changed = true;
     if (this.deduplicateChildren()) changed = true;
 
@@ -524,12 +579,12 @@ class CentralDataStore {
   async syncWithBackend(force = false) {
     if (this._isSyncing) return;
     const now = Date.now();
-    if (!force && this._lastSyncTime && now - this._lastSyncTime < 10000) {
+    if (!force && this._lastSyncTime && now - this._lastSyncTime < 8000) {
       return;
     }
     this._isSyncing = true;
     try {
-      const [childRes, hhRes] = await Promise.allSettled([
+      const [childRes, hhRes, enrRes] = await Promise.allSettled([
         fetch(getApiUrl('/api/children'), {
           headers: {
             Accept: 'application/json',
@@ -544,10 +599,18 @@ class CentralDataStore {
             'Bypass-Tunnel-Reminder': 'true',
           },
         }),
+        fetch(getApiUrl('/api/enrollments'), {
+          headers: {
+            Accept: 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'Bypass-Tunnel-Reminder': 'true',
+          },
+        }),
       ]);
 
       let serverChildren = [];
       let serverHouseholds = [];
+      let serverEnrollments = [];
 
       if (childRes.status === 'fulfilled' && childRes.value && childRes.value.ok) {
         const cJson = await childRes.value.json();
@@ -561,8 +624,14 @@ class CentralDataStore {
         if (!Array.isArray(serverHouseholds)) serverHouseholds = [];
       }
 
-      if (serverChildren.length > 0 || serverHouseholds.length > 0) {
-        this.mergeRecordsFromServer(serverChildren, serverHouseholds);
+      if (enrRes.status === 'fulfilled' && enrRes.value && enrRes.value.ok) {
+        const eJson = await enrRes.value.json();
+        serverEnrollments = eJson.data?.enrollments || eJson.data || [];
+        if (!Array.isArray(serverEnrollments)) serverEnrollments = [];
+      }
+
+      if (serverChildren.length > 0 || serverHouseholds.length > 0 || serverEnrollments.length > 0) {
+        this.mergeRecordsFromServer(serverChildren, serverHouseholds, serverEnrollments);
       }
     } catch (err) {
       console.warn('CentralDataStore: backend sync notice:', err.message);

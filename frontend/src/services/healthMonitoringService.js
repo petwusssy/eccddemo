@@ -9,12 +9,17 @@ import { centralDataStore } from './centralDataStore.js';
 import { getPhilippinesDate, addDaysPHT, getDaysAgoPHT } from '../utils/phTime.js';
 import { computeNutritionalStatus } from '../utils/whoGrowthStandards.js';
 import { queueFrontlineAction } from './offlineMappingStore.js';
+import { getApiUrl } from './apiConfig.js';
 
 export const healthMonitoringService = {
   /**
    * GET /api/health-monitoring/due
    */
   async getDueMonitoring(filters = {}) {
+    try {
+      await centralDataStore.syncWithBackend();
+    } catch (_) {}
+
     const allChildren = centralDataStore.getChildren() || [];
     const allRecords = centralDataStore.getHealthMonitorings() || [];
 
@@ -203,8 +208,35 @@ export const healthMonitoringService = {
       notes: payload.notes || '',
     });
 
-    // If offline, queue for backend synchronization
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    // Attempt live backend synchronization first
+    try {
+      const res = await fetch(getApiUrl(`/api/children/${childId}/health`), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+        body: JSON.stringify({
+          ...payload,
+          childId,
+          heightCm: height,
+          weightKg: weight,
+          date: payload.date || getPhilippinesDate(),
+          nutritionalStatus: payload.nutritionalStatus || 'Normal Weight for Age',
+          recordedBy: payload.recordedBy || 'Child Development Teacher (CDT)',
+          notes: payload.notes || '',
+        }),
+      });
+
+      if (res.ok) {
+        centralDataStore.syncWithBackend(true).catch(() => {});
+      } else {
+        throw new Error(`Health API returned ${res.status}`);
+      }
+    } catch (netErr) {
+      // Offline mode or network down -> Queue to IndexedDB for automatic background sync when reconnected!
       try {
         await queueFrontlineAction({
           type: 'health',

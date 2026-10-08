@@ -7,12 +7,17 @@
 import { centralDataStore } from './centralDataStore.js';
 import { getPhilippinesDate, addDaysPHT } from '../utils/phTime.js';
 import { queueFrontlineAction } from './offlineMappingStore.js';
+import { getApiUrl } from './apiConfig.js';
 
 export const developmentService = {
   /**
    * GET /api/development/assessments
    */
   async getAssessments(filters = {}) {
+    try {
+      await centralDataStore.syncWithBackend();
+    } catch (_) {}
+
     const allChildren = centralDataStore.getChildren() || [];
     const allAssessments = centralDataStore.getDevelopmentAssessments() || [];
     const allFollowUps = centralDataStore.getFollowUps() || [];
@@ -157,8 +162,36 @@ export const developmentService = {
       });
     }
 
-    // If offline, queue for backend synchronization
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    // Attempt live backend synchronization first
+    try {
+      const res = await fetch(getApiUrl(`/api/children/${childId}/development`), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+        body: JSON.stringify({
+          ...payload,
+          childId,
+          assessmentCycle: cycle,
+          assessmentDate: date,
+          assessor,
+          status,
+          notes,
+          standardScore: payload.standardScore || payload.scaledScore || 100,
+          scaledScores: payload.scaledScores || null,
+        }),
+      });
+
+      if (res.ok) {
+        centralDataStore.syncWithBackend(true).catch(() => {});
+      } else {
+        throw new Error(`Development API returned ${res.status}`);
+      }
+    } catch (netErr) {
+      // Offline mode or network down -> Queue to IndexedDB for automatic background sync when reconnected!
       try {
         await queueFrontlineAction({
           type: 'assessment',
@@ -171,6 +204,7 @@ export const developmentService = {
             assessmentDate: date,
             assessor,
             status,
+            notes,
           },
         });
       } catch (e) {

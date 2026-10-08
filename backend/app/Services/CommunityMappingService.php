@@ -627,9 +627,26 @@ class CommunityMappingService
                     }
                 }
 
-                // 4. Frontline actions count
+                // 4. Frontline actions execution (offline enrollment, health, assessment)
                 if (!empty($batchData['frontlineActions']) && is_array($batchData['frontlineActions'])) {
-                    $syncedActions += count($batchData['frontlineActions']);
+                    foreach ($batchData['frontlineActions'] as $action) {
+                        try {
+                            $type = $action['type'] ?? '';
+                            $payload = $action['payload'] ?? [];
+                            if ($type === 'enrollment' && !empty($payload['childId'])) {
+                                app(\App\Services\EnrollmentService::class)->enrollChild($payload);
+                                $syncedActions++;
+                            } elseif ($type === 'health' && !empty($payload['childId'])) {
+                                app(\App\Services\HealthMonitoringService::class)->recordChildHealth($payload['childId'], $payload);
+                                $syncedActions++;
+                            } elseif ($type === 'assessment' && !empty($payload['childId'])) {
+                                app(\App\Services\DevelopmentAssessmentService::class)->recordAssessment($payload['childId'], $payload);
+                                $syncedActions++;
+                            }
+                        } catch (\Throwable $actErr) {
+                            \Illuminate\Support\Facades\Log::warning('syncBatch action error: ' . $actErr->getMessage());
+                        }
+                    }
                 }
             });
         } catch (\Throwable $e) {

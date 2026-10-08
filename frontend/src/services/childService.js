@@ -16,6 +16,9 @@
 
 import { centralDataStore } from './centralDataStore.js';
 import { getApiUrl } from './apiConfig.js';
+import { enrollmentService } from './enrollmentService.js';
+import { healthMonitoringService } from './healthMonitoringService.js';
+import { developmentService } from './developmentService.js';
 
 export const childService = {
   /**
@@ -132,11 +135,11 @@ export const childService = {
    */
   async addEnrollment(id, enrollmentData) {
     try {
-      centralDataStore.enrollChild({
+      const res = await enrollmentService.enrollChild({
         childId: id,
         ...enrollmentData,
       });
-      return { ok: true, child: centralDataStore.getChild360(id) };
+      return { ok: true, child: centralDataStore.getChild360(id), result: res };
     } catch (e) {
       console.warn('Failed to add enrollment:', e);
       return { ok: false, error: e.message };
@@ -148,11 +151,8 @@ export const childService = {
    */
   async recordHealth(id, healthData) {
     try {
-      centralDataStore.recordHealth({
-        childId: id,
-        ...healthData,
-      });
-      return { ok: true, child: centralDataStore.getChild360(id) };
+      const res = await healthMonitoringService.recordChildHealth(id, healthData);
+      return { ok: true, child: centralDataStore.getChild360(id), result: res };
     } catch (e) {
       console.warn('Failed to record health:', e);
       return { ok: false, error: e.message };
@@ -164,11 +164,8 @@ export const childService = {
    */
   async startDevelopmentAssessment(id, assessmentData) {
     try {
-      centralDataStore.recordAssessment({
-        childId: id,
-        ...assessmentData,
-      });
-      return { ok: true, child: centralDataStore.getChild360(id) };
+      const res = await developmentService.recordAssessment(id, assessmentData);
+      return { ok: true, child: centralDataStore.getChild360(id), result: res };
     } catch (e) {
       console.warn('Failed to record assessment:', e);
       return { ok: false, error: e.message };

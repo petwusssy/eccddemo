@@ -20,9 +20,49 @@ class HealthMonitoringService
      * GET /api/health-monitoring/due
      * Returns dashboard counts and list of children filtered by status, barangay, or center.
      */
+    /**
+     * GET /api/health-monitoring/due
+     * Returns dashboard counts and list of children filtered by status, barangay, or center.
+     */
     public function getDueMonitoring(array $filters = []): array
     {
-        $children = self::$monitoredChildren;
+        $children = [];
+
+        try {
+            $dbChildren = \App\Models\Child::with(['household', 'barangay', 'dayCareCenter', 'healthMonitorings'])->get();
+            foreach ($dbChildren as $c) {
+                $latest = $c->healthMonitorings->sortByDesc('date')->first();
+                $hasRecord = $latest !== null;
+                $status = $hasRecord ? 'Up to Date' : ($c->health_status === 'Up to Date' ? 'Up to Date' : 'Due');
+
+                $birth = $c->birth_date ? new \DateTime($c->birth_date) : new \DateTime('2023-01-01');
+                $now = new \DateTime();
+                $diff = $now->diff($birth);
+                $ageYears = $diff->y;
+
+                $children[] = [
+                    'childId' => $c->eccd_id,
+                    'fullName' => trim("{$c->first_name} {$c->last_name}"),
+                    'sex' => $c->sex ?? 'Female',
+                    'ageDisplay' => "{$ageYears} yrs",
+                    'barangay' => $c->barangay?->name ?? 'San Isidro',
+                    'dayCareCenter' => $c->dayCareCenter?->name ?? 'San Isidro Child Development Center I',
+                    'lastMeasurementDate' => $latest?->date?->toDateString(),
+                    'lastHeightCm' => $latest ? (float) $latest->height_cm : null,
+                    'lastWeightKg' => $latest ? (float) $latest->weight_kg : null,
+                    'nutritionalStatus' => $latest?->nutritional_status ?? 'Normal Weight',
+                    'status' => $status,
+                    'daysSinceLastCheck' => $latest ? max(0, (int) (($now->getTimestamp() - strtotime($latest->date)) / 86400)) : 45,
+                    'dueDate' => $latest ? date('Y-m-d', strtotime($latest->date . ' + 30 days')) : now()->toDateString(),
+                ];
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('HealthMonitoringService getDueMonitoring DB error: ' . $e->getMessage());
+        }
+
+        if (empty($children)) {
+            $children = self::$monitoredChildren;
+        }
 
         // Calculate card counts across entire monitored cohort
         $counts = [
@@ -42,8 +82,7 @@ class HealthMonitoringService
                 $counts['upToDate']++;
             }
 
-            // Completed this month: measurement in September 2026
-            if (isset($c['lastMeasurementDate']) && str_starts_with($c['lastMeasurementDate'], '2026-09')) {
+            if (isset($c['lastMeasurementDate']) && str_starts_with($c['lastMeasurementDate'], date('Y-m'))) {
                 $counts['completedThisMonth']++;
             }
         }
@@ -87,16 +126,38 @@ class HealthMonitoringService
      */
     public function getChildHealth(string $childId): ?array
     {
-        // Find child in monitoredChildren or ChildManagementService
-        $childProfile = null;
-        foreach (self::$monitoredChildren as $c) {
-            if ($c['childId'] === $childId) {
-                $childProfile = $c;
-                break;
+        $dbRecords = [];
+        $childName = null;
+        $barangay = 'San Isidro';
+        $dayCareCenter = 'San Isidro Child Development Center I';
+        $status = 'Due';
+
+        try {
+            $child = \App\Models\Child::with(['household', 'barangay', 'dayCareCenter', 'healthMonitorings'])->where('eccd_id', $childId)->orWhere('id', $childId)->first();
+            if ($child) {
+                $childName = trim("{$child->first_name} {$child->last_name}");
+                $barangay = $child->barangay?->name ?? 'San Isidro';
+                $dayCareCenter = $child->dayCareCenter?->name ?? 'San Isidro Child Development Center I';
+                $recordsCollection = \App\Models\HealthMonitoring::where('child_id', $child->eccd_id)->orderBy('date', 'desc')->get();
+                foreach ($recordsCollection as $hm) {
+                    $dbRecords[] = [
+                        'id' => 'HLT-' . $hm->id,
+                        'childId' => $child->eccd_id,
+                        'date' => $hm->date?->toDateString(),
+                        'heightCm' => (float) $hm->height_cm,
+                        'weightKg' => (float) $hm->weight_kg,
+                        'nutritionalStatus' => $hm->nutritional_status ?? 'Normal Weight',
+                        'recordedBy' => $hm->recorded_by ?? 'CSWDO Day Care Worker',
+                        'notes' => $hm->notes ?? '',
+                        'createdAt' => $hm->created_at?->toIso8601String() ?? now()->toIso8601String(),
+                    ];
+                }
             }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('getChildHealth DB error: ' . $e->getMessage());
         }
 
-        $records = self::$healthRecords[$childId] ?? [];
+        $records = !empty($dbRecords) ? $dbRecords : (self::$healthRecords[$childId] ?? []);
 
         // Sort chronological ascending for trend visualization
         $sortedAscending = $records;
@@ -144,7 +205,6 @@ class HealthMonitoringService
         }
 
         $latest = $sortedDescending[0] ?? null;
-        $status = 'Due';
         if ($latest) {
             $latestDate = $latest['date'];
             $daysSince = (int) ((strtotime(now()->toDateString()) - strtotime($latestDate)) / 86400);
@@ -159,9 +219,9 @@ class HealthMonitoringService
 
         return [
             'childId' => $childId,
-            'childName' => $childProfile['fullName'] ?? 'Child ' . $childId,
-            'barangay' => $childProfile['barangay'] ?? '',
-            'dayCareCenter' => $childProfile['dayCareCenter'] ?? '',
+            'childName' => $childName ?: ($childProfile['fullName'] ?? 'Child ' . $childId),
+            'barangay' => $barangay,
+            'dayCareCenter' => $dayCareCenter,
             'monitoringStatus' => $status,
             'latestMeasurement' => $latest,
             'history' => $sortedDescending,
@@ -182,8 +242,32 @@ class HealthMonitoringService
         $weight = (float) ($data['weight'] ?? $data['weightKg'] ?? 0);
         $notes = trim($data['notes'] ?? '');
         $recordedBy = $data['recordedBy'] ?? 'CSWDO Day Care Worker';
-
         $nutritionalStatus = $data['nutritionalStatus'] ?? 'Normal Weight';
+
+        try {
+            $child = \App\Models\Child::where('eccd_id', $childId)->orWhere('id', $childId)->first();
+            if ($child) {
+                $child->health_status = 'Up to Date';
+                $child->save();
+
+                $dbHm = \App\Models\HealthMonitoring::create([
+                    'child_id' => $child->eccd_id,
+                    'date' => $date,
+                    'age_months' => $data['ageMonths'] ?? 36,
+                    'height_cm' => $height,
+                    'weight_kg' => $weight,
+                    'nutritional_status' => $nutritionalStatus,
+                    'opt_plus_class' => $data['optPlusClass'] ?? null,
+                    'deworming_done' => !empty($data['dewormingDone']),
+                    'vitamin_a_supplement' => !empty($data['vitaminASupplement']),
+                    'notes' => $notes,
+                    'recorded_by' => $recordedBy,
+                ]);
+                $newId = 'HLT-' . $dbHm->id;
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('recordChildHealth DB error: ' . $e->getMessage());
+        }
 
         $newRecord = [
             'id' => $newId,

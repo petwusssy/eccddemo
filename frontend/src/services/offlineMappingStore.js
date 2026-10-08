@@ -212,9 +212,9 @@ export async function syncPendingSurveysToBackend() {
           syncedCount++;
         }
 
-        // Hydrate latest children and households from server
+        // Hydrate latest children, households, and enrollments from server
         try {
-          await centralDataStore.syncWithBackend();
+          await centralDataStore.syncWithBackend(true);
         } catch (_) {}
 
         if (typeof window !== 'undefined') {
@@ -516,6 +516,26 @@ export async function clearAllOfflineData() {
   }
 
   return { success: true };
+}
+
+// Auto-flush queued offline items to backend immediately upon Wi-Fi / internet reconnect
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    console.log('ECCD Offline Store: Internet connection detected. Auto-flushing offline queue to backend...');
+    syncPendingSurveysToBackend().catch((err) => {
+      console.warn('Auto-flush offline queue notice:', err.message);
+    });
+  });
+
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && navigator.onLine) {
+      getPendingSyncCount().then((count) => {
+        if (count > 0) {
+          syncPendingSurveysToBackend().catch(() => {});
+        }
+      }).catch(() => {});
+    }
+  });
 }
 
 export default {

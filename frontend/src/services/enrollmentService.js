@@ -15,12 +15,17 @@
 import { centralDataStore } from './centralDataStore.js';
 import { getPhilippinesDate } from '../utils/phTime.js';
 import { queueFrontlineAction } from './offlineMappingStore.js';
+import { getApiUrl } from './apiConfig.js';
 
 export const enrollmentService = {
   /**
    * GET /api/enrollments
    */
   async getEnrollments(filters = {}) {
+    try {
+      await centralDataStore.syncWithBackend();
+    } catch (_) {}
+
     const rawEnrollments = centralDataStore.getEnrollments() || [];
     const children = centralDataStore.getChildren() || [];
 
@@ -87,6 +92,10 @@ export const enrollmentService = {
    * GET /api/enrollments/not-enrolled
    */
   async getNotEnrolledChildren(filters = {}) {
+    try {
+      await centralDataStore.syncWithBackend();
+    } catch (_) {}
+
     const rawChildren = centralDataStore.getChildren() || [];
     let list = rawChildren
       .filter((c) => {
@@ -161,8 +170,45 @@ export const enrollmentService = {
       status: payload.status || 'Enrolled',
     });
 
-    // If offline, queue for backend synchronization
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    // Always attempt live sync to backend first
+    try {
+      const res = await fetch(getApiUrl('/api/enrollments'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+        body: JSON.stringify({
+          ...payload,
+          enrollmentId: enrollment.id,
+        }),
+      });
+
+      if (res.ok) {
+        // Also update child directly via PUT /api/children/:id to guarantee immediate cross-device update
+        await fetch(getApiUrl(`/api/children/${payload.childId}`), {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'Bypass-Tunnel-Reminder': 'true',
+          },
+          body: JSON.stringify({
+            enrollmentStatus: 'Enrolled',
+            dayCareCenterName: payload.center || payload.dayCareCenterId,
+          }),
+        }).catch(() => {});
+
+        // Re-sync store so all views immediately reflect the backend state
+        centralDataStore.syncWithBackend(true).catch(() => {});
+      } else {
+        throw new Error(`Enrollment API returned ${res.status}`);
+      }
+    } catch (netErr) {
+      // Offline mode or network down -> Queue to IndexedDB for automatic background sync when reconnected!
       try {
         await queueFrontlineAction({
           type: 'enrollment',
@@ -173,8 +219,8 @@ export const enrollmentService = {
             enrollmentId: enrollment.id,
           },
         });
-      } catch (e) {
-        console.warn('Failed to queue offline enrollment action:', e);
+      } catch (qErr) {
+        console.warn('Failed to queue offline enrollment action:', qErr);
       }
     }
 
