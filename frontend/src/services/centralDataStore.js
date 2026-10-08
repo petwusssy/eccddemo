@@ -205,9 +205,19 @@ class CentralDataStore {
         this.syncWithBackend().catch(() => {});
       }, 500);
 
-      // Pull latest records when returning online after being offline
+      // Pull latest records when returning online or switching to tab
       window.addEventListener('online', () => {
-        this.syncWithBackend().catch(() => {});
+        this.syncWithBackend(true).catch(() => {});
+      });
+
+      window.addEventListener('focus', () => {
+        this.syncWithBackend(true).catch(() => {});
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.syncWithBackend(true).catch(() => {});
+        }
       });
     }
   }
@@ -656,7 +666,70 @@ class CentralDataStore {
         if (!Array.isArray(serverEnrollments)) serverEnrollments = [];
       }
 
-      if (serverChildren.length > 0 || serverHouseholds.length > 0 || serverEnrollments.length > 0) {
+      // Check server system status and reset token for cross-device invalidation
+      let serverResetToken = null;
+      try {
+        const statusRes = await fetch(getApiUrl('/api/system/status'), {
+          headers: {
+            Accept: 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'Bypass-Tunnel-Reminder': 'true',
+          },
+        });
+        if (statusRes.ok) {
+          const sJson = await statusRes.json();
+          serverResetToken = sJson.reset_token;
+        }
+      } catch (_) {}
+
+      const localResetToken = typeof window !== 'undefined' ? localStorage.getItem('eccd_last_reset_token') : null;
+      const isServerFreshReset = serverResetToken && localResetToken && serverResetToken !== localResetToken;
+
+      if (isServerFreshReset) {
+        this.data.children = [];
+        this.data.households = [];
+        this.data.enrollments = [];
+        this.data.healthMonitorings = [];
+        this.data.developmentAssessments = [];
+        this.data.followUps = [];
+        try {
+          if (typeof indexedDB !== 'undefined') {
+            indexedDB.deleteDatabase('eccd_care_offline_db');
+          }
+        } catch (_) {}
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('eccd_last_reset_token', serverResetToken);
+        }
+        this.save();
+        return;
+      }
+
+      if (serverResetToken && typeof window !== 'undefined') {
+        localStorage.setItem('eccd_last_reset_token', serverResetToken);
+      }
+
+      // If the server explicitly responded OK for both children and households,
+      // but returned 0 records, that means the server database is completely clean (0 records).
+      // Synchronize this device by wiping any stale old records!
+      const isBackendLive = childRes.status === 'fulfilled' && childRes.value?.ok &&
+                            hhRes.status === 'fulfilled' && hhRes.value?.ok;
+
+      if (isBackendLive && serverChildren.length === 0 && serverHouseholds.length === 0) {
+        if (this.data.children.length > 0 || this.data.households.length > 0) {
+          this.data.children = [];
+          this.data.households = [];
+          this.data.enrollments = [];
+          this.data.healthMonitorings = [];
+          this.data.developmentAssessments = [];
+          this.data.followUps = [];
+          try {
+            if (typeof indexedDB !== 'undefined') {
+              indexedDB.deleteDatabase('eccd_care_offline_db');
+            }
+          } catch (_) {}
+          this.save();
+        }
+      } else if (serverChildren.length > 0 || serverHouseholds.length > 0 || serverEnrollments.length > 0) {
         this.mergeRecordsFromServer(serverChildren, serverHouseholds, serverEnrollments);
       }
     } catch (err) {

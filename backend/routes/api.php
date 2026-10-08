@@ -313,9 +313,14 @@ Route::post('/system/reset-demo-data', function () {
         $uSeeder = new \Database\Seeders\UserSeeder();
         $uSeeder->run();
 
+        // Persist fresh reset token across devices
+        $newToken = (string)time();
+        @file_put_contents(storage_path('framework/system_reset_token.txt'), $newToken);
+
         return response()->json([
             'ok' => true,
             'status' => 200,
+            'reset_token' => $newToken,
             'message' => 'Database successfully reset to 0 operational records.',
             'data' => [
                 'children' => 0,
@@ -331,4 +336,16 @@ Route::post('/system/reset-demo-data', function () {
             'error' => 'Reset failed: ' . $e->getMessage(),
         ], 500);
     }
+});
+
+Route::get('/system/status', function () {
+    $tokenPath = storage_path('framework/system_reset_token.txt');
+    $token = file_exists($tokenPath) ? trim((string)file_get_contents($tokenPath)) : '1';
+    return response()->json([
+        'ok' => true,
+        'status' => 200,
+        'reset_token' => $token,
+        'total_children' => \App\Models\Child::count(),
+        'total_households' => \App\Models\Household::count(),
+    ]);
 });
