@@ -892,9 +892,6 @@ export function DashboardOverview({ onNavigate }) {
                   B. Children by Barangay
                 </CardTitle>
               </div>
-              <Badge variant="neutral" size="sm">
-                {barangays?.totalBarangays || 10} Barangays
-              </Badge>
             </div>
           </CardHeader>
           <CardBody>
