@@ -278,44 +278,79 @@ Route::delete('/resources/{id}', [ResourceController::class, 'destroy'])->name('
 */
 Route::post('/system/reset-demo-data', function () {
     try {
-        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
 
-        \App\Models\Child::truncate();
-        \App\Models\Household::truncate();
-        \App\Models\Enrollment::truncate();
-        \App\Models\HealthMonitoring::truncate();
-        \App\Models\DevelopmentAssessment::truncate();
-        \App\Models\FollowUp::truncate();
+        $isSqlite = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'sqlite';
 
-        if (\Illuminate\Support\Facades\Schema::hasTable('health_records')) {
-            \Illuminate\Support\Facades\DB::table('health_records')->truncate();
+        $tables = [
+            'children' => \App\Models\Child::class,
+            'households' => \App\Models\Household::class,
+            'enrollments' => \App\Models\Enrollment::class,
+            'health_monitoring' => \App\Models\HealthMonitoring::class,
+            'development_assessments' => \App\Models\DevelopmentAssessment::class,
+            'follow_ups' => \App\Models\FollowUp::class,
+            'health_records' => null,
+            'interventions' => null,
+            'mapping_activity_workers' => null,
+            'mapping_activities' => \App\Models\MappingActivity::class,
+            'audit_logs' => \App\Models\AuditLog::class,
+        ];
+
+        foreach ($tables as $table => $model) {
+            if (\Illuminate\Support\Facades\Schema::hasTable($table)) {
+                if ($isSqlite || !$model) {
+                    \Illuminate\Support\Facades\DB::table($table)->delete();
+                } else {
+                    $model::truncate();
+                }
+            }
         }
-        if (\Illuminate\Support\Facades\Schema::hasTable('interventions')) {
-            \Illuminate\Support\Facades\DB::table('interventions')->truncate();
+
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
+
+        // Reset all service-level in-memory static arrays
+        \App\Services\CommunityMappingService::resetStaticData();
+        \App\Services\ChildManagementService::resetStaticData();
+        \App\Services\EnrollmentService::resetStaticData();
+        \App\Services\HealthMonitoringService::resetStaticData();
+        \App\Services\DevelopmentAssessmentService::resetStaticData();
+        \App\Services\FollowUpService::resetStaticData();
+
+        // Re-seed default barangays if table exists
+        if (\Illuminate\Support\Facades\Schema::hasTable('barangays')) {
+            $bSeeder = new \Database\Seeders\BarangaySeeder();
+            $bSeeder->run();
         }
-        if (\Illuminate\Support\Facades\Schema::hasTable('mapping_activity_workers')) {
-            \Illuminate\Support\Facades\DB::table('mapping_activity_workers')->truncate();
+
+        // Re-seed default users and roles if table exists
+        if (\Illuminate\Support\Facades\Schema::hasTable('users')) {
+            $uSeeder = new \Database\Seeders\UserSeeder();
+            $uSeeder->run();
         }
+
+        // Re-seed standard baseline mapping activity if table exists
         if (\Illuminate\Support\Facades\Schema::hasTable('mapping_activities')) {
-            \App\Models\MappingActivity::truncate();
+            \App\Models\MappingActivity::updateOrCreate(
+                ['code' => 'ACT-MAP-2026-001'],
+                [
+                    'name' => '2026 Annual CSWDO House-to-House Child Mapping Drive',
+                    'year' => '2026',
+                    'start_date' => '2026-09-01',
+                    'end_date' => '2026-11-30',
+                    'target_households' => 450,
+                    'mapped_households' => 0,
+                    'children_identified' => 0,
+                    'status' => 'In Progress',
+                ]
+            );
         }
-        if (\Illuminate\Support\Facades\Schema::hasTable('audit_logs')) {
-            \App\Models\AuditLog::truncate();
-        }
 
-        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-
-        // Re-seed default mapping activity and barangays
-        $bSeeder = new \Database\Seeders\BarangaySeeder();
-        $bSeeder->run();
-
-        // Re-seed default users and roles
-        $uSeeder = new \Database\Seeders\UserSeeder();
-        $uSeeder->run();
-
-        // Persist fresh reset token across devices
+        // Persist fresh reset token across devices and process reboots
         $newToken = (string)time();
         @file_put_contents(storage_path('framework/system_reset_token.txt'), $newToken);
+        try {
+            \Illuminate\Support\Facades\Cache::forever('system_reset_token', $newToken);
+        } catch (\Throwable $e) {}
 
         return response()->json([
             'ok' => true,
@@ -329,7 +364,7 @@ Route::post('/system/reset-demo-data', function () {
             ],
         ]);
     } catch (\Throwable $e) {
-        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
         return response()->json([
             'ok' => false,
             'status' => 500,
@@ -340,12 +375,20 @@ Route::post('/system/reset-demo-data', function () {
 
 Route::get('/system/status', function () {
     $tokenPath = storage_path('framework/system_reset_token.txt');
-    $token = file_exists($tokenPath) ? trim((string)file_get_contents($tokenPath)) : '1';
+    $token = file_exists($tokenPath) ? trim((string)file_get_contents($tokenPath)) : null;
+    if (!$token) {
+        try {
+            $token = \Illuminate\Support\Facades\Cache::get('system_reset_token', '1');
+        } catch (\Throwable $e) {
+            $token = '1';
+        }
+    }
     return response()->json([
         'ok' => true,
         'status' => 200,
-        'reset_token' => $token,
-        'total_children' => \App\Models\Child::count(),
-        'total_households' => \App\Models\Household::count(),
+        'reset_token' => (string) $token,
+        'total_children' => \Illuminate\Support\Facades\Schema::hasTable('children') ? \App\Models\Child::count() : 0,
+        'total_households' => \Illuminate\Support\Facades\Schema::hasTable('households') ? \App\Models\Household::count() : 0,
+        'total_enrollments' => \Illuminate\Support\Facades\Schema::hasTable('enrollments') ? \App\Models\Enrollment::count() : 0,
     ]);
 });

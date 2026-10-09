@@ -17,6 +17,7 @@
 /public/hot
 /public/storage
 /storage/*.key
+/storage/framework/system_reset_token.txt
 /storage/pail
 /vendor
 Homestead.json

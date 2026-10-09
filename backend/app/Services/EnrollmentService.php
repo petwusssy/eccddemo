@@ -11,6 +11,14 @@ class EnrollmentService
     protected static array $enrollments = [];
 
     /**
+     * Clear all static in-memory enrollments.
+     */
+    public static function resetStaticData(): void
+    {
+        self::$enrollments = [];
+    }
+
+    /**
      * GET /api/enrollments
      * Computes live enrolled list from MySQL.
      */

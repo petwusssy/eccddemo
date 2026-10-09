@@ -14,11 +14,44 @@ class FollowUpService
     protected static array $cases = [];
 
     /**
+     * Clear all static in-memory follow-up cases.
+     */
+    public static function resetStaticData(): void
+    {
+        self::$cases = [];
+    }
+
+    /**
      * GET /api/follow-ups
      */
     public function getFollowUps(array $filters = []): array
     {
-        $all = self::$cases;
+        $all = [];
+        try {
+            $dbCases = \App\Models\FollowUp::with(['child.household', 'child.barangay', 'assignedWorker'])->get();
+            foreach ($dbCases as $f) {
+                $child = $f->child;
+                $all[] = [
+                    'id' => 'FU-' . $f->id,
+                    'caseNumber' => 'CASE-2026-' . str_pad((string) $f->id, 3, '0', STR_PAD_LEFT),
+                    'childId' => $f->child_id,
+                    'childName' => $child ? trim("{$child->first_name} {$child->last_name}") : 'Child Record',
+                    'ageDisplay' => ($child?->birth_date ? (int) $child->birth_date->diffInYears(now()) : 3) . ' yrs',
+                    'barangay' => $child?->barangay?->name ?? 'San Isidro',
+                    'parentGuardian' => $child?->household?->parent_guardian ?? 'Parent',
+                    'contactNumber' => $child?->household?->contact_number ?? '',
+                    'actionType' => $f->action_type ?? 'Follow-up',
+                    'reason' => $f->reason ?? 'Support needed',
+                    'status' => $f->status ?? 'Needs Attention',
+                    'category' => $f->status ?? 'Needs Attention',
+                    'assignedWorker' => $f->assignedWorker?->name ?? 'CSWDO Worker',
+                    'scheduledDate' => $f->scheduled_date?->toDateString(),
+                    'completedDate' => $f->completed_date?->toDateString(),
+                ];
+            }
+        } catch (\Throwable $e) {
+            $all = self::$cases;
+        }
 
         // KPI Counts
         $counts = [

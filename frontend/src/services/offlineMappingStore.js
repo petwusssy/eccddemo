@@ -195,14 +195,54 @@ export async function syncPendingSurveysToBackend() {
   let syncedCount = 0;
   let failedCount = 0;
 
+  // Check server reset status to prevent resurrecting deleted records after server reset
+  let serverResetToken = null;
+  let serverTotalChildren = 0;
+  let serverTotalHouseholds = 0;
+  try {
+    const statusRes = await fetch(getApiUrl('/api/system/status'), {
+      headers: {
+        Accept: 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+        'Bypass-Tunnel-Reminder': 'true',
+      },
+    });
+    if (statusRes.ok) {
+      const sJson = await statusRes.json();
+      serverResetToken = sJson.reset_token;
+      serverTotalChildren = sJson.total_children || 0;
+      serverTotalHouseholds = sJson.total_households || 0;
+    }
+  } catch (_) {}
+
+  const localResetToken = typeof window !== 'undefined' ? localStorage.getItem('eccd_last_reset_token') : null;
+  const isServerFreshReset = serverResetToken && localResetToken && serverResetToken !== localResetToken;
+
+  if (isServerFreshReset || (serverResetToken && !localResetToken && serverTotalChildren === 0 && serverTotalHouseholds === 0)) {
+    console.log('ECCD Offline Store: Detected fresh server reset. Purging stale offline queue to prevent resurrecting deleted records.');
+    await clearAllOfflineData();
+    if (typeof window !== 'undefined' && serverResetToken) {
+      localStorage.setItem('eccd_last_reset_token', serverResetToken);
+    }
+    return {
+      success: true,
+      synced: 0,
+      failed: 0,
+      total: 0,
+      message: 'System database is at clean baseline (0 records). Stale offline cache synchronized and cleared.',
+    };
+  }
+
+  if (serverResetToken && typeof window !== 'undefined') {
+    localStorage.setItem('eccd_last_reset_token', serverResetToken);
+  }
+
   // 1. Primary Attempt: Atomic Batch Sync via POST /api/mapping/sync
   if (pendingSurveys.length > 0 || pendingActions.length > 0) {
     try {
       const batchPayload = {
         surveys: pendingSurveys,
         frontlineActions: pendingActions,
-        households: centralDataStore.getHouseholds() || [],
-        children: centralDataStore.getChildren() || [],
       };
 
       const syncRes = await fetch(getApiUrl('/api/mapping/sync'), {
@@ -522,12 +562,44 @@ export async function importOfflineDataBundle(bundle) {
  * Clears all pending and cached offline mapping records from IndexedDB.
  */
 export async function clearAllOfflineData() {
-  const db = await getOfflineDb();
-  await db.clear('mapping_surveys');
-  await db.clear('frontline_queue');
-  centralDataStore.reset();
+  try {
+    const db = await getOfflineDb();
+    await db.clear('mapping_surveys');
+    await db.clear('frontline_queue');
+  } catch (err) {
+    console.warn('clearAllOfflineData IndexedDB notice:', err);
+  }
 
-  if (typeof window !== 'undefined') {
+  centralDataStore.reset();
+  centralDataStore.data.children = [];
+  centralDataStore.data.households = [];
+  centralDataStore.data.enrollments = [];
+  centralDataStore.data.healthMonitorings = [];
+  centralDataStore.data.developmentAssessments = [];
+  centralDataStore.data.followUps = [];
+  centralDataStore.save();
+
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const staleKeys = [
+      'eccd_mapping_field_draft_v2',
+      'eccd_offline_child_form_draft',
+      'eccd_offline_registration_draft',
+      'eccd_offline_f1_draft',
+      'eccd_offline_f2_draft',
+      'eccd_offline_checklist_draft',
+      'eccd_mapping_households_data_v2',
+      'eccd_mapping_children_data_v2',
+      'eccd_children_360_data_v2',
+    ];
+    staleKeys.forEach((k) => localStorage.removeItem(k));
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('eccd_form') || key.startsWith('eccd_checklist_') || key.startsWith('eccd_draft_'))) {
+        localStorage.removeItem(key);
+      }
+    }
+
     window.dispatchEvent(new CustomEvent('eccd:offline-survey-updated', { detail: { cleared: true } }));
     window.dispatchEvent(new CustomEvent('eccd:offline-sync-completed', { detail: { synced: 0, failed: 0 } }));
   }

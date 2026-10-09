@@ -18,6 +18,15 @@ class DevelopmentAssessmentService
     protected static array $assessmentCohort = [];
 
     /**
+     * Clear all static in-memory assessments and cohorts.
+     */
+    public static function resetStaticData(): void
+    {
+        self::$assessments = [];
+        self::$assessmentCohort = [];
+    }
+
+    /**
      * GET /api/development/assessments
      * Returns dashboard KPI counts and list of children with assessment status from MySQL.
      */
@@ -51,9 +60,6 @@ class DevelopmentAssessmentService
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('getAssessments DB error: ' . $e->getMessage());
-        }
-
-        if (empty($cohort)) {
             $cohort = self::$assessmentCohort;
         }
 

@@ -23,6 +23,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { useToast } from '../ui/Toast';
 import { centralDataStore } from '../../services/centralDataStore';
+import { clearAllOfflineData } from '../../services/offlineMappingStore';
 import { apiClient } from '../../services/apiClient';
 import { getApiUrl } from '../../services/apiConfig';
 
@@ -39,7 +40,15 @@ export function SettingsView({ onNavigate }) {
 
     setIsResetting(true);
     try {
-      // 1. Reset MySQL backend database to 0
+      // 1. Wipe IndexedDB offline storage & queue cleanly first
+      try {
+        await clearAllOfflineData();
+      } catch (idbErr) {
+        console.warn('IDB clear notice:', idbErr);
+      }
+
+      // 2. Reset MySQL backend database to 0
+      let newToken = null;
       try {
         const res = await fetch(getApiUrl('/api/system/reset-demo-data'), {
           method: 'POST',
@@ -51,27 +60,44 @@ export function SettingsView({ onNavigate }) {
           },
         });
         if (res.ok) {
-          console.log('MySQL Database reset successfully.');
+          const json = await res.json();
+          newToken = json.reset_token;
+          console.log('MySQL Database reset successfully, new token:', newToken);
         }
       } catch (backendErr) {
         console.warn('Backend reset call notice:', backendErr);
       }
 
-      // 2. Wipe IndexedDB offline storage
+      // 3. Clear all cached keys and drafts from localStorage
       try {
-        if (typeof indexedDB !== 'undefined') {
-          indexedDB.deleteDatabase('eccd_care_offline_db');
-        }
-      } catch (_) {}
+        const keysToRemove = [
+          'eccd_care_central_datastore_v3',
+          'eccd_care_central_datastore_v2',
+          'eccd_care_central_datastore_v1',
+          'eccd_mapping_households_data_v2',
+          'eccd_mapping_children_data_v2',
+          'eccd_children_360_data_v2',
+          'eccd_mapping_activities_data_v2',
+          'eccd_mapping_assignments_data_v2',
+          'eccd_mapping_field_draft_v2',
+          'eccd_offline_child_form_draft',
+          'eccd_offline_registration_draft',
+          'eccd_offline_f1_draft',
+          'eccd_offline_f2_draft',
+          'eccd_offline_checklist_draft',
+        ];
+        keysToRemove.forEach((k) => localStorage.removeItem(k));
 
-      // 3. Clear all cached keys from localStorage
-      try {
-        localStorage.removeItem('eccd_care_central_datastore_v3');
-        localStorage.removeItem('eccd_care_central_datastore_v2');
-        localStorage.removeItem('eccd_care_central_datastore_v1');
-        localStorage.removeItem('eccd_mapping_households_data_v2');
-        localStorage.removeItem('eccd_mapping_children_data_v2');
-        localStorage.removeItem('eccd_children_360_data_v2');
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('eccd_form') || key.startsWith('eccd_checklist_') || key.startsWith('eccd_draft_'))) {
+            localStorage.removeItem(key);
+          }
+        }
+
+        if (newToken) {
+          localStorage.setItem('eccd_last_reset_token', newToken);
+        }
       } catch (_) {}
 
       // 4. Force centralDataStore to 0 records and save

@@ -11,6 +11,14 @@ class ChildManagementService
     protected static array $children = [];
 
     /**
+     * Clear all static in-memory children records.
+     */
+    public static function resetStaticData(): void
+    {
+        self::$children = [];
+    }
+
+    /**
      * Helper to format Eloquent Child into API contract response format.
      */
     protected function formatChildModel(\App\Models\Child $child): array
@@ -127,13 +135,11 @@ class ChildManagementService
             }
 
             $dbChildren = $query->get();
-            if ($dbChildren->isNotEmpty()) {
-                $formatted = $dbChildren->map(fn($c) => $this->formatChildModel($c))->toArray();
-                return [
-                    'total' => count($formatted),
-                    'children' => $formatted,
-                ];
-            }
+            $formatted = $dbChildren->map(fn($c) => $this->formatChildModel($c))->toArray();
+            return [
+                'total' => count($formatted),
+                'children' => $formatted,
+            ];
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('DB getChildren fallback: ' . $e->getMessage());
         }

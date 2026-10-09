@@ -53,4 +53,35 @@ class SyncBatchTest extends TestCase
                 ],
             ]);
     }
+
+    public function test_reset_data_wipes_all_records_and_leaves_clean_state(): void
+    {
+        // 1. Trigger system reset endpoint
+        $resetRes = $this->postJson('/api/system/reset-demo-data');
+        $resetRes->assertStatus(200)
+            ->assertJson([
+                'ok' => true,
+                'status' => 200,
+            ]);
+
+        // 2. Query children and households endpoints
+        $childrenRes = $this->getJson('/api/children');
+        $childrenRes->assertStatus(200)
+            ->assertJson([
+                'ok' => true,
+                'status' => 200,
+                'data' => [
+                    'total' => 0,
+                    'children' => [],
+                ],
+            ]);
+
+        $householdsRes = $this->getJson('/api/households');
+        $householdsRes->assertStatus(200)
+            ->assertJson([
+                'ok' => true,
+                'status' => 200,
+                'data' => [],
+            ]);
+    }
 }

@@ -207,34 +207,40 @@ class CommunityMappingService
     }
 
     /**
+     * Clear all static in-memory households and children.
+     */
+    public static function resetStaticData(): void
+    {
+        self::$households = [];
+        self::$children = [];
+    }
+
+    /**
      * Get households list from database.
      */
     public function getHouseholds(): array
     {
         try {
             $dbHouseholds = \App\Models\Household::with(['barangay', 'mappingActivity'])->get();
-            if ($dbHouseholds->isNotEmpty()) {
-                return $dbHouseholds->map(function ($hh) {
-                    return [
-                        'id' => $hh->household_no,
-                        'household_no' => $hh->household_no,
-                        'parentGuardian' => $hh->parent_guardian,
-                        'contactNumber' => $hh->contact_number,
-                        'address' => $hh->address,
-                        'barangay' => $hh->barangay?->name ?? 'San Isidro',
-                        'mappingActivityId' => $hh->mappingActivity?->code ?? 'ACT-MAP-2026-001',
-                        'mappedDate' => $hh->mapped_date?->toDateString() ?? now()->toDateString(),
-                        'mappedBy' => $hh->mapped_by ?? 'Field Worker',
-                        'childrenCount' => $hh->children()->count() ?: 1,
-                        'status' => 'Completed',
-                    ];
-                })->toArray();
-            }
+            return $dbHouseholds->map(function ($hh) {
+                return [
+                    'id' => $hh->household_no,
+                    'household_no' => $hh->household_no,
+                    'parentGuardian' => $hh->parent_guardian,
+                    'contactNumber' => $hh->contact_number,
+                    'address' => $hh->address,
+                    'barangay' => $hh->barangay?->name ?? 'San Isidro',
+                    'mappingActivityId' => $hh->mappingActivity?->code ?? 'ACT-MAP-2026-001',
+                    'mappedDate' => $hh->mapped_date?->toDateString() ?? now()->toDateString(),
+                    'mappedBy' => $hh->mapped_by ?? 'Field Worker',
+                    'childrenCount' => $hh->children()->count() ?: 1,
+                    'status' => 'Completed',
+                ];
+            })->toArray();
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('DB getHouseholds fallback: ' . $e->getMessage());
+            return self::$households;
         }
-
-        return self::$households;
     }
 
     /**
@@ -419,6 +425,7 @@ class CommunityMappingService
         $rawBirthDate = $data['birthDate'] ?? $data['birth_date'] ?? null;
         $birthDate = $rawBirthDate ? substr($rawBirthDate, 0, 10) : null;
         $hhNo = $data['householdId'] ?? $data['household_id'] ?? 'HH-2026-0101';
+        $uniqueId = $data['id'] ?? $data['eccd_id'] ?? ('ECCD-2026-' . rand(100000, 999999));
 
         try {
             $household = \App\Models\Household::where('household_no', $hhNo)->first();
@@ -614,25 +621,7 @@ class CommunityMappingService
                     $syncedSurveys++;
                 }
 
-                // 2. Direct households (fallback)
-                if (!empty($batchData['households']) && is_array($batchData['households'])) {
-                    foreach ($batchData['households'] as $hh) {
-                        if (!empty($hh['id']) || !empty($hh['household_no']) || !empty($hh['parentGuardian'])) {
-                            $this->createHousehold($hh);
-                            $syncedHouseholds++;
-                        }
-                    }
-                }
-
-                // 3. Direct children (fallback)
-                if (!empty($batchData['children']) && is_array($batchData['children'])) {
-                    foreach ($batchData['children'] as $child) {
-                        $this->createChild($child);
-                        $syncedChildren++;
-                    }
-                }
-
-                // 4. Frontline actions execution (offline enrollment, health, assessment)
+                // 2. Frontline actions execution (offline enrollment, health, assessment)
                 if (!empty($batchData['frontlineActions']) && is_array($batchData['frontlineActions'])) {
                     foreach ($batchData['frontlineActions'] as $action) {
                         try {

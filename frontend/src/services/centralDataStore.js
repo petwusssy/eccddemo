@@ -685,6 +685,26 @@ class CentralDataStore {
       const localResetToken = typeof window !== 'undefined' ? localStorage.getItem('eccd_last_reset_token') : null;
       const isServerFreshReset = serverResetToken && localResetToken && serverResetToken !== localResetToken;
 
+      const clearOfflineIdb = () => {
+        try {
+          if (typeof indexedDB !== 'undefined') {
+            const req = indexedDB.open('eccd_care_offline_db');
+            req.onsuccess = (e) => {
+              const idb = e.target.result;
+              try {
+                const stores = [];
+                if (idb.objectStoreNames.contains('mapping_surveys')) stores.push('mapping_surveys');
+                if (idb.objectStoreNames.contains('frontline_queue')) stores.push('frontline_queue');
+                if (stores.length > 0) {
+                  const tx = idb.transaction(stores, 'readwrite');
+                  stores.forEach((s) => tx.objectStore(s).clear());
+                }
+              } catch (_) {}
+            };
+          }
+        } catch (_) {}
+      };
+
       if (isServerFreshReset) {
         this.data.children = [];
         this.data.households = [];
@@ -692,13 +712,11 @@ class CentralDataStore {
         this.data.healthMonitorings = [];
         this.data.developmentAssessments = [];
         this.data.followUps = [];
-        try {
-          if (typeof indexedDB !== 'undefined') {
-            indexedDB.deleteDatabase('eccd_care_offline_db');
-          }
-        } catch (_) {}
+        clearOfflineIdb();
         if (typeof window !== 'undefined') {
           localStorage.setItem('eccd_last_reset_token', serverResetToken);
+          window.dispatchEvent(new CustomEvent('eccd:offline-survey-updated', { detail: { cleared: true } }));
+          window.dispatchEvent(new CustomEvent('eccd:offline-sync-completed', { detail: { synced: 0, failed: 0 } }));
         }
         this.save();
         return;
@@ -715,18 +733,18 @@ class CentralDataStore {
                             hhRes.status === 'fulfilled' && hhRes.value?.ok;
 
       if (isBackendLive && serverChildren.length === 0 && serverHouseholds.length === 0) {
-        if (this.data.children.length > 0 || this.data.households.length > 0) {
+        if (this.data.children.length > 0 || this.data.households.length > 0 || this.data.enrollments.length > 0) {
           this.data.children = [];
           this.data.households = [];
           this.data.enrollments = [];
           this.data.healthMonitorings = [];
           this.data.developmentAssessments = [];
           this.data.followUps = [];
-          try {
-            if (typeof indexedDB !== 'undefined') {
-              indexedDB.deleteDatabase('eccd_care_offline_db');
-            }
-          } catch (_) {}
+          clearOfflineIdb();
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('eccd:offline-survey-updated', { detail: { cleared: true } }));
+            window.dispatchEvent(new CustomEvent('eccd:offline-sync-completed', { detail: { synced: 0, failed: 0 } }));
+          }
           this.save();
         }
       } else if (serverChildren.length > 0 || serverHouseholds.length > 0 || serverEnrollments.length > 0) {

@@ -17,9 +17,14 @@ class HealthMonitoringService
     protected static array $monitoredChildren = [];
 
     /**
-     * GET /api/health-monitoring/due
-     * Returns dashboard counts and list of children filtered by status, barangay, or center.
+     * Clear all static in-memory health records.
      */
+    public static function resetStaticData(): void
+    {
+        self::$healthRecords = [];
+        self::$monitoredChildren = [];
+    }
+
     /**
      * GET /api/health-monitoring/due
      * Returns dashboard counts and list of children filtered by status, barangay, or center.
@@ -58,9 +63,6 @@ class HealthMonitoringService
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('HealthMonitoringService getDueMonitoring DB error: ' . $e->getMessage());
-        }
-
-        if (empty($children)) {
             $children = self::$monitoredChildren;
         }
 
