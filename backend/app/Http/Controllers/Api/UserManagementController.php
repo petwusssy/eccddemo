@@ -28,6 +28,7 @@ class UserManagementController extends Controller
                 'name' => $u->name,
                 'email' => $u->email,
                 'role_id' => $u->role_id,
+                'active_password' => $u->temp_password ?? ($u->email === 'admin@eccd.gov.ph' ? 'Eccd@$SULpX' : 'password'),
                 'role' => $u->role ? [
                     'id' => $u->role->id,
                     'name' => $u->role->name,
@@ -104,6 +105,7 @@ class UserManagementController extends Controller
             'name' => trim($validated['name']),
             'email' => strtolower(trim($validated['email'])),
             'password' => Hash::make($validated['password']),
+            'temp_password' => $validated['password'],
             'role_id' => $validated['role_id'],
         ]);
 
@@ -214,6 +216,7 @@ class UserManagementController extends Controller
 
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
+            $user->temp_password = $validated['password'];
         }
 
         $user->save();
@@ -299,6 +302,7 @@ class UserManagementController extends Controller
         }
 
         $user->password = Hash::make($password);
+        $user->temp_password = $password;
         $user->save();
 
         try {
@@ -317,6 +321,7 @@ class UserManagementController extends Controller
             'ok' => true,
             'status' => 200,
             'message' => "Password for {$user->name} has been reset successfully.",
+            'active_password' => $user->temp_password,
         ]);
     }
 

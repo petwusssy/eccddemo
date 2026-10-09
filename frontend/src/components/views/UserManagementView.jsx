@@ -123,6 +123,7 @@ export function UserManagementView({ currentUser, onNavigate }) {
   };
 
   const getActivePasswordForUser = (u) => {
+    if (u?.active_password) return u.active_password;
     const cred = getOfflineUserCredential(u?.email);
     if (cred?.password) return cred.password;
     if (u?.email === 'admin@eccd.gov.ph') return 'Eccd@$SULpX';

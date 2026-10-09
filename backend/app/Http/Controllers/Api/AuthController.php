@@ -29,7 +29,10 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $credentials = $request->only('email', 'password');
+        $credentials = [
+            'email' => strtolower(trim((string)$request->input('email'))),
+            'password' => (string)$request->input('password'),
+        ];
 
         if (!$token = auth('api')->attempt($credentials)) {
             return response()->json([

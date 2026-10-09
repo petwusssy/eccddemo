@@ -37,6 +37,14 @@ export const userService = {
         const json = await res.json();
         const serverUsers = json.data || [];
         if (Array.isArray(serverUsers) && serverUsers.length > 0) {
+          serverUsers.forEach((u) => {
+            if (u.email && u.active_password) {
+              updateOfflineUserCredential(u.email, u.active_password);
+              try {
+                centralDataStore.updateUserPassword(u.email, u.active_password);
+              } catch (_) {}
+            }
+          });
           return serverUsers;
         }
       }
