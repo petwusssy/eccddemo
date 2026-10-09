@@ -4,8 +4,13 @@ import './index.css'
 import App from './App.jsx'
 import { registerSW } from 'virtual:pwa-register'
 
-// Register PWA service worker with immediate check
-registerSW({ immediate: true })
+// Register PWA service worker with immediate refresh on update
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    updateSW(true);
+  },
+});
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

@@ -50,13 +50,13 @@ export const ROLE_LABELS = {
 
 // Role → default landing page after login
 export const ROLE_LANDING = {
-  [ROLES.SYSADMIN]: 'admin',
+  [ROLES.SYSADMIN]: 'dashboard',
   [ROLES.ADMIN]: 'dashboard',
-  [ROLES.CDT]: 'community-mapping',
-  'sysadmin': 'admin',
+  [ROLES.CDT]: 'dashboard',
+  'sysadmin': 'dashboard',
   'cswdo_admin': 'dashboard',
-  'field_worker': 'community-mapping',
-  'daycare_worker': 'community-mapping',
+  'field_worker': 'dashboard',
+  'daycare_worker': 'dashboard',
 };
 
 // Role → permitted sidebar sections (Strict role-based navigation & module boundaries)

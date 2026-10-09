@@ -96,14 +96,14 @@ const PATH_TO_SECTION = {
 };
 
 const ROLE_LANDING_ROUTE = {
-  [ROLES.SYSADMIN]: '/admin',
+  [ROLES.SYSADMIN]: '/dashboard',
   [ROLES.ADMIN]: '/dashboard',
-  [ROLES.CDT]: '/mapping',
-  'sysadmin': '/admin',
+  [ROLES.CDT]: '/dashboard',
+  'sysadmin': '/dashboard',
   'eccd_admin': '/dashboard',
   'cswdo_admin': '/dashboard',
-  'field_worker': '/mapping',
-  'daycare_worker': '/mapping',
+  'field_worker': '/dashboard',
+  'daycare_worker': '/dashboard',
 };
 
 /**
@@ -168,9 +168,9 @@ function AuthenticatedApp() {
     };
   }, [user]);
 
-  // Active navigation section derived directly from URL (or role landing when on root)
+  // Active navigation section derived directly from URL (or dashboard when on root)
   const activeItem = location.pathname === '/'
-    ? (ROLE_LANDING?.[user?.role] || 'dashboard')
+    ? 'dashboard'
     : (PATH_TO_SECTION[location.pathname] || 'dashboard');
 
   // Centralized navigation handler accepting route key or path
@@ -366,7 +366,11 @@ function AuthenticatedApp() {
         />
       );
     }
-    return <AdminShell user={user} onLogout={logout} />;
+    return (
+      <ErrorBoundary onNavigate={handleNavigate} onReset={() => navigate('/dashboard')}>
+        <AdminShell user={user} onLogout={logout} />
+      </ErrorBoundary>
+    );
   }
 
   return (
@@ -398,7 +402,7 @@ function AuthenticatedApp() {
       ) : (
         <ErrorBoundary key={location.pathname} onNavigate={handleNavigate}>
           <Routes>
-            <Route path="/" element={<Navigate to={ROLE_LANDING_ROUTE[user?.role] || '/dashboard'} replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             
             {/* 1. MAIN */}
             <Route path="/dashboard" element={<DashboardOverview onNavigate={handleNavigate} />} />
@@ -442,7 +446,7 @@ function AuthenticatedApp() {
             <Route path="/settings" element={<SettingsView onNavigate={handleNavigate} />} />
             <Route path="/users" element={<Navigate to="/admin" replace />} />
             <Route path="/resources" element={<ModulePlaceholder moduleId="resources" onNavigate={handleNavigate} />} />
-            <Route path="*" element={<Navigate to={ROLE_LANDING_ROUTE[user?.role] || '/dashboard'} replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </ErrorBoundary>
       )}
