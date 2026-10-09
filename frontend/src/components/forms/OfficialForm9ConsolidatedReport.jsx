@@ -13,12 +13,26 @@ import { Button } from '../ui/Button';
 import { officialFormsService } from '../../services/officialFormsService';
 import { useToast } from '../ui/Toast';
 
-export function OfficialForm9ConsolidatedReport() {
+export function OfficialForm9ConsolidatedReport({ initialBarangay = 'All' } = {}) {
   const { addToast } = useToast();
 
+  const [filterBarangay, setFilterBarangay] = React.useState(
+    initialBarangay && initialBarangay !== 'all' ? initialBarangay : 'All'
+  );
+
+  React.useEffect(() => {
+    if (initialBarangay && initialBarangay !== 'all') {
+      setFilterBarangay(initialBarangay);
+    } else if (initialBarangay === 'all') {
+      setFilterBarangay('All');
+    }
+  }, [initialBarangay]);
+
   const consolidation = useMemo(() => {
-    return officialFormsService.generateForm9Consolidation();
-  }, []);
+    return officialFormsService.generateForm9Consolidation({
+      barangay: filterBarangay,
+    });
+  }, [filterBarangay]);
 
   const handlePrint = () => {
     window.print();

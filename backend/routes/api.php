@@ -211,6 +211,12 @@ Route::prefix('reports')->group(function () {
     Route::get('/barangay-summary', [ReportController::class, 'barangaySummary']);
     Route::get('/consolidated-family', [ReportController::class, 'consolidatedFamily']);
     Route::get('/consolidated-children', [ReportController::class, 'consolidatedChildren']);
+    Route::get('/consolidated-cdw', [ReportController::class, 'consolidatedCdw']);
+    Route::get('/consolidated-cdc', [ReportController::class, 'consolidatedCdc']);
+    Route::get('/form4', [ReportController::class, 'consolidatedFamily']);
+    Route::get('/form5', [ReportController::class, 'consolidatedChildren']);
+    Route::get('/form8', [ReportController::class, 'consolidatedCdw']);
+    Route::get('/form9', [ReportController::class, 'consolidatedCdc']);
 });
 
 /*

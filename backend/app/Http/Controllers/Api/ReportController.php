@@ -112,4 +112,22 @@ class ReportController extends Controller
         $data = $this->reportService->getConsolidatedChildrenReport($this->parseFilters($request));
         return response()->json(['success' => true, 'data' => $data]);
     }
+
+    /**
+     * GET /api/reports/consolidated-cdw
+     */
+    public function consolidatedCdw(Request $request): JsonResponse
+    {
+        $data = $this->reportService->getConsolidatedCdwReport($this->parseFilters($request));
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+
+    /**
+     * GET /api/reports/consolidated-cdc
+     */
+    public function consolidatedCdc(Request $request): JsonResponse
+    {
+        $data = $this->reportService->getConsolidatedCdcReport($this->parseFilters($request));
+        return response()->json(['success' => true, 'data' => $data]);
+    }
 }

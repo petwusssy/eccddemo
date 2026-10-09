@@ -20,13 +20,40 @@ import { officialFormsService } from '../../services/officialFormsService';
 import { useToast } from '../ui/Toast';
 import { BARANGAY_OPTIONS } from '../../data/sanFernandoBarangays';
 
-export function OfficialForm5ConsolidatedReport({ onClose } = {}) {
+export function OfficialForm5ConsolidatedReport({ onClose, initialBarangay = 'All', initialCenter = 'All', initialYear = '2026' } = {}) {
   const { addToast } = useToast();
 
-  const [filterBarangay, setFilterBarangay] = useState('All');
-  const [filterCenter, setFilterCenter] = useState('All');
+  const [filterBarangay, setFilterBarangay] = useState(
+    initialBarangay && initialBarangay !== 'all' ? initialBarangay : 'All'
+  );
+  const [filterCenter, setFilterCenter] = useState(
+    initialCenter && initialCenter !== 'all' ? initialCenter : 'All'
+  );
   const [filterYear, setFilterYear] = useState('2026');
   const [refreshKey, setRefreshKey] = useState(0);
+
+  React.useEffect(() => {
+    if (initialBarangay && initialBarangay !== 'all') {
+      setFilterBarangay(initialBarangay);
+    } else if (initialBarangay === 'all') {
+      setFilterBarangay('All');
+    }
+  }, [initialBarangay]);
+
+  React.useEffect(() => {
+    if (initialCenter && initialCenter !== 'all') {
+      setFilterCenter(initialCenter);
+    } else if (initialCenter === 'all') {
+      setFilterCenter('All');
+    }
+  }, [initialCenter]);
+
+  React.useEffect(() => {
+    if (initialYear && initialYear !== 'all') {
+      const parsed = initialYear.replace(/[^0-9]/g, '').slice(0, 4);
+      if (parsed) setFilterYear(parsed);
+    }
+  }, [initialYear]);
 
   // Compute live consolidation from central database
   const consolidation = useMemo(() => {

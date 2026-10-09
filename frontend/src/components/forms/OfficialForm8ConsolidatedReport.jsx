@@ -13,12 +13,38 @@ import { Button } from '../ui/Button';
 import { officialFormsService } from '../../services/officialFormsService';
 import { useToast } from '../ui/Toast';
 
-export function OfficialForm8ConsolidatedReport() {
+export function OfficialForm8ConsolidatedReport({ initialBarangay = 'All', initialCenter = 'All' } = {}) {
   const { addToast } = useToast();
 
+  const [filterBarangay, setFilterBarangay] = React.useState(
+    initialBarangay && initialBarangay !== 'all' ? initialBarangay : 'All'
+  );
+  const [filterCenter, setFilterCenter] = React.useState(
+    initialCenter && initialCenter !== 'all' ? initialCenter : 'All'
+  );
+
+  React.useEffect(() => {
+    if (initialBarangay && initialBarangay !== 'all') {
+      setFilterBarangay(initialBarangay);
+    } else if (initialBarangay === 'all') {
+      setFilterBarangay('All');
+    }
+  }, [initialBarangay]);
+
+  React.useEffect(() => {
+    if (initialCenter && initialCenter !== 'all') {
+      setFilterCenter(initialCenter);
+    } else if (initialCenter === 'all') {
+      setFilterCenter('All');
+    }
+  }, [initialCenter]);
+
   const consolidation = useMemo(() => {
-    return officialFormsService.generateForm8Consolidation();
-  }, []);
+    return officialFormsService.generateForm8Consolidation({
+      barangay: filterBarangay,
+      center: filterCenter,
+    });
+  }, [filterBarangay, filterCenter]);
 
   const handlePrint = () => {
     window.print();

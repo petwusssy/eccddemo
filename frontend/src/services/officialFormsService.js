@@ -1195,13 +1195,17 @@ export const officialFormsService = {
     return center?.form7Data || null;
   },
 
-  // =========================================================================
-  // 8. FORM 8: CONSOLIDATED CHILD DEVELOPMENT WORKER PROFILE (APRIL 2014, 6 PAGES)
-  // =========================================================================
-  generateForm8Consolidation() {
+  generateForm8Consolidation({ barangay = 'All', center = 'All' } = {}) {
     const barangays = centralDataStore.getBarangays();
     const centers = centralDataStore.getDayCareCenters();
-    const workers = centralDataStore.getWorkers();
+    let workers = centralDataStore.getWorkers();
+
+    if (barangay && barangay !== 'All' && barangay !== 'all') {
+      workers = workers.filter((w) => (w.barangay || '').toLowerCase() === barangay.toLowerCase());
+    }
+    if (center && center !== 'All' && center !== 'all') {
+      workers = workers.filter((w) => (w.centerName || w.dayCareCenter || '').toLowerCase() === center.toLowerCase());
+    }
 
     const totalWorkers = workers.length || 28;
     const pct = (c) => ((c / totalWorkers) * 100).toFixed(1) + '%';
@@ -1428,13 +1432,17 @@ export const officialFormsService = {
 
   // =========================================================================
   // 9. FORM 9: CONSOLIDATED CHILD DEVELOPMENT CENTER PROFILE (APRIL 2014, 3 PAGES)
-  // =========================================================================
-  generateForm9Consolidation() {
+  generateForm9Consolidation({ barangay = 'All' } = {}) {
     const barangays = centralDataStore.getBarangays();
-    const centers = centralDataStore.getDayCareCenters();
-    const workers = centralDataStore.getWorkers();
+    let centers = centralDataStore.getDayCareCenters();
+    let workers = centralDataStore.getWorkers();
 
-    const totalCenters = centers.length || 35;
+    if (barangay && barangay !== 'All' && barangay !== 'all') {
+      centers = centers.filter((c) => (c.barangay || '').toLowerCase() === barangay.toLowerCase());
+      workers = workers.filter((w) => (w.barangay || '').toLowerCase() === barangay.toLowerCase());
+    }
+
+    const totalCenters = centers.length || (barangay && barangay !== 'All' && barangay !== 'all' ? 1 : 35);
     const pct = (c) => ((c / totalCenters) * 100).toFixed(1) + '%';
 
     return {

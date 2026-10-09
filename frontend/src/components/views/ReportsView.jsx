@@ -98,7 +98,7 @@ export function ReportsView({ onNavigate }) {
         <div className="reports-category-header">
           <div className="reports-category-title">
             <Layers size={16} />
-            <span>Select Report Category ({REPORT_CATEGORIES.length})</span>
+            <span>Official Consolidated Governance Reports ({REPORT_CATEGORIES.length})</span>
           </div>
         </div>
 
@@ -359,13 +359,26 @@ export function ReportsView({ onNavigate }) {
       )}
 
       {selectedCategory === 'consolidated-family' && reportViewMode === 'official' ? (
-        <OfficialForm4ConsolidatedReport />
+        <OfficialForm4ConsolidatedReport
+          initialBarangay={filters.barangay}
+          initialCenter={filters.dayCareCenter}
+          initialYear={filters.year}
+        />
       ) : selectedCategory === 'consolidated-children' && reportViewMode === 'official' ? (
-        <OfficialForm5ConsolidatedReport />
+        <OfficialForm5ConsolidatedReport
+          initialBarangay={filters.barangay}
+          initialCenter={filters.dayCareCenter}
+          initialYear={filters.year}
+        />
       ) : selectedCategory === 'consolidated-cdw' && reportViewMode === 'official' ? (
-        <OfficialForm8ConsolidatedReport />
+        <OfficialForm8ConsolidatedReport
+          initialBarangay={filters.barangay}
+          initialCenter={filters.dayCareCenter}
+        />
       ) : selectedCategory === 'consolidated-cdc' && reportViewMode === 'official' ? (
-        <OfficialForm9ConsolidatedReport />
+        <OfficialForm9ConsolidatedReport
+          initialBarangay={filters.barangay}
+        />
       ) : (
       <div className="report-doc-wrapper">
         <div className="report-document">

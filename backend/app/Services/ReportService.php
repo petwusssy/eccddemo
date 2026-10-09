@@ -727,4 +727,165 @@ class ReportService
             true // includeOfficialForms = true
         );
     }
+
+    /**
+     * 10. GET /api/reports/consolidated-cdw
+     * Official Form 8: Consolidated Child Development Worker Profile
+     */
+    public function getConsolidatedCdwReport(array $filters = []): array
+    {
+        $allWorkers = $this->communityService->getWorkers()['workers'] ?? [];
+
+        if (!empty($filters['barangay']) && $filters['barangay'] !== 'all' && $filters['barangay'] !== 'All Barangays') {
+            $allWorkers = array_filter($allWorkers, function($w) use ($filters) {
+                return strtolower($w['barangay'] ?? '') === strtolower($filters['barangay']);
+            });
+        }
+
+        if (!empty($filters['dayCareCenter']) && $filters['dayCareCenter'] !== 'all' && $filters['dayCareCenter'] !== 'All Centers') {
+            $allWorkers = array_filter($allWorkers, function($w) use ($filters) {
+                return strtolower($w['center'] ?? '') === strtolower($filters['dayCareCenter']);
+            });
+        }
+
+        if (!empty($filters['status']) && $filters['status'] !== 'all') {
+            $allWorkers = array_filter($allWorkers, function($w) use ($filters) {
+                return strtolower($w['status'] ?? '') === strtolower($filters['status']);
+            });
+        }
+
+        $totalWorkers = count($allWorkers);
+        $totalActive = 0;
+        $totalAccredited = 0;
+        $rows = [];
+
+        foreach ($allWorkers as $w) {
+            $isActive = strtolower($w['status'] ?? '') === 'active';
+            if ($isActive) $totalActive++;
+
+            $isAccredited = !empty($w['accreditationNo']) && $w['accreditationNo'] !== 'Pending Accreditation';
+            if ($isAccredited) $totalAccredited++;
+
+            $rows[] = [
+                'workerId' => $w['id'] ?? 'WKR-000',
+                'name' => $w['name'] ?? 'Worker Name',
+                'designation' => $w['role'] ?? 'Child Development Worker',
+                'barangay' => $w['barangay'] ?? 'City of San Fernando',
+                'center' => $w['center'] ?? 'Child Development Center',
+                'accreditationNo' => $w['accreditationNo'] ?? 'CDW-2024-001',
+                'contact' => $w['contact'] ?? '0917-000-0000',
+                'status' => $w['status'] ?? 'Active',
+            ];
+        }
+
+        $summary = [
+            'totalWorkersProfiled' => $totalWorkers,
+            'activeWorkers' => $totalActive,
+            'accreditedWorkers' => $totalAccredited,
+            'coverageRate' => $totalWorkers > 0 ? round(($totalAccredited / $totalWorkers) * 100, 1) . '%' : '100%',
+        ];
+
+        $columns = [
+            ['key' => 'workerId', 'label' => 'Worker ID'],
+            ['key' => 'name', 'label' => 'Worker Name'],
+            ['key' => 'designation', 'label' => 'Designation'],
+            ['key' => 'barangay', 'label' => 'Barangay'],
+            ['key' => 'center', 'label' => 'Assigned CDC'],
+            ['key' => 'accreditationNo', 'label' => 'Accreditation No.'],
+            ['key' => 'contact', 'label' => 'Contact Number'],
+            ['key' => 'status', 'label' => 'Status'],
+        ];
+
+        return $this->wrapReport(
+            'Consolidated CDW Profile',
+            'Official Form 8: Consolidated Child Development Worker Profile',
+            'ECCD-FORM-8',
+            $filters,
+            $summary,
+            $columns,
+            $rows,
+            true
+        );
+    }
+
+    /**
+     * 11. GET /api/reports/consolidated-cdc
+     * Official Form 9: Consolidated Child Development Center Profile
+     */
+    public function getConsolidatedCdcReport(array $filters = []): array
+    {
+        $allCenters = $this->communityService->getCenters()['centers'] ?? [];
+
+        if (!empty($filters['barangay']) && $filters['barangay'] !== 'all' && $filters['barangay'] !== 'All Barangays') {
+            $allCenters = array_filter($allCenters, function($c) use ($filters) {
+                return strtolower($c['barangay'] ?? '') === strtolower($filters['barangay']);
+            });
+        }
+
+        if (!empty($filters['dayCareCenter']) && $filters['dayCareCenter'] !== 'all' && $filters['dayCareCenter'] !== 'All Centers') {
+            $allCenters = array_filter($allCenters, function($c) use ($filters) {
+                return strtolower($c['name'] ?? '') === strtolower($filters['dayCareCenter']);
+            });
+        }
+
+        if (!empty($filters['status']) && $filters['status'] !== 'all') {
+            $allCenters = array_filter($allCenters, function($c) use ($filters) {
+                return strtolower($c['status'] ?? '') === strtolower($filters['status']);
+            });
+        }
+
+        $totalCenters = count($allCenters);
+        $totalCapacity = 0;
+        $totalEnrolled = 0;
+        $rows = [];
+
+        foreach ($allCenters as $c) {
+            $cap = (int)($c['capacity'] ?? 60);
+            $enr = (int)($c['enrolledCount'] ?? 0);
+            $totalCapacity += $cap;
+            $totalEnrolled += $enr;
+
+            $rows[] = [
+                'code' => $c['code'] ?? 'CDC-CSFP-01',
+                'name' => $c['name'] ?? 'Child Development Center',
+                'barangay' => $c['barangay'] ?? 'City of San Fernando',
+                'address' => $c['address'] ?? 'Barangay Hall Compound',
+                'capacity' => $cap,
+                'enrolledCount' => $enr,
+                'utilizationRate' => $cap > 0 ? round(($enr / $cap) * 100, 1) . '%' : '0%',
+                'accreditationLevel' => $c['accreditationLevel'] ?? 'Level 1 Accredited',
+                'status' => $c['status'] ?? 'Operational',
+            ];
+        }
+
+        $summary = [
+            'totalCentersProfiled' => $totalCenters,
+            'totalCapacity' => $totalCapacity,
+            'totalEnrolledChildren' => $totalEnrolled,
+            'overallUtilization' => $totalCapacity > 0 ? round(($totalEnrolled / $totalCapacity) * 100, 1) . '%' : '0%',
+        ];
+
+        $columns = [
+            ['key' => 'code', 'label' => 'Center Code'],
+            ['key' => 'name', 'label' => 'Center Name'],
+            ['key' => 'barangay', 'label' => 'Barangay'],
+            ['key' => 'address', 'label' => 'Address / Location'],
+            ['key' => 'capacity', 'label' => 'Capacity'],
+            ['key' => 'enrolledCount', 'label' => 'Enrolled'],
+            ['key' => 'utilizationRate', 'label' => 'Utilization'],
+            ['key' => 'accreditationLevel', 'label' => 'Accreditation'],
+            ['key' => 'status', 'label' => 'Status'],
+        ];
+
+        return $this->wrapReport(
+            'Consolidated CDC Profile',
+            'Official Form 9: Consolidated Child Development Center Profile',
+            'ECCD-FORM-9',
+            $filters,
+            $summary,
+            $columns,
+            $rows,
+            true
+        );
+    }
 }
