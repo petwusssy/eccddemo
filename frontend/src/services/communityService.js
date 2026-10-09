@@ -16,6 +16,7 @@
 
 import { centralDataStore } from './centralDataStore.js';
 import { SAN_FERNANDO_BARANGAYS } from '../data/sanFernandoBarangays.js';
+import { getApiUrl } from './apiConfig.js';
 
 export const WORKER_ROLES = [
   'Service Provider',
@@ -137,6 +138,42 @@ export const communityService = {
   async getWorkerById(id) {
     const list = (centralDataStore.getWorkers() || []).map(mapWorker);
     return list.find((w) => w.id === id || norm(w.name) === norm(id)) || null;
+  },
+
+  /** POST /api/centers */
+  async createCenter(payload) {
+    const created = centralDataStore.createDayCareCenter(payload);
+    try {
+      fetch(getApiUrl('/api/centers'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+    } catch (_) {}
+    return mapCenter(created);
+  },
+
+  /** POST /api/workers */
+  async createWorker(payload) {
+    const created = centralDataStore.createWorker(payload);
+    try {
+      fetch(getApiUrl('/api/workers'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+    } catch (_) {}
+    return mapWorker(created);
   },
 };
 

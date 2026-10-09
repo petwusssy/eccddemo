@@ -19,6 +19,8 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { officialFormsService } from '../../services/officialFormsService';
 import { centralDataStore } from '../../services/centralDataStore';
+import { communityService } from '../../services/communityService';
+import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
 import { useToast } from '../ui/Toast';
 import { getPhilippinesDate } from '../../utils/phTime';
 
@@ -112,9 +114,9 @@ export function OfficialForm7CenterProfileModal({
     dateConducted: getPhilippinesDate(),
   });
 
-  // Load existing data if centerId provided
+  // Load existing data if centerId provided, or reset for registration
   useEffect(() => {
-    if (centerId && isOpen) {
+    if (centerId && centerId !== 'new' && isOpen) {
       const center = centralDataStore.getDayCareCenterById(centerId);
       const existingForm7 = officialFormsService.getForm7Data(centerId);
 
@@ -128,10 +130,28 @@ export function OfficialForm7CenterProfileModal({
           addressBarangay: center.barangay || 'San Isidro',
           numberOfCDWs: String(center.assignedWorkers?.length || 2),
           accreditationNo: center.accreditationNo || 'CDC-2024-012',
-          accreditationLevel: String(center.accreditationLevel || '3'),
+          accreditationLevel: String(center.accreditationLevel?.replace(/\D/g, '') || '3'),
           cdwNamePrint: center.assignedWorkers?.[0] || 'Maritess S. Pangilinan',
         }));
       }
+    } else if (isOpen && (!centerId || centerId === 'new')) {
+      // Clean form for registering a new CDC
+      setFormData((prev) => ({
+        ...prev,
+        centerName: '',
+        yearEstablished: '2020',
+        addressNo: '',
+        addressStreet: '',
+        addressBarangay: 'Sindalan',
+        telephoneNos: '',
+        faxNo: '',
+        emailAdd: '',
+        accreditationNo: `CDC-2026-${String(Math.floor(Math.random() * 900) + 100)}`,
+        accreditationLevel: '3',
+        centerStatus: 'Accredited',
+        dateAccredited: getPhilippinesDate(),
+        numberOfCDWs: '1',
+      }));
     }
   }, [centerId, isOpen]);
 
@@ -160,25 +180,43 @@ export function OfficialForm7CenterProfileModal({
   };
 
   const handleSave = () => {
-    // Prevent duplicate center records by name & barangay
-    if (!centerId) {
-      const existing = centralDataStore.getDayCareCenters().find(
-        (c) => c.name.toLowerCase() === formData.centerName.trim().toLowerCase() &&
-               c.barangay.toLowerCase() === formData.addressBarangay.toLowerCase()
-      );
-      if (existing) {
-        addToast(`Center record already exists for ${formData.centerName}. Updated existing profile.`, 'info');
-        officialFormsService.saveForm7Data(existing.id, formData);
-        if (onSuccess) onSuccess(existing);
-        onClose();
-        return;
-      }
+    if (!formData.centerName.trim()) {
+      addToast('Please enter the Child Development Center Name.', 'error');
+      return;
     }
 
-    const targetId = centerId || `CDC-${Date.now()}`;
+    const targetId = centerId && centerId !== 'new' ? centerId : `CDC-${Date.now()}`;
+
+    // Save to centralDataStore
+    const savedCenter = centralDataStore.createDayCareCenter({
+      id: targetId,
+      name: formData.centerName.trim(),
+      barangay: formData.addressBarangay,
+      barangayName: formData.addressBarangay,
+      address: formData.addressStreet
+        ? `${formData.addressNo || ''} ${formData.addressStreet}, ${formData.addressBarangay}, ${formData.addressCity}`.trim()
+        : `Barangay Hall Compound, ${formData.addressBarangay}, City of San Fernando, Pampanga`,
+      capacity: 60,
+      status: `${formData.centerStatus} (Level ${formData.accreditationLevel || '3'})`,
+      accreditationLevel: `Level ${formData.accreditationLevel || '3'}`,
+      accreditationNo: formData.accreditationNo,
+      accreditationValidUntil: '2027-12-31',
+    });
+
     officialFormsService.saveForm7Data(targetId, formData);
+
+    // Sync with backend API
+    communityService.createCenter({
+      id: targetId,
+      centerName: formData.centerName.trim(),
+      addressBarangay: formData.addressBarangay,
+      address: savedCenter.address,
+      centerStatus: formData.centerStatus,
+      accreditationLevel: `Level ${formData.accreditationLevel || '3'}`,
+    }).catch(() => {});
+
     addToast('Official Form 7 (CDC Profile) saved successfully.', 'success');
-    if (onSuccess) onSuccess(formData);
+    if (onSuccess) onSuccess(savedCenter);
     onClose();
   };
 
@@ -318,10 +356,10 @@ export function OfficialForm7CenterProfileModal({
                     value={formData.addressStreet}
                     onChange={(e) => handleFieldChange('addressStreet', e.target.value)}
                   />
-                  <Input
-                    placeholder="Subdivision / Barangay"
+                  <Select
                     value={formData.addressBarangay}
                     onChange={(e) => handleFieldChange('addressBarangay', e.target.value)}
+                    options={SAN_FERNANDO_BARANGAYS.map((b) => ({ value: b, label: b }))}
                   />
                   <Input
                     placeholder="City / Municipality"

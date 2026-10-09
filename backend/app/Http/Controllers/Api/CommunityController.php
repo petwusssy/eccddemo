@@ -131,4 +131,59 @@ class CommunityController extends Controller
             'data' => $data,
         ]);
     }
+
+    /**
+     * POST /api/centers — Register a new Child Development Center (Form 7)
+     */
+    public function storeCenter(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'centerName' => 'nullable|string|max:255',
+            'barangay' => 'nullable|string|max:255',
+            'addressBarangay' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'capacity' => 'nullable|integer',
+            'status' => 'nullable|string|max:100',
+            'accreditationLevel' => 'nullable|string|max:50',
+        ]);
+
+        $data = array_merge($validated, [
+            'name' => $request->input('centerName') ?? $request->input('name'),
+            'barangay' => $request->input('addressBarangay') ?? $request->input('barangay'),
+        ]);
+
+        $center = $this->communityService->createCenter($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Child Development Center registered successfully.',
+            'data' => $center,
+        ], 201);
+    }
+
+    /**
+     * POST /api/workers — Register a new Child Development Worker (Form 6)
+     */
+    public function storeWorker(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'firstName' => 'nullable|string|max:255',
+            'lastName' => 'nullable|string|max:255',
+            'role' => 'nullable|string|max:100',
+            'centerBeingServed' => 'nullable|string|max:255',
+            'addressBarangay' => 'nullable|string|max:255',
+            'contactMobile' => 'nullable|string|max:50',
+            'email' => 'nullable|string|email|max:255',
+        ]);
+
+        $worker = $this->communityService->createWorker($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Child Development Worker registered successfully.',
+            'data' => $worker,
+        ], 201);
+    }
 }

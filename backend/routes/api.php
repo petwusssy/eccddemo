@@ -175,11 +175,13 @@ Route::prefix('barangays')->group(function () {
 
 Route::prefix('centers')->group(function () {
     Route::get('/', [CommunityController::class, 'getCenters']);
+    Route::post('/', [CommunityController::class, 'storeCenter']);
     Route::get('/{id}', [CommunityController::class, 'getCenterById']);
 });
 
 Route::prefix('workers')->group(function () {
     Route::get('/', [CommunityController::class, 'getWorkers']);
+    Route::post('/', [CommunityController::class, 'storeWorker']);
     Route::get('/{id}', [CommunityController::class, 'getWorkerById']);
 });
 

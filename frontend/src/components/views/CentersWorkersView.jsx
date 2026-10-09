@@ -12,6 +12,7 @@ import {
   Layers,
   X,
   CheckCircle2,
+  Plus,
 } from 'lucide-react';
 import { communityService, WORKER_ROLES } from '../../services/communityService';
 import Button from '../ui/Button';
@@ -85,6 +86,22 @@ export function CentersWorkersView({ initialTab = 'daycare-centers', onNavigate 
     }
     loadData();
   }, []);
+
+  const handleCenterSuccess = async () => {
+    const cData = await communityService.getCenters();
+    setCenters(cData || []);
+    const bData = await communityService.getBarangays();
+    setBarangays(bData || []);
+    setSelectedCenterForForm7(null);
+  };
+
+  const handleWorkerSuccess = async () => {
+    const wData = await communityService.getWorkers();
+    setWorkers(wData || []);
+    const cData = await communityService.getCenters();
+    setCenters(cData || []);
+    setSelectedWorkerForForm6(null);
+  };
 
   // Filtered Centers
   const filteredCenters = useMemo(() => {
@@ -215,6 +232,15 @@ export function CentersWorkersView({ initialTab = 'daycare-centers', onNavigate 
                   ))}
                 </select>
               </div>
+
+              <Button
+                variant="primary"
+                size="sm"
+                icon={Plus}
+                onClick={() => setSelectedCenterForForm7('new')}
+              >
+                + Register CDC
+              </Button>
 
               <Button
                 variant="outline"
@@ -451,14 +477,25 @@ export function CentersWorkersView({ initialTab = 'daycare-centers', onNavigate 
                 })}
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                icon={Layers}
-                onClick={() => setIsForm8Open(true)}
-              >
-                Official Form 8 (Consolidated CDW Profile)
-              </Button>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={Plus}
+                  onClick={() => setSelectedWorkerForForm6('new')}
+                >
+                  + Register Worker
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={Layers}
+                  onClick={() => setIsForm8Open(true)}
+                >
+                  Official Form 8 (Consolidated CDW Profile)
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -847,6 +884,7 @@ export function CentersWorkersView({ initialTab = 'daycare-centers', onNavigate 
         isOpen={Boolean(selectedWorkerForForm6)}
         onClose={() => setSelectedWorkerForForm6(null)}
         workerId={selectedWorkerForForm6}
+        onSuccess={handleWorkerSuccess}
       />
 
       {/* Official Form 7 (Center Profile) Modal */}
@@ -854,6 +892,7 @@ export function CentersWorkersView({ initialTab = 'daycare-centers', onNavigate 
         isOpen={Boolean(selectedCenterForForm7)}
         onClose={() => setSelectedCenterForForm7(null)}
         centerId={selectedCenterForForm7}
+        onSuccess={handleCenterSuccess}
       />
 
       {/* Official Form 8 (Consolidated CDW Profile) Modal */}

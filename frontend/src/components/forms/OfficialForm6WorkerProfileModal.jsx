@@ -19,6 +19,8 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { officialFormsService } from '../../services/officialFormsService';
 import { centralDataStore } from '../../services/centralDataStore';
+import { communityService } from '../../services/communityService';
+import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
 import { useToast } from '../ui/Toast';
 import { getPhilippinesDate } from '../../utils/phTime';
 
@@ -110,9 +112,9 @@ export function OfficialForm6WorkerProfileModal({
     dateConducted: getPhilippinesDate(),
   });
 
-  // Load existing worker data if workerId provided
+  // Load existing worker data if workerId provided, or reset for registration
   useEffect(() => {
-    if (workerId && isOpen) {
+    if (workerId && workerId !== 'new' && isOpen) {
       const worker = centralDataStore.getWorkerById(workerId);
       const existingForm6 = officialFormsService.getForm6Data(workerId);
 
@@ -120,7 +122,7 @@ export function OfficialForm6WorkerProfileModal({
         setFormData(existingForm6);
       } else if (worker) {
         // Pre-fill from central worker profile (Capture Once -> Reuse Everywhere)
-        const nameParts = worker.name.split(' ');
+        const nameParts = (worker.name || '').split(' ');
         const lName = nameParts[nameParts.length - 1] || '';
         const fName = nameParts.slice(0, nameParts.length - 1).join(' ') || worker.name;
 
@@ -128,8 +130,8 @@ export function OfficialForm6WorkerProfileModal({
           ...prev,
           lastName: lName,
           firstName: fName,
-          centerBeingServed: worker.assignedCenters?.[0] || 'San Isidro Day Care Center',
-          addressBarangay: worker.assignedBarangay || 'San Isidro',
+          centerBeingServed: worker.assignedCenters?.[0] || 'Sindalan Child Development Center',
+          addressBarangay: worker.assignedBarangay || 'Sindalan',
           contactMobile: worker.contactNumber || prev.contactMobile,
           email: worker.email || prev.email,
           yearsAsCDW: String(worker.yearsOfService || 5),
@@ -137,6 +139,37 @@ export function OfficialForm6WorkerProfileModal({
           cdwNamePrint: worker.name,
         }));
       }
+    } else if (isOpen && (!workerId || workerId === 'new')) {
+      // Clean form for registering a new worker
+      const allCenters = centralDataStore.getDayCareCenters();
+      const defaultCenter = allCenters.length > 0 ? allCenters[0].name : '';
+      const defaultBrgy = allCenters.length > 0 ? allCenters[0].barangay : 'Sindalan';
+      setFormData((prev) => ({
+        ...prev,
+        lastName: '',
+        firstName: '',
+        middleName: '',
+        age: '28',
+        sex: 'Female',
+        birthday: '1998-05-15',
+        civilStatus: 'Single',
+        noChildren: '0',
+        addressNo: '',
+        addressStreet: '',
+        addressBarangay: defaultBrgy,
+        contactMobile: '',
+        contactOffice: '',
+        contactHome: '',
+        contactFax: '',
+        email: '',
+        yearsAsCDW: '1',
+        centerBeingServed: defaultCenter,
+        accreditationNo: `CDW-2026-${String(Math.floor(Math.random() * 900) + 100)}`,
+        accreditationStatus: 'Accredited',
+        dateAccredited: getPhilippinesDate(),
+        cdwNamePrint: '',
+        dateConducted: getPhilippinesDate(),
+      }));
     }
   }, [workerId, isOpen]);
 
@@ -163,25 +196,52 @@ export function OfficialForm6WorkerProfileModal({
   };
 
   const handleSave = () => {
-    // Prevent duplicate worker records: check by name and barangay if new
-    if (!workerId) {
-      const fullName = `${formData.firstName} ${formData.lastName}`.trim().toLowerCase();
-      const existing = centralDataStore.getWorkers().find(
-        (w) => w.name.toLowerCase() === fullName && w.assignedBarangay.toLowerCase() === formData.addressBarangay.toLowerCase()
-      );
-      if (existing) {
-        addToast(`Worker record already exists for ${formData.firstName} ${formData.lastName}. Updated existing profile.`, 'info');
-        officialFormsService.saveForm6Data(existing.id, formData);
-        if (onSuccess) onSuccess(existing);
-        onClose();
-        return;
-      }
+    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      addToast('Please provide both First Name and Last Name of the worker.', 'error');
+      return;
+    }
+    if (!formData.centerBeingServed) {
+      addToast('Please select the Child Development Center being served.', 'error');
+      return;
     }
 
-    const targetId = workerId || `WKR-${Date.now()}`;
+    const targetId = workerId && workerId !== 'new' ? workerId : `WKR-${Date.now()}`;
+
+    // Register in centralDataStore and link to CDC
+    const savedWorker = centralDataStore.createWorker({
+      id: targetId,
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      name: fullName,
+      centerBeingServed: formData.centerBeingServed,
+      addressBarangay: formData.addressBarangay,
+      role: 'Child Development Worker',
+      designation: 'Child Development Worker',
+      contactMobile: formData.contactMobile,
+      email: formData.email,
+      yearsAsCDW: Number(formData.yearsAsCDW || 5),
+      accreditationNo: formData.accreditationNo,
+      status: formData.accreditationStatus || 'Active',
+    });
+
     officialFormsService.saveForm6Data(targetId, formData);
-    addToast('Official Form 6 (CDW Profile) saved successfully.', 'success');
-    if (onSuccess) onSuccess(formData);
+
+    // Sync with backend API
+    communityService.createWorker({
+      id: targetId,
+      name: fullName,
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      role: 'Child Development Worker',
+      centerBeingServed: formData.centerBeingServed,
+      addressBarangay: formData.addressBarangay,
+      contactMobile: formData.contactMobile,
+      email: formData.email,
+    }).catch(() => {});
+
+    addToast('Official Form 6 (CDW Profile) registered and linked to CDC successfully.', 'success');
+    if (onSuccess) onSuccess(savedWorker);
     onClose();
   };
 
@@ -394,10 +454,10 @@ export function OfficialForm6WorkerProfileModal({
                     value={formData.addressStreet}
                     onChange={(e) => handleFieldChange('addressStreet', e.target.value)}
                   />
-                  <Input
-                    placeholder="Subdivision / Barangay"
+                  <Select
                     value={formData.addressBarangay}
                     onChange={(e) => handleFieldChange('addressBarangay', e.target.value)}
+                    options={SAN_FERNANDO_BARANGAYS.map((b) => ({ value: b, label: b }))}
                   />
                   <Input
                     placeholder="City / Municipality"
@@ -541,11 +601,25 @@ export function OfficialForm6WorkerProfileModal({
                 </div>
                 <div>
                   <label style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>
-                    2. Name of Child Development Center Being Served
+                    2. Name of Child Development Center Being Served *
                   </label>
-                  <Input
+                  <Select
                     value={formData.centerBeingServed}
-                    onChange={(e) => handleFieldChange('centerBeingServed', e.target.value)}
+                    onChange={(e) => {
+                      const cName = e.target.value;
+                      handleFieldChange('centerBeingServed', cName);
+                      const cdc = centralDataStore.getDayCareCenters().find((c) => c.name === cName);
+                      if (cdc && cdc.barangay) {
+                        handleFieldChange('addressBarangay', cdc.barangay);
+                      }
+                    }}
+                    options={[
+                      { value: '', label: '-- Select Child Development Center --' },
+                      ...centralDataStore.getDayCareCenters().map((c) => ({
+                        value: c.name,
+                        label: `${c.name} (${c.barangay})`,
+                      })),
+                    ]}
                   />
                 </div>
               </div>

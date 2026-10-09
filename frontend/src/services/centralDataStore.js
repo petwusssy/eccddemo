@@ -87,8 +87,31 @@ export const SEED_BARANGAYS = SAN_FERNANDO_BARANGAYS.map((name, i) => ({
   district: 'City of San Fernando',
 }));
 
-// Seed Day Care Centers
-export const SEED_DAY_CARE_CENTERS = [];
+// Seed Day Care Centers (City of San Fernando, Pampanga — 35 Official Barangays)
+export const SEED_DAY_CARE_CENTERS = SAN_FERNANDO_BARANGAYS.map((name, i) => {
+  const cleanName = name.replace(/ \(Pulung Bulo\)| \(San Pedro Cutud\)| \(Poblacion\)/g, '');
+  return {
+    id: `CDC-${String(i + 1).padStart(3, '0')}`,
+    code: `CDC-CSFP-${String(i + 1).padStart(2, '0')}`,
+    name: `${cleanName} Child Development Center`,
+    barangay: name,
+    barangayName: name,
+    address: `Barangay Hall Compound, ${name}, City of San Fernando, Pampanga`,
+    capacity: 60,
+    enrolledChildren: 0,
+    enrolledCount: 0,
+    status: 'Accredited (Level 3)',
+    accreditationLevel: 'Level 3',
+    accreditationValidUntil: '2027-12-31',
+    accreditationNo: `CDC-2024-${String(i + 1).padStart(3, '0')}`,
+    assignedWorkers: name === 'Sindalan' ? ['Remedios D. Garcia, CDT']
+      : name === 'Dolores' ? ['Maritess S. Pangilinan, CDW']
+      : name === 'San Agustin' ? ['Corazon M. David, CDW']
+      : name === 'San Isidro' ? ['Josefina T. Santos, CDW']
+      : [],
+    sessions: 'Morning & Afternoon Sessions',
+  };
+});
 
 // Seed Users & Workers
 export const SEED_USERS = [
@@ -126,7 +149,60 @@ export const SEED_USERS = [
   },
 ];
 
-export const SEED_WORKERS = [];
+export const SEED_WORKERS = [
+  {
+    id: 'WKR-001',
+    name: 'Remedios D. Garcia, CDT',
+    role: 'Child Development Teacher',
+    designation: 'Child Development Teacher',
+    assignedBarangay: 'Sindalan',
+    assignedCenters: ['Sindalan Child Development Center'],
+    accreditationNo: 'CDW-2024-001',
+    contactNumber: '0917-555-0101',
+    email: 'cdt@eccd.gov.ph',
+    yearsOfService: 6,
+    status: 'Active',
+  },
+  {
+    id: 'WKR-002',
+    name: 'Maritess S. Pangilinan, CDW',
+    role: 'Child Development Worker',
+    designation: 'Child Development Worker',
+    assignedBarangay: 'Dolores',
+    assignedCenters: ['Dolores Child Development Center'],
+    accreditationNo: 'CDW-2024-002',
+    contactNumber: '0918-555-0102',
+    email: 'maritess.pangilinan@csfp.gov.ph',
+    yearsOfService: 5,
+    status: 'Active',
+  },
+  {
+    id: 'WKR-003',
+    name: 'Corazon M. David, CDW',
+    role: 'Child Development Worker',
+    designation: 'Child Development Worker',
+    assignedBarangay: 'San Agustin',
+    assignedCenters: ['San Agustin Child Development Center'],
+    accreditationNo: 'CDW-2024-003',
+    contactNumber: '0919-555-0103',
+    email: 'corazon.david@csfp.gov.ph',
+    yearsOfService: 4,
+    status: 'Active',
+  },
+  {
+    id: 'WKR-004',
+    name: 'Josefina T. Santos, CDW',
+    role: 'Child Development Worker',
+    designation: 'Child Development Worker',
+    assignedBarangay: 'San Isidro',
+    assignedCenters: ['San Isidro Child Development Center'],
+    accreditationNo: 'CDW-2024-004',
+    contactNumber: '0920-555-0104',
+    email: 'josefina.santos@csfp.gov.ph',
+    yearsOfService: 7,
+    status: 'Active',
+  },
+];
 
 // Seed Mapping Activities
 export const SEED_MAPPING_ACTIVITIES = [];
@@ -255,6 +331,14 @@ class CentralDataStore {
         auditLogs: SEED_AUDIT_LOGS,
         resources: SEED_RESOURCES,
       };
+    }
+
+    // Ensure day care centers and workers are hydrated with seeded records if empty
+    if (!initialData.dayCareCenters || initialData.dayCareCenters.length === 0) {
+      initialData.dayCareCenters = [...SEED_DAY_CARE_CENTERS];
+    }
+    if (!initialData.workers || initialData.workers.length === 0) {
+      initialData.workers = [...SEED_WORKERS];
     }
 
     // Clear obsolete legacy keys so stale duplicates are permanently purged
@@ -833,7 +917,127 @@ class CentralDataStore {
     return this.data.workers.find((w) => w.id === workerId) || null;
   }
   getDayCareCenterById(centerId) {
-    return this.data.dayCareCenters.find((c) => c.id === centerId) || null;
+    return this.data.dayCareCenters.find((c) => c.id === centerId || c.code === centerId || c.name === centerId) || null;
+  }
+
+  createDayCareCenter(centerPayload) {
+    if (!Array.isArray(this.data.dayCareCenters)) this.data.dayCareCenters = [];
+
+    const name = (centerPayload.name || centerPayload.centerName || '').trim();
+    const brgy = (centerPayload.barangay || centerPayload.addressBarangay || 'San Isidro').trim();
+    const cleanName = name || `${brgy} Child Development Center`;
+
+    const existing = this.data.dayCareCenters.find(
+      (c) => c.name.toLowerCase() === cleanName.toLowerCase() ||
+             (centerPayload.id && c.id === centerPayload.id)
+    );
+
+    if (existing) {
+      Object.assign(existing, {
+        ...centerPayload,
+        name: cleanName,
+        barangay: brgy,
+        barangayName: brgy,
+        updatedAt: getPhilippinesDateTime(),
+      });
+      this.save();
+      return existing;
+    }
+
+    const count = this.data.dayCareCenters.length + 1;
+    const newId = centerPayload.id || `CDC-${String(count).padStart(3, '0')}`;
+    const newCenter = {
+      id: newId,
+      code: centerPayload.code || `CDC-CSFP-${String(count).padStart(2, '0')}`,
+      name: cleanName,
+      barangay: brgy,
+      barangayName: brgy,
+      address: centerPayload.address || (centerPayload.addressStreet ? `${centerPayload.addressNo || ''} ${centerPayload.addressStreet}, ${brgy}` : `Barangay Hall Compound, ${brgy}, City of San Fernando, Pampanga`),
+      capacity: Number(centerPayload.capacity || 60),
+      enrolledChildren: Number(centerPayload.enrolledChildren || 0),
+      enrolledCount: Number(centerPayload.enrolledChildren || 0),
+      status: centerPayload.status || centerPayload.centerStatus || 'Accredited (Level 3)',
+      accreditationLevel: centerPayload.accreditationLevel || 'Level 3',
+      accreditationValidUntil: centerPayload.accreditationValidUntil || '2027-12-31',
+      accreditationNo: centerPayload.accreditationNo || `CDC-2024-${String(count).padStart(3, '0')}`,
+      assignedWorkers: Array.isArray(centerPayload.assignedWorkers) ? centerPayload.assignedWorkers : [],
+      sessions: centerPayload.sessions || 'Morning & Afternoon Sessions',
+      createdAt: getPhilippinesDateTime(),
+    };
+
+    this.data.dayCareCenters.unshift(newCenter);
+    this.save();
+    return newCenter;
+  }
+
+  createWorker(workerPayload) {
+    if (!Array.isArray(this.data.workers)) this.data.workers = [];
+
+    const fullName = (workerPayload.name || `${workerPayload.firstName || ''} ${workerPayload.lastName || ''}`).trim() || 'Child Development Worker';
+    const centerName = workerPayload.centerBeingServed || (Array.isArray(workerPayload.assignedCenters) ? workerPayload.assignedCenters[0] : '');
+    const brgy = workerPayload.addressBarangay || workerPayload.assignedBarangay || 'San Isidro';
+
+    const existing = this.data.workers.find(
+      (w) => (w.name.toLowerCase() === fullName.toLowerCase()) ||
+             (workerPayload.id && w.id === workerPayload.id)
+    );
+
+    if (existing) {
+      Object.assign(existing, {
+        ...workerPayload,
+        name: fullName,
+        assignedCenters: centerName ? [centerName] : existing.assignedCenters,
+        assignedBarangay: brgy,
+        updatedAt: getPhilippinesDateTime(),
+      });
+
+      // Link to CDC assignedWorkers
+      if (centerName && Array.isArray(this.data.dayCareCenters)) {
+        const cdc = this.data.dayCareCenters.find((c) => c.name.toLowerCase() === centerName.toLowerCase());
+        if (cdc) {
+          if (!Array.isArray(cdc.assignedWorkers)) cdc.assignedWorkers = [];
+          if (!cdc.assignedWorkers.includes(fullName)) {
+            cdc.assignedWorkers.push(fullName);
+          }
+        }
+      }
+
+      this.save();
+      return existing;
+    }
+
+    const count = this.data.workers.length + 1;
+    const newId = workerPayload.id || `WKR-${String(count).padStart(3, '0')}`;
+    const newWorker = {
+      id: newId,
+      name: fullName,
+      role: workerPayload.role || 'Child Development Worker',
+      designation: workerPayload.designation || workerPayload.role || 'Child Development Worker',
+      assignedBarangay: brgy,
+      assignedCenters: centerName ? [centerName] : [],
+      accreditationNo: workerPayload.accreditationNo || `CDW-2024-${String(count).padStart(3, '0')}`,
+      contactNumber: workerPayload.contactNumber || workerPayload.contactMobile || '0917-000-0000',
+      email: workerPayload.email || `${fullName.toLowerCase().replace(/[\s,.]+/g, '.')}@csfp.gov.ph`,
+      yearsOfService: Number(workerPayload.yearsOfService || workerPayload.yearsAsCDW || 5),
+      status: workerPayload.status || 'Active',
+      createdAt: getPhilippinesDateTime(),
+    };
+
+    this.data.workers.unshift(newWorker);
+
+    // Link to CDC assignedWorkers
+    if (centerName && Array.isArray(this.data.dayCareCenters)) {
+      const cdc = this.data.dayCareCenters.find((c) => c.name.toLowerCase() === centerName.toLowerCase());
+      if (cdc) {
+        if (!Array.isArray(cdc.assignedWorkers)) cdc.assignedWorkers = [];
+        if (!cdc.assignedWorkers.includes(fullName)) {
+          cdc.assignedWorkers.push(fullName);
+        }
+      }
+    }
+
+    this.save();
+    return newWorker;
   }
   createHousehold(payload) {
     if (payload.parentGuardian) payload.parentGuardian = String(payload.parentGuardian).toUpperCase();
