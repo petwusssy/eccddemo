@@ -9,6 +9,7 @@ import {
   CheckSquare,
   CalendarClock,
   Building2,
+  School,
   FileBarChart,
   FileClock,
   Settings,
