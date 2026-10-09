@@ -24,38 +24,47 @@ import anacLogo from '../../assets/anac-logo.png';
 const navigationSections = [
   {
     title: 'MAIN',
+    shortTitle: 'MAIN',
     items: [
       { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     ],
   },
   {
-    title: 'CHILD MANAGEMENT',
+    title: 'SYSTEM SETUP & NETWORK',
+    shortTitle: 'SETUP',
     items: [
-      { id: 'children', label: 'Children', path: '/children', icon: Users },
-      { id: 'community-mapping', label: 'Community Mapping', path: '/mapping', icon: MapPin },
-      { id: 'enrollment', label: 'Enrollment', path: '/enrollment', icon: ClipboardCheck },
-    ],
-  },
-  {
-    title: 'MONITORING',
-    items: [
-      { id: 'health-monitoring', label: 'Health Monitoring', path: '/health-monitoring', icon: HeartPulse },
-      { id: 'eccd-checklist', label: 'Development Assessment', path: '/development-assessment', icon: CheckSquare },
-      { id: 'follow-ups', label: 'Follow-ups', path: '/follow-ups', icon: CalendarClock },
-    ],
-  },
-  {
-    title: 'COMMUNITY',
-    items: [
+      { id: 'centers-workers', label: 'Centers & Workers', path: '/centers-workers', icon: School },
       { id: 'community-network', label: 'Community Network', path: '/community-network', icon: Building2 },
     ],
   },
   {
-    title: 'REPORTS',
-    items: [{ id: 'reports', label: 'Reports', path: '/reports', icon: FileBarChart }],
+    title: 'REGISTRATION & MAPPING',
+    shortTitle: 'REG',
+    items: [
+      { id: 'community-mapping', label: 'Community Mapping', path: '/mapping', icon: MapPin },
+      { id: 'enrollment', label: 'Enrollment', path: '/enrollment', icon: ClipboardCheck },
+      { id: 'children', label: 'Children Records', path: '/children', icon: Users },
+    ],
+  },
+  {
+    title: 'ASSESSMENT & MONITORING',
+    shortTitle: 'EVAL',
+    items: [
+      { id: 'development-assessment', label: 'Development Assessment', path: '/development-assessment', icon: CheckSquare },
+      { id: 'health-monitoring', label: 'Health Monitoring', path: '/health-monitoring', icon: HeartPulse },
+      { id: 'follow-ups', label: 'Follow-ups', path: '/follow-ups', icon: CalendarClock },
+    ],
+  },
+  {
+    title: 'REPORTS & GOVERNANCE',
+    shortTitle: 'REP',
+    items: [
+      { id: 'reports', label: 'Consolidated Reports', path: '/reports', icon: FileBarChart },
+    ],
   },
   {
     title: 'SYSTEM',
+    shortTitle: 'SYS',
     items: [
       { id: 'settings', label: 'Settings', path: '/settings', icon: Settings },
     ],
@@ -133,7 +142,7 @@ export function Sidebar({
           {navigationSections.map((section, idx) => (
             <div key={idx} style={{ marginBottom: '0.75rem' }}>
               <div className="sidebar-section-title">
-                {isCollapsed ? section.title.slice(0, 3) : section.title}
+                {isCollapsed ? (section.shortTitle || section.title.slice(0, 3)) : section.title}
               </div>
 
               {section.items.map((item) => {
@@ -141,17 +150,27 @@ export function Sidebar({
                 const isItemActive =
                   location.pathname === item.path ||
                   activeItem === item.id ||
-                  (item.id === 'community-mapping' && (location.pathname === '/mapping' || location.pathname === '/community-mapping' || location.pathname === '/households')) ||
-                  (item.id === 'eccd-checklist' && (location.pathname === '/development-assessment' || location.pathname === '/eccd-checklist')) ||
+                  (item.id === 'centers-workers' &&
+                    ['/centers-workers', '/daycare-centers', '/workers'].includes(location.pathname)) ||
                   (item.id === 'community-network' &&
-                    ['/community-network', '/barangays', '/daycare-centers', '/workers'].includes(location.pathname));
+                    ['/community-network', '/barangays'].includes(location.pathname)) ||
+                  ((item.id === 'community-mapping' || item.id === 'mapping') &&
+                    ['/mapping', '/community-mapping', '/households'].includes(location.pathname)) ||
+                  ((item.id === 'development-assessment' || item.id === 'eccd-checklist') &&
+                    ['/development-assessment', '/eccd-checklist'].includes(location.pathname));
 
                 const isAllowed = checkPermission
                   ? item.id === 'community-network'
-                    ? checkPermission('community-network') ||
-                      checkPermission('barangays') ||
+                    ? checkPermission('community-network') || checkPermission('barangays')
+                    : item.id === 'centers-workers'
+                    ? checkPermission('centers-workers') ||
+                      checkPermission('community-network') ||
                       checkPermission('daycare-centers') ||
                       checkPermission('workers')
+                    : item.id === 'community-mapping' || item.id === 'mapping'
+                    ? checkPermission('mapping') || checkPermission('community-mapping') || checkPermission('households')
+                    : item.id === 'development-assessment' || item.id === 'eccd-checklist'
+                    ? checkPermission('development-assessment') || checkPermission('eccd-checklist')
                     : checkPermission(item.id)
                   : true;
 

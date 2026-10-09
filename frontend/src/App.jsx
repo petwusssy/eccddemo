@@ -49,19 +49,20 @@ import anacLogo from './assets/anac-logo.png';
 
 const ROUTE_MAP = {
   dashboard: '/dashboard',
-  children: '/children',
+  'centers-workers': '/centers-workers',
+  'community-network': '/community-network',
+  barangays: '/community-network',
+  'daycare-centers': '/centers-workers',
+  workers: '/centers-workers',
   'community-mapping': '/mapping',
   mapping: '/mapping',
   households: '/mapping',
   enrollment: '/enrollment',
-  'health-monitoring': '/health-monitoring',
-  'eccd-checklist': '/development-assessment',
+  children: '/children',
   'development-assessment': '/development-assessment',
+  'eccd-checklist': '/development-assessment',
+  'health-monitoring': '/health-monitoring',
   'follow-ups': '/follow-ups',
-  'community-network': '/community-network',
-  barangays: '/community-network',
-  'daycare-centers': '/community-network',
-  workers: '/community-network',
   reports: '/reports',
   'audit-logs': '/audit-logs',
   settings: '/settings',
@@ -73,19 +74,20 @@ const ROUTE_MAP = {
 const PATH_TO_SECTION = {
   '/': 'dashboard',
   '/dashboard': 'dashboard',
-  '/children': 'children',
+  '/centers-workers': 'centers-workers',
+  '/community-network': 'community-network',
+  '/barangays': 'community-network',
+  '/daycare-centers': 'centers-workers',
+  '/workers': 'centers-workers',
   '/mapping': 'community-mapping',
   '/community-mapping': 'community-mapping',
   '/households': 'community-mapping',
   '/enrollment': 'enrollment',
+  '/children': 'children',
+  '/development-assessment': 'development-assessment',
+  '/eccd-checklist': 'development-assessment',
   '/health-monitoring': 'health-monitoring',
-  '/development-assessment': 'eccd-checklist',
-  '/eccd-checklist': 'eccd-checklist',
   '/follow-ups': 'follow-ups',
-  '/community-network': 'community-network',
-  '/barangays': 'community-network',
-  '/daycare-centers': 'community-network',
-  '/workers': 'community-network',
   '/reports': 'reports',
   '/audit-logs': 'audit-logs',
   '/settings': 'settings',
@@ -199,7 +201,7 @@ function AuthenticatedApp() {
         return {
           title: 'CSWDO ECCD Monitoring Dashboard',
           breadcrumbs: [
-            { label: 'ECCD CARE', onClick: () => navigate('/dashboard') },
+            { label: 'MAIN', onClick: () => navigate('/dashboard') },
             { label: 'Executive Dashboard' },
           ],
           actions: (
@@ -214,11 +216,24 @@ function AuthenticatedApp() {
           ),
         };
 
-      case 'children':
+      case 'centers-workers':
+      case 'daycare-centers':
+      case 'workers':
         return {
+          title: 'Day Care Centers & Child Development Workers',
           breadcrumbs: [
-            { label: 'Child Management', onClick: () => navigate('/children') },
-            { label: 'Children Masterlist' },
+            { label: 'SYSTEM SETUP & NETWORK', onClick: () => navigate('/centers-workers') },
+            { label: 'Centers & Workers (Forms 6 & 7)' },
+          ],
+        };
+
+      case 'community-network':
+      case 'barangays':
+        return {
+          title: 'Community Network & Barangay Directory',
+          breadcrumbs: [
+            { label: 'SYSTEM SETUP & NETWORK', onClick: () => navigate('/community-network') },
+            { label: 'Community Network (Form 3)' },
           ],
         };
 
@@ -226,63 +241,65 @@ function AuthenticatedApp() {
       case 'community-mapping':
       case 'mapping':
         return {
+          title: 'Community Mapping (Form 1)',
           breadcrumbs: [
-            { label: 'Child Management' },
+            { label: 'REGISTRATION & MAPPING', onClick: () => navigate('/mapping') },
             { label: 'Community Mapping' },
           ],
         };
 
       case 'enrollment':
         return {
+          title: 'Center Enrollment & Session Scheduling',
           breadcrumbs: [
-            { label: 'Child Management' },
+            { label: 'REGISTRATION & MAPPING', onClick: () => navigate('/enrollment') },
             { label: 'Enrollment' },
           ],
         };
 
-      case 'health-monitoring':
+      case 'children':
         return {
+          title: 'Children Records & Child 360° Directory',
           breadcrumbs: [
-            { label: 'Monitoring' },
-            { label: 'Health Monitoring' },
+            { label: 'REGISTRATION & MAPPING', onClick: () => navigate('/children') },
+            { label: 'Children Records (Form 2)' },
           ],
         };
 
       case 'eccd-checklist':
       case 'development-assessment':
         return {
+          title: 'Phil-ECCD Developmental Assessment Checklist',
           breadcrumbs: [
-            { label: 'Monitoring' },
+            { label: 'ASSESSMENT & MONITORING', onClick: () => navigate('/development-assessment') },
             { label: 'Development Assessment' },
+          ],
+        };
+
+      case 'health-monitoring':
+        return {
+          title: 'Child Health & Growth Monitoring (OPT Plus)',
+          breadcrumbs: [
+            { label: 'ASSESSMENT & MONITORING', onClick: () => navigate('/health-monitoring') },
+            { label: 'Health Monitoring' },
           ],
         };
 
       case 'follow-ups':
         return {
+          title: 'Case Management & Intervention Follow-ups',
           breadcrumbs: [
-            { label: 'Monitoring' },
+            { label: 'ASSESSMENT & MONITORING', onClick: () => navigate('/follow-ups') },
             { label: 'Follow-ups' },
-          ],
-        };
-
-      case 'barangays':
-      case 'daycare-centers':
-      case 'workers':
-      case 'community-network':
-        return {
-          title: 'Community Network',
-          breadcrumbs: [
-            { label: 'Community', onClick: () => navigate('/community-network') },
-            { label: 'Community Network' },
           ],
         };
 
       case 'reports':
         return {
-          title: 'ECCD Reports & DSWD Consolidated Submissions',
+          title: 'System-Generated Consolidated Reports & Governance',
           breadcrumbs: [
-            { label: 'Reports' },
-            { label: 'Consolidated Reports' },
+            { label: 'REPORTS & GOVERNANCE', onClick: () => navigate('/reports') },
+            { label: 'Consolidated Reports (Forms 4, 5, 8, 9)' },
           ],
         };
 
@@ -298,7 +315,7 @@ function AuthenticatedApp() {
       case 'audit-logs':
         return {
           breadcrumbs: [
-            { label: 'System' },
+            { label: 'SYSTEM' },
             { label: 'Audit Logs' },
           ],
         };
@@ -307,7 +324,7 @@ function AuthenticatedApp() {
         return {
           title: 'System Configuration & Settings',
           breadcrumbs: [
-            { label: 'System' },
+            { label: 'SYSTEM', onClick: () => navigate('/settings') },
             { label: 'Settings' },
           ],
         };
@@ -315,7 +332,7 @@ function AuthenticatedApp() {
       case 'users':
         return {
           breadcrumbs: [
-            { label: 'System' },
+            { label: 'SYSTEM' },
             { label: 'User Accounts' },
           ],
         };
@@ -382,20 +399,31 @@ function AuthenticatedApp() {
         <ErrorBoundary key={location.pathname} onNavigate={handleNavigate}>
           <Routes>
             <Route path="/" element={<Navigate to={ROLE_LANDING_ROUTE[user?.role] || '/dashboard'} replace />} />
+            
+            {/* 1. MAIN */}
             <Route path="/dashboard" element={<DashboardOverview onNavigate={handleNavigate} />} />
-            <Route path="/children" element={<ChildManagementView onNavigate={handleNavigate} />} />
+
+            {/* 2. SYSTEM SETUP & NETWORK */}
+            <Route path="/centers-workers" element={<CommunityView key="centers-workers" initialTab="daycare-centers" onNavigate={handleNavigate} />} />
+            <Route path="/community-network" element={<CommunityView key="community-network" initialTab="barangays" onNavigate={handleNavigate} />} />
+            <Route path="/barangays" element={<Navigate to="/community-network" replace />} />
+            <Route path="/daycare-centers" element={<Navigate to="/centers-workers" replace />} />
+            <Route path="/workers" element={<Navigate to="/centers-workers" replace />} />
+
+            {/* 3. REGISTRATION & MAPPING */}
             <Route path="/mapping" element={<CommunityMappingView onNavigate={handleNavigate} />} />
             <Route path="/community-mapping" element={<Navigate to="/mapping" replace />} />
             <Route path="/households" element={<CommunityMappingView initialTab="households" onNavigate={handleNavigate} />} />
             <Route path="/enrollment" element={<EnrollmentView onNavigate={handleNavigate} />} />
-            <Route path="/health-monitoring" element={<HealthMonitoringView onNavigate={handleNavigate} />} />
+            <Route path="/children" element={<ChildManagementView onNavigate={handleNavigate} />} />
+
+            {/* 4. ASSESSMENT & MONITORING */}
             <Route path="/development-assessment" element={<DevelopmentView onNavigate={handleNavigate} />} />
             <Route path="/eccd-checklist" element={<Navigate to="/development-assessment" replace />} />
+            <Route path="/health-monitoring" element={<HealthMonitoringView onNavigate={handleNavigate} />} />
             <Route path="/follow-ups" element={<FollowUpView onNavigate={handleNavigate} />} />
-            <Route path="/community-network" element={<CommunityView initialTab="barangays" onNavigate={handleNavigate} />} />
-            <Route path="/barangays" element={<Navigate to="/community-network" replace />} />
-            <Route path="/daycare-centers" element={<Navigate to="/community-network" replace />} />
-            <Route path="/workers" element={<Navigate to="/community-network" replace />} />
+
+            {/* 5. REPORTS & GOVERNANCE */}
             <Route path="/reports" element={<ReportsView onNavigate={handleNavigate} />} />
             <Route
               path="/audit-logs"
