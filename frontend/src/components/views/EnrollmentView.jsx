@@ -34,6 +34,7 @@ import { Modal } from '../ui/Modal';
 import { useToast } from '../ui/Toast';
 import { useAuth } from '../auth/AuthProvider';
 import { enrollmentService } from '../../services/enrollmentService';
+import { centralDataStore } from '../../services/centralDataStore';
 import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
 import { getPhilippinesDate } from '../../utils/phTime';
 
@@ -76,6 +77,8 @@ export function EnrollmentView({ onNavigate }) {
   // Datasets
   const [enrollments, setEnrollments] = useState([]);
   const [notEnrolledChildren, setNotEnrolledChildren] = useState([]);
+  const [availableCentersList, setAvailableCentersList] = useState([]);
+  const [availableWorkersList, setAvailableWorkersList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Filters for Directory
@@ -97,12 +100,14 @@ export function EnrollmentView({ onNavigate }) {
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [enrollmentForm, setEnrollmentForm] = useState({
     center: 'San Isidro Child Development Center I',
+    dayCareCenterId: null,
     program: 'Child Development Center (CDC)',
     session: 'Morning Session (8:00 AM – 11:00 AM)',
     schoolYear: 'SY 2026–2027',
     enrollmentDate: getPhilippinesDate(),
     status: 'Enrolled',
     teacher: 'Maria Santos, CDW I',
+    workerId: null,
   });
 
   // History Modal State
@@ -128,6 +133,22 @@ export function EnrollmentView({ onNavigate }) {
         status: filterNotEnrStatus,
       });
       setNotEnrolledChildren(notEnrData.children || []);
+
+      const rawCenters = centralDataStore.getDayCareCenters() || [];
+      const rawWorkers = centralDataStore.getWorkers() || [];
+      setAvailableCentersList(
+        rawCenters.length > 0
+          ? rawCenters
+          : AVAILABLE_CENTERS.map((name, i) => ({ id: `CDC-${i + 1}`, name, barangay: 'San Isidro' }))
+      );
+      setAvailableWorkersList(
+        rawWorkers.length > 0
+          ? rawWorkers
+          : [
+              { id: 'WKR-001', name: 'Maria Santos', role: 'CDW I', assignedCenters: ['San Isidro Child Development Center I'], assignedBarangay: 'San Isidro' },
+              { id: 'WKR-002', name: 'Elena Dizon', role: 'CDW II', assignedCenters: ['San Isidro Child Development Center II'], assignedBarangay: 'San Isidro' },
+            ]
+      );
     } catch (e) {
       console.error('Error loading enrollment data:', e);
     } finally {
@@ -159,9 +180,31 @@ export function EnrollmentView({ onNavigate }) {
   // Open confirmation modal for child enrollment
   const handleInitiateEnrollment = (child) => {
     setSelectedChildForEnrollment(child);
+    const childBrgy = (child.barangay || '').toLowerCase().trim();
+    const cdcList = centralDataStore.getDayCareCenters() || [];
+    const workerList = centralDataStore.getWorkers() || [];
+
+    // Form 7 CDC matching child's barangay or nearest
+    const matchingCdc = cdcList.find((c) => (c.barangay || '').toLowerCase().trim() === childBrgy);
+    const centerName = matchingCdc?.name || child.nearestCenter || (cdcList[0]?.name || 'San Isidro Child Development Center I');
+    const centerId = matchingCdc?.id || cdcList[0]?.id || null;
+
+    // Form 6 Worker deployed to this center or barangay
+    const matchingWorker = workerList.find((w) =>
+      (Array.isArray(w.assignedCenters) && w.assignedCenters.some((ac) => ac.toLowerCase() === centerName.toLowerCase())) ||
+      (w.assignedBarangay && w.assignedBarangay.toLowerCase().trim() === childBrgy)
+    );
+    const teacherName = matchingWorker ? `${matchingWorker.name}, ${matchingWorker.role || 'CDW I'}` : 'Maria Santos, CDW I';
+    const workerId = matchingWorker?.id || null;
+
     setEnrollmentForm({
       ...enrollmentForm,
-      center: child.nearestCenter || 'San Isidro Child Development Center I',
+      center: centerName,
+      dayCareCenterId: centerId,
+      teacher: teacherName,
+      workerId: workerId,
+      schoolYear: 'SY 2026–2027',
+      status: 'Enrolled',
     });
     setIsEnrollModalOpen(true);
   };
@@ -179,15 +222,17 @@ export function EnrollmentView({ onNavigate }) {
       sex: selectedChildForEnrollment.sex,
       barangay: selectedChildForEnrollment.barangay,
       center: enrollmentForm.center,
+      dayCareCenterId: enrollmentForm.dayCareCenterId,
+      teacher: enrollmentForm.teacher,
+      workerId: enrollmentForm.workerId,
       program: enrollmentForm.program,
       session: enrollmentForm.session,
-      schoolYear: enrollmentForm.schoolYear,
+      schoolYear: enrollmentForm.schoolYear || 'SY 2026–2027',
       enrollmentDate: enrollmentForm.enrollmentDate,
-      status: enrollmentForm.status,
-      teacher: enrollmentForm.teacher,
+      status: enrollmentForm.status || 'Enrolled',
     });
 
-    addToast(res.message, 'success');
+    addToast(res.message || 'Child enrolled successfully!', 'success');
     setIsEnrollModalOpen(false);
     setSelectedChildForEnrollment(null);
     setSearchQuery('');
@@ -213,7 +258,7 @@ export function EnrollmentView({ onNavigate }) {
       <div className="page-header" style={{ marginBottom: 'var(--space-3)' }}>
         <div className="page-title-group">
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <h1 className="page-title">Day Care &amp; CDC Enrollment</h1>
+            <h1 className="page-title">Center Enrollment &amp; Session Scheduling</h1>
             <Badge variant="primary" size="sm">SY 2026–2027</Badge>
           </div>
         </div>
@@ -365,7 +410,12 @@ export function EnrollmentView({ onNavigate }) {
                 <Select
                   value={filterCenter}
                   onChange={(e) => setFilterCenter(e.target.value)}
-                  options={[{ value: '', label: 'All Day Care Centers' }, ...AVAILABLE_CENTERS.map((c) => ({ value: c, label: c }))]}
+                  options={[
+                    { value: '', label: 'All Day Care Centers' },
+                    ...(availableCentersList.length > 0
+                      ? availableCentersList.map((c) => ({ value: c.name, label: c.name }))
+                      : AVAILABLE_CENTERS.map((c) => ({ value: c, label: c }))),
+                  ]}
                   className="select-sm"
                 />
               </div>
@@ -861,10 +911,28 @@ export function EnrollmentView({ onNavigate }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
                 <Select
-                  label="Day Care Center"
+                  label="Day Care Center (Form 7 CDC)"
                   value={enrollmentForm.center}
-                  onChange={(e) => setEnrollmentForm({ ...enrollmentForm, center: e.target.value })}
-                  options={AVAILABLE_CENTERS.map((c) => ({ value: c, label: c }))}
+                  onChange={(e) => {
+                    const cdcName = e.target.value;
+                    const cdcObj = availableCentersList.find((c) => c.name === cdcName);
+                    const matchingWorker = availableWorkersList.find((w) =>
+                      (Array.isArray(w.assignedCenters) && w.assignedCenters.some((ac) => ac.toLowerCase() === cdcName.toLowerCase())) ||
+                      (cdcObj && w.assignedBarangay && w.assignedBarangay.toLowerCase() === (cdcObj.barangay || '').toLowerCase())
+                    );
+                    setEnrollmentForm({
+                      ...enrollmentForm,
+                      center: cdcName,
+                      dayCareCenterId: cdcObj?.id || null,
+                      teacher: matchingWorker ? `${matchingWorker.name}, ${matchingWorker.role || 'CDW I'}` : enrollmentForm.teacher,
+                      workerId: matchingWorker?.id || enrollmentForm.workerId,
+                    });
+                  }}
+                  options={
+                    availableCentersList.length > 0
+                      ? availableCentersList.map((c) => ({ value: c.name, label: `${c.name} (${c.barangay || 'San Fernando'})` }))
+                      : AVAILABLE_CENTERS.map((c) => ({ value: c, label: c }))
+                  }
                   required
                 />
                 <Select
@@ -872,7 +940,7 @@ export function EnrollmentView({ onNavigate }) {
                   value={enrollmentForm.schoolYear}
                   onChange={(e) => setEnrollmentForm({ ...enrollmentForm, schoolYear: e.target.value })}
                   options={[
-                    { value: 'SY 2026–2027', label: 'SY 2026–2027' },
+                    { value: 'SY 2026–2027', label: 'SY 2026–2027 (Active School Year)' },
                     { value: 'SY 2025–2026', label: 'SY 2025–2026' },
                   ]}
                   required
@@ -880,11 +948,25 @@ export function EnrollmentView({ onNavigate }) {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
-                <Input
-                  label="Enrollment Date"
-                  type="date"
-                  value={enrollmentForm.enrollmentDate}
-                  onChange={(e) => setEnrollmentForm({ ...enrollmentForm, enrollmentDate: e.target.value })}
+                <Select
+                  label="Assigned CDW / Teacher (Form 6)"
+                  value={enrollmentForm.teacher}
+                  onChange={(e) => {
+                    const chosen = availableWorkersList.find((w) => `${w.name}, ${w.role || 'CDW I'}` === e.target.value || w.name === e.target.value);
+                    setEnrollmentForm({
+                      ...enrollmentForm,
+                      teacher: e.target.value,
+                      workerId: chosen?.id || null,
+                    });
+                  }}
+                  options={
+                    availableWorkersList.length > 0
+                      ? availableWorkersList.map((w) => ({
+                          value: `${w.name}, ${w.role || 'CDW I'}`,
+                          label: `${w.name} (${w.assignedBarangay || 'San Fernando'}) — ${w.role || 'CDW I'}`,
+                        }))
+                      : [{ value: 'Maria Santos, CDW I', label: 'Maria Santos, CDW I' }]
+                  }
                   required
                 />
                 <Select
@@ -901,6 +983,13 @@ export function EnrollmentView({ onNavigate }) {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+                <Input
+                  label="Enrollment Date"
+                  type="date"
+                  value={enrollmentForm.enrollmentDate}
+                  onChange={(e) => setEnrollmentForm({ ...enrollmentForm, enrollmentDate: e.target.value })}
+                  required
+                />
                 <Select
                   label="Program Modality"
                   value={enrollmentForm.program}
@@ -910,6 +999,9 @@ export function EnrollmentView({ onNavigate }) {
                     { value: 'Supervised Neighborhood Play (SNP)', label: 'Supervised Neighborhood Play (SNP)' },
                   ]}
                 />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--space-3)' }}>
                 <Select
                   label="Session Schedule"
                   value={enrollmentForm.session}

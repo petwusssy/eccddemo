@@ -20,7 +20,7 @@ import { officialFormsService } from '../../services/officialFormsService';
 import { useToast } from '../ui/Toast';
 import { BARANGAY_OPTIONS } from '../../data/sanFernandoBarangays';
 
-export function OfficialForm5ConsolidatedReport() {
+export function OfficialForm5ConsolidatedReport({ onClose } = {}) {
   const { addToast } = useToast();
 
   const [filterBarangay, setFilterBarangay] = useState('All');
@@ -218,6 +218,15 @@ export function OfficialForm5ConsolidatedReport() {
               >
                 Export CSV
               </Button>
+              {onClose && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClose}
+                >
+                  Close
+                </Button>
+              )}
             </div>
           </div>
         </CardBody>

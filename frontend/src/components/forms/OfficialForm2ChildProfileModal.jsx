@@ -20,6 +20,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { officialFormsService } from '../../services/officialFormsService';
 import { centralDataStore } from '../../services/centralDataStore';
+import { BARANGAY_OPTIONS } from '../../data/sanFernandoBarangays';
 import { useToast } from '../ui/Toast';
 import { getPhilippinesDate } from '../../utils/phTime';
 
@@ -34,6 +35,8 @@ export function OfficialForm2ChildProfileModal({
 
   const [formData, setFormData] = useState({
     childId: '',
+    barangay: 'San Isidro',
+    householdId: '',
     // 1. Personal Information
     lastName: '',
     firstName: '',
@@ -135,7 +138,7 @@ export function OfficialForm2ChildProfileModal({
 
   // Prepopulate from Child record in Central Store (Capture Once → Reuse Everywhere!)
   useEffect(() => {
-    if (isOpen && childId) {
+    if (isOpen && childId && childId !== 'new') {
       const existing = officialFormsService.getForm2Data(childId);
       const child = centralDataStore.getChildById(childId);
 
@@ -149,6 +152,8 @@ export function OfficialForm2ChildProfileModal({
         setFormData((prev) => ({
           ...prev,
           childId,
+          barangay: child.barangay || 'San Isidro',
+          householdId: child.householdId || '',
           lastName: child.lastName || '',
           firstName: child.firstName || '',
           middleInitial: child.middleName ? child.middleName.charAt(0) : '',
@@ -163,19 +168,82 @@ export function OfficialForm2ChildProfileModal({
           nameOfRespondent: child.parentGuardian || '',
         }));
       }
+    } else if (isOpen && (!childId || childId === 'new')) {
+      const defaultHh = centralDataStore.getHouseholds()[0];
+      setFormData((prev) => ({
+        ...prev,
+        childId: '',
+        barangay: defaultHh?.barangay || 'San Isidro',
+        householdId: defaultHh?.id || '',
+        nameOfRespondent: defaultHh?.parentGuardian || '',
+        lastName: '',
+        firstName: '',
+        middleInitial: '',
+        birthDate: '',
+        age: '3 yrs',
+        sex: 'Male',
+        heightCm: '92',
+        weightKg: '13.5',
+        nameOfCDT: 'Maria C. Santos (CDW I)',
+        dateConducted: getPhilippinesDate(),
+      }));
     }
   }, [isOpen, childId]);
 
   const handleSaveDraft = () => {
-    officialFormsService.saveDraft(`FORM_2_${childId}`, formData);
+    const draftKey = childId && childId !== 'new' ? `FORM_2_${childId}` : 'FORM_2_NEW';
+    officialFormsService.saveDraft(draftKey, formData);
     addToast('Official Form 2 draft saved locally.', 'info');
   };
 
   const handleSave = (e) => {
     e.preventDefault();
-    officialFormsService.saveForm2Data(childId, formData);
-    addToast('Official Form 2 (Children\'s Profile) saved and connected to Child 360°.', 'success');
-    if (onSuccess) onSuccess(formData);
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      addToast('Please enter Child First Name and Last Name.', 'error');
+      return;
+    }
+
+    let targetChildId = childId;
+    if (!targetChildId || targetChildId === 'new') {
+      const allKids = centralDataStore.getChildren() || [];
+      targetChildId = `ECCD-2026-${String(allKids.length + 101).padStart(5, '0')}`;
+
+      // Register new Master Child Profile into Central Data Store
+      centralDataStore.registerChild({
+        id: targetChildId,
+        firstName: formData.firstName.toUpperCase().trim(),
+        lastName: formData.lastName.toUpperCase().trim(),
+        middleName: (formData.middleInitial || '').toUpperCase().trim(),
+        fullName: `${formData.firstName} ${formData.lastName}`.toUpperCase().trim(),
+        birthDate: formData.birthDate,
+        sex: formData.sex,
+        barangay: formData.barangay || 'San Isidro',
+        householdId: formData.householdId || null,
+        parentGuardian: formData.nameOfRespondent || 'Parent / Guardian',
+        height: parseFloat(formData.heightCm) || 92,
+        weight: parseFloat(formData.weightKg) || 13.5,
+        firstLanguage: formData.motherTongue,
+        secondLanguage: formData.otherDialects,
+        enrollmentStatus: 'Not Enrolled',
+      });
+    } else {
+      centralDataStore.updateChild(targetChildId, {
+        firstName: formData.firstName.toUpperCase().trim(),
+        lastName: formData.lastName.toUpperCase().trim(),
+        birthDate: formData.birthDate,
+        sex: formData.sex,
+        height: parseFloat(formData.heightCm) || undefined,
+        weight: parseFloat(formData.weightKg) || undefined,
+      });
+    }
+
+    officialFormsService.saveForm2Data(targetChildId, {
+      ...formData,
+      childId: targetChildId,
+    });
+
+    addToast(`Official Form 2 (Children's Profile) saved! ECCD ID: ${targetChildId}`, 'success');
+    if (onSuccess) onSuccess(formData, targetChildId);
     onClose();
   };
 
@@ -240,6 +308,36 @@ export function OfficialForm2ChildProfileModal({
               =================================================================== */}
           {activeSection === 'personal' && (
             <div>
+              {/* Connected Form 1 Household & Barangay */}
+              <div className="official-grid-2" style={{ marginBottom: 'var(--space-3)' }}>
+                <Select
+                  label="Connected Barangay (Form 3) *"
+                  value={formData.barangay || 'San Isidro'}
+                  onChange={(e) => setFormData({ ...formData, barangay: e.target.value })}
+                  options={BARANGAY_OPTIONS}
+                />
+                <Select
+                  label="Connected Household (Form 1 Home Profile)"
+                  value={formData.householdId || ''}
+                  onChange={(e) => {
+                    const hh = centralDataStore.getHouseholdById(e.target.value);
+                    setFormData({
+                      ...formData,
+                      householdId: e.target.value,
+                      barangay: hh?.barangay || formData.barangay,
+                      nameOfRespondent: hh?.parentGuardian || formData.nameOfRespondent,
+                    });
+                  }}
+                  options={[
+                    { value: '', label: 'Select Form 1 Household (Optional)...' },
+                    ...centralDataStore.getHouseholds().map((h) => ({
+                      value: h.id,
+                      label: `${h.id} — ${h.parentGuardian} (${h.barangay})`,
+                    })),
+                  ]}
+                />
+              </div>
+
               <div className="official-section-title">1. Personal Information</div>
               <div className="official-grid-5">
                 <Input

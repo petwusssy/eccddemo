@@ -133,6 +133,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isForm1ModalOpen, setIsForm1ModalOpen] = useState(false);
   const [isForm2ModalOpen, setIsForm2ModalOpen] = useState(false);
+  const [selectedChildForForm2, setSelectedChildForForm2] = useState(null);
   const [isForm5ModalOpen, setIsForm5ModalOpen] = useState(false);
   const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
@@ -400,7 +401,7 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
           <div className="page-header" style={{ marginBottom: 'var(--space-3)' }}>
             <div className="page-title-group">
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <h1 className="page-title">Children Master Registry</h1>
+                <h1 className="page-title">Children Records &amp; Child 360° Directory</h1>
                 <Badge variant="primary" size="sm">0–4 Cohort</Badge>
               </div>
             </div>
@@ -416,7 +417,10 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => setIsRegisterModalOpen(true)}
+                onClick={() => {
+                  setSelectedChildForForm2('new');
+                  setIsForm2ModalOpen(true);
+                }}
               >
                 <Plus size={16} />
                 Register Child
@@ -710,14 +714,29 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
                       </TableCell>
 
                       <TableCell className="child-col-action">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleOpenProfile(child.id)}
-                        >
-                          <Eye size={15} />
-                          Profile
-                        </Button>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleOpenProfile(child.id)}
+                            title="View Child 360° Profile"
+                          >
+                            <Eye size={15} />
+                            Profile
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedChildForForm2(child.id);
+                              setIsForm2ModalOpen(true);
+                            }}
+                            title="Open Form 2 - Children's Profile"
+                          >
+                            <FileText size={15} />
+                            Form 2
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -2085,10 +2104,17 @@ export function ChildManagementView({ initialChildId, onNavigate }) {
 
       <OfficialForm2ChildProfileModal
         isOpen={isForm2ModalOpen}
-        onClose={() => setIsForm2ModalOpen(false)}
-        childId={childProfile?.childId}
-        onSuccess={() => {
-          if (childProfile?.childId) handleOpenProfile(childProfile.childId);
+        onClose={() => {
+          setIsForm2ModalOpen(false);
+          setSelectedChildForForm2(null);
+        }}
+        childId={selectedChildForForm2 || childProfile?.childId}
+        onSuccess={(savedFormData, newTargetId) => {
+          loadDirectory();
+          const targetId = newTargetId || (typeof savedFormData === 'string' ? savedFormData : null) || childProfile?.childId;
+          if (targetId) {
+            handleOpenProfile(targetId);
+          }
         }}
       />
 

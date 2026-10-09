@@ -407,16 +407,25 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     setSyncStatus('saving');
     const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
 
+    const brgyIndex = SAN_FERNANDO_BARANGAYS.findIndex(
+      (b) => b.toLowerCase().trim() === (householdForm.barangay || '').toLowerCase().trim()
+    );
+    const form3BarangayId = brgyIndex >= 0 ? `BRGY-${String(brgyIndex + 1).padStart(2, '0')}` : 'BRGY-01';
+
     const householdPayload = {
       id: householdForm.id,
+      household_no: householdForm.id,
       parentGuardian: String(householdForm.parentGuardian || '').trim().toUpperCase(),
       contactNumber: householdForm.contactNumber ? householdForm.contactNumber.replace(/\D/g, '') : '',
       address: `${householdForm.address}, ${householdForm.purok}`,
       barangay: householdForm.barangay,
+      barangayId: form3BarangayId,
+      purok: householdForm.purok,
       mappingActivityId: householdForm.activityId,
       childrenCount: childrenList.length,
       mappedBy: 'CSWDO Field Officer',
       mappedDate: new Date().toISOString().slice(0, 10),
+      status: 'Completed',
     };
 
     // 1. Immediately write to IndexedDB (idb) with pending status so data is never lost offline
@@ -430,10 +439,23 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     });
 
     try {
-      // 2. Create household
+      // 2. Create household bound to Form 3 Barangay
       const createdHh = await communityMappingService.createHousehold(householdPayload);
 
-      // 3. Register or link children without duplicates
+      // Save Form 1 Master Profile for this household
+      officialFormsService.saveForm1Data(createdHh.id, {
+        householdId: createdHh.id,
+        barangay: householdForm.barangay,
+        barangayId: form3BarangayId,
+        purok: householdForm.purok,
+        address: householdForm.address,
+        parentGuardian: householdForm.parentGuardian,
+        contactNumber: householdForm.contactNumber,
+        childrenCount: childrenList.length,
+        mappedDate: formatPHTTime(new Date(), false),
+      });
+
+      // 3. Register children and auto-push to Mapped but Not Enrolled Queue
       const savedChildren = [];
       for (const child of childrenList) {
         const regRes = await communityMappingService.registerChild({
@@ -447,8 +469,9 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           householdId: createdHh.id,
           parentGuardian: householdForm.parentGuardian,
           barangay: householdForm.barangay,
-          enrollmentStatus: child.enrollmentStatus,
-          enrollmentCenter: child.enrollmentCenter,
+          barangayId: form3BarangayId,
+          enrollmentStatus: 'Not Enrolled',
+          enrollmentCenter: 'Pending CDC Assignment',
           existingChildId: child.decision === 'same' && child.matchedRecord ? child.matchedRecord.id : null,
         });
         savedChildren.push(regRes.child);
@@ -678,13 +701,13 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           type="button"
           className="mapping-tab-btn"
           onClick={() => {
-            setSelectedBarangayForForm3('San Isidro');
+            setSelectedBarangayForForm3(householdForm?.barangay || 'San Isidro');
             setIsForm3ModalOpen(true);
           }}
           title="Open official ECCD Council Form 3"
         >
           <FileText size={16} />
-          <span>Official Form 3 (Community Profile)</span>
+          <span>Official Form 3</span>
         </button>
       </nav>
 
