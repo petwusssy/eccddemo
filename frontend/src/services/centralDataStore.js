@@ -1438,6 +1438,9 @@ class CentralDataStore {
 
     const height = Number(healthPayload.heightCm || healthPayload.height || 0);
     const weight = Number(healthPayload.weightKg || healthPayload.weight || 0);
+    const muac = healthPayload.muacCm !== undefined && healthPayload.muacCm !== null && healthPayload.muacCm !== ''
+      ? Number(healthPayload.muacCm)
+      : (healthPayload.muac ? Number(healthPayload.muac) : null);
     const date = healthPayload.date || getPhilippinesDate();
     const nutStatus = healthPayload.nutritionalStatus || 'Normal Weight';
 
@@ -1446,6 +1449,7 @@ class CentralDataStore {
       ...healthPayload,
       heightCm: height,
       weightKg: weight,
+      muacCm: muac,
       date,
       nutritionalStatus: nutStatus,
       createdAt: getPhilippinesDateTime(),
@@ -1458,6 +1462,7 @@ class CentralDataStore {
     child.healthStatus = 'Up to Date';
     child.lastWeightKg = weight;
     child.lastHeightCm = height;
+    child.lastMuacCm = muac;
     child.lastMeasurementDate = date;
     child.nutritionalStatus = nutStatus;
 
@@ -1467,6 +1472,7 @@ class CentralDataStore {
       variant: 'success',
       lastWeightKg: weight,
       lastHeightCm: height,
+      lastMuacCm: muac,
       nutritionalStatus: nutStatus,
       lastMeasurementDate: date,
       nextDue: addDaysPHT(30),

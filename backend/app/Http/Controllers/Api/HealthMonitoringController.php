@@ -76,6 +76,8 @@ class HealthMonitoringController extends Controller
             'heightCm' => 'nullable|numeric|min:30|max:150',
             'weight' => 'nullable|numeric|min:2|max:60',
             'weightKg' => 'nullable|numeric|min:2|max:60',
+            'muac' => 'nullable|numeric|min:5|max:35',
+            'muacCm' => 'nullable|numeric|min:5|max:35',
             'nutritionalStatus' => 'nullable|string|max:50',
             'notes' => 'nullable|string|max:1000',
             'recordedBy' => 'nullable|string|max:150',

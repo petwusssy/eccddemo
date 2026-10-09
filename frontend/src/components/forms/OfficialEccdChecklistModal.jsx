@@ -38,6 +38,7 @@ export function OfficialEccdChecklistModal({
   isOpen,
   onClose,
   childId = '',
+  initialRecordType = null,
   onSuccess,
 }) {
   const { addToast } = useToast();
@@ -49,7 +50,9 @@ export function OfficialEccdChecklistModal({
   const [currentStep, setCurrentStep] = useState('assessment');
 
   // Selected Record: 'record1' (0-3.0 yrs) | 'record2' (3.1-5.11 yrs)
-  const [recordTypeKey, setRecordTypeKey] = useState('record2');
+  const [recordTypeKey, setRecordTypeKey] = useState(
+    initialRecordType === 'record1' || initialRecordType === "Child's Record 1" ? 'record1' : 'record2'
+  );
 
   // Domain Tab in Assessment: 'gross-motor' | 'fine-motor' | 'self-help' | 'receptive-language' | 'expressive-language' | 'cognitive' | 'social-emotional' | 'qualitative'
   const [activeDomainId, setActiveDomainId] = useState('gross-motor');
@@ -90,9 +93,14 @@ export function OfficialEccdChecklistModal({
       const c = centralDataStore.getChildById(childId);
       if (c) {
         setChild(c);
-        const appropriate = officialChecklistService.getAppropriateRecord(c);
-        const isRec1 = appropriate.recordType === "Child's Record 1";
-        setRecordTypeKey(isRec1 ? 'record1' : 'record2');
+        if (initialRecordType) {
+          const isRec1 = initialRecordType === 'record1' || initialRecordType === "Child's Record 1";
+          setRecordTypeKey(isRec1 ? 'record1' : 'record2');
+        } else {
+          const appropriate = officialChecklistService.getAppropriateRecord(c, sessionMeta.assessmentDate);
+          const isRec1 = appropriate.recordType === "Child's Record 1";
+          setRecordTypeKey(isRec1 ? 'record1' : 'record2');
+        }
 
         setSessionMeta((prev) => ({
           ...prev,
@@ -101,7 +109,7 @@ export function OfficialEccdChecklistModal({
         }));
       }
     }
-  }, [isOpen, childId]);
+  }, [isOpen, childId, initialRecordType]);
 
   // Current active record definition
   const currentRecord = useMemo(() => {

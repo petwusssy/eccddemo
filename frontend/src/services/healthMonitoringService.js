@@ -49,12 +49,14 @@ export const healthMonitoringService = {
 
       const lastHeightCm = latest?.heightCm ?? latest?.height ?? c.lastHeightCm ?? (c.statusPillars?.health?.lastHeightCm) ?? null;
       const lastWeightKg = latest?.weightKg ?? latest?.weight ?? c.lastWeightKg ?? (c.statusPillars?.health?.lastWeightKg) ?? null;
+      const lastMuacCm = latest?.muacCm ?? latest?.muac ?? c.lastMuacCm ?? (c.statusPillars?.health?.lastMuacCm) ?? null;
 
       let nutritionalStatus = latest?.nutritionalStatus || c.nutritionalStatus || (c.statusPillars?.health?.nutritionalStatus) || 'Normal';
       if (lastWeightKg !== null && lastWeightKg !== undefined && lastHeightCm !== null && lastHeightCm !== undefined) {
         const whoRes = computeNutritionalStatus({
           weightKg: lastWeightKg,
           heightCm: lastHeightCm,
+          muacCm: lastMuacCm,
           birthDate: c.birthDate,
           sex: c.sex || 'Female',
           measurementDate: latest?.date || c.lastMeasurementDate || getPhilippinesDate(),
@@ -77,6 +79,7 @@ export const healthMonitoringService = {
         lastMeasurementDate: latest?.date || (hasRecord ? getPhilippinesDate() : (c.lastMeasurementDate || null)),
         lastHeightCm,
         lastWeightKg,
+        lastMuacCm,
         nutritionalStatus,
         status,
         daysSinceLastCheck,
@@ -196,6 +199,9 @@ export const healthMonitoringService = {
   async recordChildHealth(childId, payload) {
     const height = Number(payload.height || payload.heightCm || 0);
     const weight = Number(payload.weight || payload.weightKg || 0);
+    const muac = payload.muacCm !== undefined && payload.muacCm !== null && payload.muacCm !== ''
+      ? Number(payload.muacCm)
+      : (payload.muac ? Number(payload.muac) : null);
 
     const newRecord = centralDataStore.recordHealth({
       childId,
@@ -203,6 +209,7 @@ export const healthMonitoringService = {
       date: payload.date || getPhilippinesDate(),
       heightCm: height,
       weightKg: weight,
+      muacCm: muac,
       nutritionalStatus: payload.nutritionalStatus || 'Normal Weight for Age',
       recordedBy: payload.recordedBy || 'Child Development Teacher (CDT)',
       notes: payload.notes || '',
@@ -223,6 +230,7 @@ export const healthMonitoringService = {
           childId,
           heightCm: height,
           weightKg: weight,
+          muacCm: muac,
           date: payload.date || getPhilippinesDate(),
           nutritionalStatus: payload.nutritionalStatus || 'Normal Weight for Age',
           recordedBy: payload.recordedBy || 'Child Development Teacher (CDT)',

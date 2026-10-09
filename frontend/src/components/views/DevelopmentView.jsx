@@ -25,6 +25,8 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { developmentService } from '../../services/developmentService';
+import { officialFormsService } from '../../services/officialFormsService';
+import { officialChecklistService } from '../../services/officialChecklistService';
 import { barangaysList, dayCareCentersList } from '../../data/mockData';
 import Button from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -105,6 +107,37 @@ export function DevelopmentView({ onNavigate }) {
   const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [checklistChildId, setChecklistChildId] = useState('');
+  const [selectedRecordType, setSelectedRecordType] = useState(null);
+
+  // Automatic form selection logic based on Form 2 / child birthdate:
+  // - 0 to 3.1 years old (<= 37 months) -> Child's Record 1 Modal
+  // - 3.2 to 5.11 years old (38 to 71 months) -> Child's Record 2 Modal
+  const handleOpenChecklistForChild = (targetChild, forcedRecord = null) => {
+    if (!targetChild) return;
+    const childId = targetChild.childId || targetChild.id;
+    const f2 = officialFormsService.getForm2Data(childId);
+    const birthDate = f2?.birthDate || targetChild.birthDate;
+
+    let ageMonths = 36;
+    if (birthDate) {
+      const bdate = new Date(birthDate);
+      const now = new Date();
+      if (!isNaN(bdate.getTime())) {
+        let months = (now.getFullYear() - bdate.getFullYear()) * 12 + (now.getMonth() - bdate.getMonth());
+        if (now.getDate() < bdate.getDate()) months -= 1;
+        ageMonths = Math.max(0, months);
+      }
+    } else if (targetChild.ageMonths !== undefined && targetChild.ageMonths !== null) {
+      ageMonths = targetChild.ageMonths;
+    } else if (targetChild.ageYears !== undefined) {
+      ageMonths = targetChild.ageYears * 12;
+    }
+
+    const recordKey = forcedRecord || (ageMonths <= 37 ? 'record1' : 'record2');
+    setChecklistChildId(childId);
+    setSelectedRecordType(recordKey);
+    setIsChecklistModalOpen(true);
+  };
 
   // Load cohort data
   const loadData = async () => {
@@ -256,17 +289,27 @@ export function DevelopmentView({ onNavigate }) {
       <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
         <div>
           <h1 className="text-h1" style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
-            ECCD Developmental Assessment
+            Phil-ECCD Developmental Assessment Checklist
           </h1>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsManualModalOpen(true)}
-        >
-          <BookOpen size={14} />
-          Checklist Manual
-        </Button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsManualModalOpen(true)}
+          >
+            <BookOpen size={14} />
+            Checklist Manual
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            icon={Plus}
+            onClick={() => handleOpenChecklistForChild(currentChildProfile || cohortData.children[0])}
+          >
+            + Start Assessment
+          </Button>
+        </div>
       </div>
 
       {/* 2. Bento Grid Metrics */}
@@ -377,7 +420,7 @@ export function DevelopmentView({ onNavigate }) {
           onClick={() => setActiveTab('session')}
         >
           <CheckSquare size={16} />
-          Start Assessment (Active Session)
+          Start Assessment
         </button>
 
         <button
@@ -460,9 +503,9 @@ export function DevelopmentView({ onNavigate }) {
                 variant="primary"
                 size="sm"
                 icon={Plus}
-                onClick={() => setActiveTab('session')}
+                onClick={() => handleOpenChecklistForChild(currentChildProfile || cohortData.children[0])}
               >
-                Start Assessment
+                + Start Assessment
               </Button>
             </div>
           </div>
@@ -625,10 +668,7 @@ export function DevelopmentView({ onNavigate }) {
                               variant="primary"
                               size="sm"
                               icon={CheckSquare}
-                              onClick={() => {
-                                setChecklistChildId(child.childId);
-                                setIsChecklistModalOpen(true);
-                              }}
+                              onClick={() => handleOpenChecklistForChild(child)}
                               title="Conduct ECCD Checklist"
                             >
                               Checklist
@@ -773,10 +813,7 @@ export function DevelopmentView({ onNavigate }) {
                   variant="primary"
                   size="sm"
                   icon={CheckSquare}
-                  onClick={() => {
-                    setChecklistChildId(selectedChildId);
-                    setIsChecklistModalOpen(true);
-                  }}
+                  onClick={() => handleOpenChecklistForChild(currentChildProfile, 'record1')}
                 >
                   Start Record 1 Assessment
                 </Button>
@@ -788,7 +825,7 @@ export function DevelopmentView({ onNavigate }) {
                     Child's Record 2 (Form 2)
                   </span>
                   <span style={{ fontSize: '11px', color: '#166534', background: '#dcfce7', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
-                    Ages 3.1 to 5.11 yrs
+                    Ages 3.2 to 5.11 yrs
                   </span>
                 </div>
                 <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
@@ -798,10 +835,7 @@ export function DevelopmentView({ onNavigate }) {
                   variant="primary"
                   size="sm"
                   icon={CheckSquare}
-                  onClick={() => {
-                    setChecklistChildId(selectedChildId);
-                    setIsChecklistModalOpen(true);
-                  }}
+                  onClick={() => handleOpenChecklistForChild(currentChildProfile, 'record2')}
                 >
                   Start Record 2 Assessment
                 </Button>
@@ -1333,8 +1367,12 @@ export function DevelopmentView({ onNavigate }) {
       {isChecklistModalOpen && (
         <OfficialEccdChecklistModal
           isOpen={isChecklistModalOpen}
-          onClose={() => setIsChecklistModalOpen(false)}
+          onClose={() => {
+            setIsChecklistModalOpen(false);
+            setSelectedRecordType(null);
+          }}
           childId={checklistChildId}
+          initialRecordType={selectedRecordType}
           onSuccess={async () => {
             await loadData();
             await loadChildDetails(checklistChildId);

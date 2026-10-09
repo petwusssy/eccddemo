@@ -18,6 +18,7 @@ class HealthMonitoring extends Model
         'age_months',
         'height_cm',
         'weight_kg',
+        'muac_cm',
         'nutritional_status',
         'opt_plus_class',
         'deworming_done',
@@ -32,6 +33,7 @@ class HealthMonitoring extends Model
         'vitamin_a_supplement' => 'boolean',
         'height_cm' => 'decimal:2',
         'weight_kg' => 'decimal:2',
+        'muac_cm' => 'decimal:1',
     ];
 
     public function child(): BelongsTo

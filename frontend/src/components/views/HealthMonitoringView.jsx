@@ -67,7 +67,23 @@ const getNutritionalBadgeStyle = (status) => {
       dotColor: '#dc2626',
     };
   }
-  if (s.includes('underweight') || s.includes('wasted') || s.includes('stunted')) {
+  if (s.includes('wasted')) {
+    return {
+      backgroundColor: '#ffe4e6', // bg-rose-100
+      color: '#be123c',           // text-rose-700
+      border: '1px solid #fda4af', // border-rose-300
+      dotColor: '#e11d48',
+    };
+  }
+  if (s.includes('stunted')) {
+    return {
+      backgroundColor: '#ffedd5', // bg-orange-100
+      color: '#c2410c',           // text-orange-700
+      border: '1px solid #fdba74', // border-orange-300
+      dotColor: '#ea580c',
+    };
+  }
+  if (s.includes('underweight')) {
     return {
       backgroundColor: '#fef3c7', // bg-amber-100
       color: '#b45309',           // text-amber-700
@@ -148,6 +164,7 @@ export function HealthMonitoringView({ onNavigate }) {
     date: getPhilippinesDate(),
     heightCm: '',
     weightKg: '',
+    muacCm: '',
     nutritionalStatus: 'Normal',
     recordedBy: 'Maria Santos, CDW I',
     notes: '',
@@ -228,6 +245,7 @@ export function HealthMonitoringView({ onNavigate }) {
     return computeNutritionalStatus({
       weightKg: quickRecordChild.inputWeight,
       heightCm: quickRecordChild.inputHeight,
+      muacCm: quickRecordChild.inputMuac,
       birthDate: quickRecordChild.birthDate,
       sex: quickRecordChild.sex || 'Female',
       measurementDate: quickRecordChild.inputDate || getPhilippinesDate(),
@@ -235,6 +253,7 @@ export function HealthMonitoringView({ onNavigate }) {
   }, [
     quickRecordChild?.inputWeight,
     quickRecordChild?.inputHeight,
+    quickRecordChild?.inputMuac,
     quickRecordChild?.inputDate,
     quickRecordChild?.birthDate,
     quickRecordChild?.sex,
@@ -245,6 +264,7 @@ export function HealthMonitoringView({ onNavigate }) {
     return computeNutritionalStatus({
       weightKg: formData.weightKg,
       heightCm: formData.heightCm,
+      muacCm: formData.muacCm,
       birthDate: currentChildProfile?.birthDate,
       sex: currentChildProfile?.sex || 'Female',
       measurementDate: formData.date || getPhilippinesDate(),
@@ -252,6 +272,7 @@ export function HealthMonitoringView({ onNavigate }) {
   }, [
     formData.weightKg,
     formData.heightCm,
+    formData.muacCm,
     formData.date,
     currentChildProfile?.birthDate,
     currentChildProfile?.sex,
@@ -268,6 +289,12 @@ export function HealthMonitoringView({ onNavigate }) {
     const w = parseFloat(data.weightKg);
     if (isNaN(w) || w < 2 || w > 45) {
       errs.weightKg = 'Weight must be between 2.0 kg and 45.0 kg.';
+    }
+    if (data.muacCm) {
+      const m = parseFloat(data.muacCm);
+      if (isNaN(m) || m < 5 || m > 35) {
+        errs.muacCm = 'MUAC must be between 5.0 cm and 35.0 cm.';
+      }
     }
     return errs;
   };
@@ -292,6 +319,7 @@ export function HealthMonitoringView({ onNavigate }) {
       const calcRes = computeNutritionalStatus({
         weightKg: formData.weightKg,
         heightCm: formData.heightCm,
+        muacCm: formData.muacCm,
         birthDate: child.birthDate,
         sex: child.sex || 'Female',
         measurementDate: formData.date || getPhilippinesDate(),
@@ -305,13 +333,14 @@ export function HealthMonitoringView({ onNavigate }) {
         date: formData.date,
         heightCm: formData.heightCm,
         weightKg: formData.weightKg,
+        muacCm: formData.muacCm,
         nutritionalStatus: nutStatus,
         recordedBy: formData.recordedBy,
         notes: formData.notes,
       });
 
-      // Auto-trigger urgent follow-up if Underweight or Severely Underweight
-      if (nutStatus === 'Underweight' || nutStatus === 'Severely Underweight') {
+      // Auto-trigger urgent follow-up if child is malnourished (Underweight, Stunted, Wasted)
+      if (calcRes.isMalnourished || ['Underweight', 'Severely Underweight', 'Stunted', 'Wasted'].includes(nutStatus)) {
         try {
           await followUpService.createFollowUp({
             childId: selectedChildId,
@@ -325,7 +354,7 @@ export function HealthMonitoringView({ onNavigate }) {
             actionType: 'Monitoring',
             assignedWorker: formData.recordedBy || 'Maria Santos, CDW I',
             dueDate: addDaysPHT(14),
-            notes: `Urgent nutritional intervention required. Recorded: ${formData.weightKg} kg, ${formData.heightCm} cm. Status: ${nutStatus}. WHO Z-Score: ${calcRes.zScore} SD.`,
+            notes: `Urgent nutritional intervention required. Recorded: ${formData.weightKg} kg, ${formData.heightCm} cm${formData.muacCm ? `, MUAC: ${formData.muacCm} cm` : ''}. Status: ${nutStatus}. WHO Z-Score: ${calcRes.zScore} SD.`,
           });
         } catch (err) {
           console.warn('Failed to dispatch nutritional follow-up:', err);
@@ -339,6 +368,7 @@ export function HealthMonitoringView({ onNavigate }) {
         date: getPhilippinesDate(),
         heightCm: '',
         weightKg: '',
+        muacCm: '',
         nutritionalStatus: 'Normal',
         recordedBy: formData.recordedBy,
         notes: '',
@@ -365,6 +395,7 @@ export function HealthMonitoringView({ onNavigate }) {
 
     const h = parseFloat(quickRecordChild.inputHeight);
     const w = parseFloat(quickRecordChild.inputWeight);
+    const muac = quickRecordChild.inputMuac ? parseFloat(quickRecordChild.inputMuac) : null;
 
     if (isNaN(h) || h < 40 || isNaN(w) || w < 2) {
       alert('Please enter valid numeric height (cm) and weight (kg).');
@@ -375,6 +406,7 @@ export function HealthMonitoringView({ onNavigate }) {
       const calcRes = computeNutritionalStatus({
         weightKg: w,
         heightCm: h,
+        muacCm: muac,
         birthDate: quickRecordChild.birthDate,
         sex: quickRecordChild.sex || 'Female',
         measurementDate: quickRecordChild.inputDate || getPhilippinesDate(),
@@ -388,13 +420,14 @@ export function HealthMonitoringView({ onNavigate }) {
         date: quickRecordChild.inputDate || getPhilippinesDate(),
         heightCm: h,
         weightKg: w,
+        muacCm: muac,
         nutritionalStatus: nutStatus,
         recordedBy: quickRecordChild.inputWorker || 'CSWDO CDW',
         notes: quickRecordChild.inputNotes || '',
       });
 
-      // Auto-trigger urgent follow-up if Underweight or Severely Underweight
-      if (nutStatus === 'Underweight' || nutStatus === 'Severely Underweight') {
+      // Auto-trigger urgent follow-up if child is malnourished (Underweight, Stunted, Wasted)
+      if (calcRes.isMalnourished || ['Underweight', 'Severely Underweight', 'Stunted', 'Wasted'].includes(nutStatus)) {
         try {
           await followUpService.createFollowUp({
             childId: quickRecordChild.childId,
@@ -408,7 +441,7 @@ export function HealthMonitoringView({ onNavigate }) {
             actionType: 'Monitoring',
             assignedWorker: quickRecordChild.inputWorker || 'CSWDO CDW',
             dueDate: addDaysPHT(14),
-            notes: `Urgent nutritional intervention required. Recorded: ${w} kg, ${h} cm. Status: ${nutStatus}. WHO Z-Score: ${calcRes.zScore} SD.`,
+            notes: `Urgent nutritional intervention required. Recorded: ${w} kg, ${h} cm${muac ? `, MUAC: ${muac} cm` : ''}. Status: ${nutStatus}. WHO Z-Score: ${calcRes.zScore} SD.`,
           });
         } catch (err) {
           console.warn('Failed to dispatch nutritional follow-up:', err);
@@ -429,7 +462,7 @@ export function HealthMonitoringView({ onNavigate }) {
       <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
         <div>
           <h1 className="text-h1" style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
-            Child Health &amp; Nutrition Monitoring
+            Child Health &amp; Growth Monitoring (OPT Plus)
           </h1>
         </div>
       </div>
@@ -527,7 +560,7 @@ export function HealthMonitoringView({ onNavigate }) {
           onClick={() => setActiveTab('directory')}
         >
           <Clock size={16} />
-          Monthly Monitoring Directory &amp; Due List
+          Monthly Monitoring Directory
         </button>
 
         <button
@@ -536,7 +569,7 @@ export function HealthMonitoringView({ onNavigate }) {
           onClick={() => setActiveTab('record')}
         >
           <Scale size={16} />
-          Record Child Measurement (Intake)
+          Record Child Measurement
         </button>
 
         <button
@@ -818,9 +851,11 @@ export function HealthMonitoringView({ onNavigate }) {
                                 const initDate = getPhilippinesDate();
                                 const initH = child.lastHeightCm || '';
                                 const initW = child.lastWeightKg || '';
+                                const initMuac = child.lastMuacCm || '';
                                 const initCalc = computeNutritionalStatus({
                                   weightKg: initW,
                                   heightCm: initH,
+                                  muacCm: initMuac,
                                   birthDate: child.birthDate,
                                   sex: child.sex || 'Female',
                                   measurementDate: initDate,
@@ -830,6 +865,7 @@ export function HealthMonitoringView({ onNavigate }) {
                                   inputDate: initDate,
                                   inputHeight: initH,
                                   inputWeight: initW,
+                                  inputMuac: initMuac,
                                   inputNutritionalStatus: initCalc.status,
                                   inputWorker: 'Maria Santos, CDW I',
                                   inputNotes: '',
@@ -1026,6 +1062,39 @@ export function HealthMonitoringView({ onNavigate }) {
                   </div>
                   {formErrors.weightKg && (
                     <span style={{ fontSize: '0.75rem', color: '#dc2626' }}>{formErrors.weightKg}</span>
+                  )}
+                </div>
+
+                {/* MUAC (Mid-Upper Arm Circumference) */}
+                <div className="health-form-group">
+                  <label className="health-form-label">
+                    MUAC (Centimeters / cm) <span style={{ fontSize: '11px', color: '#64748b' }}>(OPT Plus)</span>
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="e.g. 13.5"
+                      className="health-input"
+                      value={formData.muacCm}
+                      onChange={(e) => setFormData({ ...formData, muacCm: e.target.value })}
+                    />
+                    <span
+                      style={{
+                        position: 'absolute',
+                        right: '0.75rem',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        fontSize: '0.8125rem',
+                        color: '#94a3b8',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      cm
+                    </span>
+                  </div>
+                  {formErrors.muacCm && (
+                    <span style={{ fontSize: '0.75rem', color: '#dc2626' }}>{formErrors.muacCm}</span>
                   )}
                 </div>
 
@@ -1435,7 +1504,7 @@ export function HealthMonitoringView({ onNavigate }) {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
                   <div className="health-form-group">
                     <label className="health-form-label">Height (cm)</label>
                     <input
@@ -1463,6 +1532,20 @@ export function HealthMonitoringView({ onNavigate }) {
                         setQuickRecordChild({ ...quickRecordChild, inputWeight: e.target.value })
                       }
                       required
+                    />
+                  </div>
+
+                  <div className="health-form-group">
+                    <label className="health-form-label">MUAC (cm)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className="health-input"
+                      placeholder="e.g. 13.5"
+                      value={quickRecordChild.inputMuac || ''}
+                      onChange={(e) =>
+                        setQuickRecordChild({ ...quickRecordChild, inputMuac: e.target.value })
+                      }
                     />
                   </div>
                 </div>

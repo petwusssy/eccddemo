@@ -148,6 +148,7 @@ class HealthMonitoringService
                         'date' => $hm->date?->toDateString(),
                         'heightCm' => (float) $hm->height_cm,
                         'weightKg' => (float) $hm->weight_kg,
+                        'muacCm' => $hm->muac_cm !== null ? (float) $hm->muac_cm : null,
                         'nutritionalStatus' => $hm->nutritional_status ?? 'Normal Weight',
                         'recordedBy' => $hm->recorded_by ?? 'CSWDO Day Care Worker',
                         'notes' => $hm->notes ?? '',
@@ -176,6 +177,7 @@ class HealthMonitoringService
                 'date' => $r['date'],
                 'heightCm' => (float) $r['heightCm'],
                 'weightKg' => (float) $r['weightKg'],
+                'muacCm' => isset($r['muacCm']) ? (float) $r['muacCm'] : null,
                 'ageMonths' => $r['ageMonths'] ?? null,
             ];
         }, $sortedAscending);
@@ -242,6 +244,7 @@ class HealthMonitoringService
         $date = $data['date'] ?? now()->toDateString();
         $height = (float) ($data['height'] ?? $data['heightCm'] ?? 0);
         $weight = (float) ($data['weight'] ?? $data['weightKg'] ?? 0);
+        $muac = isset($data['muac']) || isset($data['muacCm']) ? (float) ($data['muac'] ?? $data['muacCm']) : null;
         $notes = trim($data['notes'] ?? '');
         $recordedBy = $data['recordedBy'] ?? 'CSWDO Day Care Worker';
         $nutritionalStatus = $data['nutritionalStatus'] ?? 'Normal Weight';
@@ -258,6 +261,7 @@ class HealthMonitoringService
                     'age_months' => $data['ageMonths'] ?? 36,
                     'height_cm' => $height,
                     'weight_kg' => $weight,
+                    'muac_cm' => $muac,
                     'nutritional_status' => $nutritionalStatus,
                     'opt_plus_class' => $data['optPlusClass'] ?? null,
                     'deworming_done' => !empty($data['dewormingDone']),
@@ -277,6 +281,7 @@ class HealthMonitoringService
             'date' => $date,
             'heightCm' => $height,
             'weightKg' => $weight,
+            'muacCm' => $muac,
             'nutritionalStatus' => $nutritionalStatus,
             'recordedBy' => $recordedBy,
             'notes' => $notes,

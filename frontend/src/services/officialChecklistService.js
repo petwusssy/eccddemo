@@ -11,6 +11,7 @@
 
 import { centralDataStore } from './centralDataStore.js';
 import { followUpService } from './followUpService.js';
+import { officialFormsService } from './officialFormsService.js';
 import { getPhilippinesDate, getPhilippinesDateTime, addDaysPHT } from '../utils/phTime.js';
 import { CHECKLIST_RECORD_1, CHECKLIST_RECORD_2, HOW_TO_USE_MANUAL } from '../data/officialChecklistData.js';
 import {
@@ -23,24 +24,42 @@ import {
 export const officialChecklistService = {
   /**
    * Determine whether Child's Record 1 or 2 applies based on child age
+   * - Age 0 to 3.1 years old (<= 37 months): Child's Record 1
+   * - Age 3.2 to 5.11 years old (38 to 71 months): Child's Record 2
    */
-  getAppropriateRecord(child) {
+  getAppropriateRecord(child, assessmentDate) {
     if (!child) return CHECKLIST_RECORD_1;
 
-    let ageInMonths = child.ageMonths;
-    if (ageInMonths === undefined || ageInMonths === null) {
-      if (child.birthDate) {
-        const bdate = new Date(child.birthDate);
-        const today = new Date();
-        ageInMonths = (today.getFullYear() - bdate.getFullYear()) * 12 + (today.getMonth() - bdate.getMonth());
-      } else {
-        ageInMonths = (child.ageYears || 3) * 12;
+    // Fetch child's exact age based on their birthdate recorded in Form 2 (Children's Profile)
+    let birthDate = child.birthDate;
+    const childId = child.id || child.childId;
+    if (childId) {
+      const f2 = officialFormsService.getForm2Data(childId);
+      if (f2?.birthDate) {
+        birthDate = f2.birthDate;
       }
     }
 
-    // 0 to 36 months = Child's Record 1 (0 to 3.0 years)
-    // 37 months and up = Child's Record 2 (3 years 1 month to 5 years 11 months)
-    return ageInMonths <= 36 ? CHECKLIST_RECORD_1 : CHECKLIST_RECORD_2;
+    let ageInMonths = child.ageMonths;
+    if (birthDate) {
+      const bdate = new Date(birthDate);
+      const testDate = assessmentDate ? new Date(assessmentDate) : new Date();
+      if (!isNaN(bdate.getTime()) && !isNaN(testDate.getTime())) {
+        let months = (testDate.getFullYear() - bdate.getFullYear()) * 12 + (testDate.getMonth() - bdate.getMonth());
+        if (testDate.getDate() < bdate.getDate()) {
+          months -= 1;
+        }
+        ageInMonths = Math.max(0, months);
+      }
+    }
+
+    if (ageInMonths === undefined || ageInMonths === null) {
+      ageInMonths = (child.ageYears || 3) * 12;
+    }
+
+    // 0 to 3.1 years old (0 to 37 months) = Child's Record 1
+    // 3.2 to 5.11 years old (38 to 71 months) = Child's Record 2
+    return ageInMonths <= 37 ? CHECKLIST_RECORD_1 : CHECKLIST_RECORD_2;
   },
 
   /**

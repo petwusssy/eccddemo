@@ -86,6 +86,18 @@ const CATEGORIES = [
   'Completed',
 ];
 
+const INTERVENTION_DOMAINS = [
+  'Gross Motor',
+  'Fine Motor',
+  'Self-Help',
+  'Receptive Language',
+  'Expressive Language',
+  'Cognitive',
+  'Social-Emotional',
+  'Nutrition & Health',
+  'Family & Attendance Support',
+];
+
 export function FollowUpView({ onNavigate }) {
   // Navigation tabs
   const [activeTab, setActiveTab] = useState('queue'); // 'queue' | 'create' | 'case-view'
@@ -139,6 +151,27 @@ export function FollowUpView({ onNavigate }) {
   });
   const [isSubmittingResolve, setIsSubmittingResolve] = useState(false);
 
+  // Intervention Plan modal state
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [planForm, setPlanForm] = useState({
+    targetDomains: [],
+    objectives: '',
+    activities: '',
+    targetReviewDate: addDaysPHT(30),
+    recordedBy: 'Maria Santos, CDW I',
+  });
+  const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
+
+  // Schedule Home Visit modal state
+  const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
+  const [visitForm, setVisitForm] = useState({
+    visitDate: addDaysPHT(7),
+    visitingWorker: 'Maria Santos, CDW I',
+    guardianContact: '',
+    agenda: '',
+  });
+  const [isSubmittingVisit, setIsSubmittingVisit] = useState(false);
+
   // Load queue data
   const loadData = async () => {
     setLoading(true);
@@ -150,6 +183,7 @@ export function FollowUpView({ onNavigate }) {
         assignedWorker: workerFilter,
         search: searchQuery,
       });
+
       // Strict UI safeguard: guarantee exactly 1 row per childId in the follow-up queue
       const uniqueCases = [];
       const seenChildIds = new Set();
@@ -168,9 +202,9 @@ export function FollowUpView({ onNavigate }) {
       });
       const kids = centralDataStore.getChildren() || [];
       setRegisteredChildren(kids);
-      if (data.cases && data.cases.length > 0) {
-        if (!selectedCaseId || !data.cases.some((c) => c.id === selectedCaseId)) {
-          setSelectedCaseId(data.cases[0].id);
+      if (uniqueCases.length > 0) {
+        if (!selectedCaseId || !uniqueCases.some((c) => c.id === selectedCaseId)) {
+          setSelectedCaseId(uniqueCases[0].id);
         }
       } else {
         setSelectedCaseId(null);
@@ -235,7 +269,7 @@ export function FollowUpView({ onNavigate }) {
       const newCase = await followUpService.createFollowUp(createForm);
 
       setSaveSuccessMsg(
-        `Follow-up case ${newCase.id} successfully created and assigned to ${newCase.assignedWorker}. Child 360° status and timeline updated.`
+        `Follow-up case ${newCase.id || newCase.case?.id} successfully created and assigned to ${newCase.assignedWorker || newCase.case?.assignedWorker}. Child 360° status and timeline updated.`
       );
 
       setCreateForm({
@@ -253,7 +287,8 @@ export function FollowUpView({ onNavigate }) {
       });
 
       await loadData();
-      setSelectedCaseId(newCase.id);
+      const targetId = newCase.id || newCase.case?.id;
+      if (targetId) setSelectedCaseId(targetId);
 
       setTimeout(() => {
         setSaveSuccessMsg('');
@@ -296,6 +331,62 @@ export function FollowUpView({ onNavigate }) {
     }
   };
 
+  // Save Intervention Plan
+  const handleSavePlan = async (e) => {
+    e.preventDefault();
+    const caseId = caseViewData?.case?.id || selectedCaseId;
+    if (!caseId) return;
+
+    setIsSubmittingPlan(true);
+    try {
+      await followUpService.saveInterventionPlan(caseId, planForm);
+      setIsPlanModalOpen(false);
+      await loadData();
+      await loadCaseView(caseId);
+    } catch (err) {
+      console.error('Failed to save intervention plan:', err);
+    } finally {
+      setIsSubmittingPlan(false);
+    }
+  };
+
+  // Schedule Home Visit
+  const handleSaveVisit = async (e) => {
+    e.preventDefault();
+    const caseId = caseViewData?.case?.id || selectedCaseId;
+    if (!caseId) return;
+
+    setIsSubmittingVisit(true);
+    try {
+      await followUpService.scheduleHomeVisit(caseId, visitForm);
+      setIsVisitModalOpen(false);
+      await loadData();
+      await loadCaseView(caseId);
+    } catch (err) {
+      console.error('Failed to schedule home visit:', err);
+    } finally {
+      setIsSubmittingVisit(false);
+    }
+  };
+
+  // Update Status Progression
+  const handleUpdateStatus = async (newStatus) => {
+    const caseId = caseViewData?.case?.id || selectedCaseId;
+    if (!caseId) return;
+    try {
+      await followUpService.updateCaseStatus(
+        caseId,
+        newStatus,
+        caseViewData?.case?.assignedWorker || 'Maria Santos, CDW I',
+        `Case progress transitioned to ${newStatus}.`
+      );
+      await loadData();
+      await loadCaseView(caseId);
+    } catch (err) {
+      console.error('Failed to update case status:', err);
+    }
+  };
+
   // Helper for category badge classes
   const getCategoryClass = (cat) => {
     switch (cat) {
@@ -319,6 +410,14 @@ export function FollowUpView({ onNavigate }) {
 
   return (
     <div className="fup-container">
+      {/* Page Header */}
+      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
+        <div>
+          <h1 className="text-h1" style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
+            Case Management &amp; Intervention Follow-ups
+          </h1>
+        </div>
+      </div>
 
       {/* 2. Top KPI Cards (Categories) */}
       <div className="fup-kpi-grid">
@@ -402,7 +501,7 @@ export function FollowUpView({ onNavigate }) {
           onClick={() => setActiveTab('create')}
         >
           <Plus size={16} />
-          Assign New Follow-Up (CSWDO Intake)
+          Assign New Follow-Up
         </button>
 
         <button
@@ -411,7 +510,7 @@ export function FollowUpView({ onNavigate }) {
           onClick={() => setActiveTab('case-view')}
         >
           <Eye size={16} />
-          Early Support Case View (Timeline)
+          Early Support Case View
         </button>
       </div>
 
@@ -474,9 +573,20 @@ export function FollowUpView({ onNavigate }) {
                   </option>
                 ))}
               </select>
+
+              {/* Worker Filter */}
+              <select
+                className="health-select"
+                value={workerFilter}
+                onChange={(e) => setWorkerFilter(e.target.value)}
+              >
+                <option value="all">All Workers</option>
+                <option value="Maria Santos, CDW I">Maria Santos, CDW I</option>
+                <option value="CSWDO Social Worker">CSWDO Social Worker</option>
+              </select>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="health-toolbar-right">
               <Button
                 variant="outline"
                 size="sm"
@@ -485,14 +595,6 @@ export function FollowUpView({ onNavigate }) {
                 disabled={loading}
               >
                 Refresh
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                icon={Plus}
-                onClick={() => setActiveTab('create')}
-              >
-                Assign Follow-Up
               </Button>
             </div>
           </div>
@@ -902,48 +1004,29 @@ export function FollowUpView({ onNavigate }) {
       )}
 
       {/* =========================================================================
-          TAB 3: CASE VIEW (TIMELINE DEEP-DIVE)
+          TAB 3: CASE VIEW (TIMELINE & INTERVENTION TRACKER)
           ========================================================================= */}
       {activeTab === 'case-view' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Case Selector Header */}
           <div className="health-toolbar">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, flexWrap: 'wrap' }}>
               <span style={{ fontWeight: 600, fontSize: '0.875rem', color: '#334155' }}>
-                Select Case for Timeline View:
+                Select Active Case:
               </span>
               <select
                 className="health-select"
-                value={selectedCaseId}
+                value={selectedCaseId || ''}
                 onChange={(e) => setSelectedCaseId(e.target.value)}
-                style={{ minWidth: '340px' }}
+                style={{ minWidth: '320px' }}
               >
                 {queueData.cases.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.id}: {c.childName} — {c.reason.slice(0, 45)}... [{c.category || c.status}]
+                    {c.id}: {c.childName} — {c.reason?.slice(0, 40)}... [{c.category || c.status}]
                   </option>
                 ))}
               </select>
             </div>
-
-            {caseViewData && caseViewData.case && caseViewData.case.category !== 'Completed' && (
-              <Button
-                variant="primary"
-                size="sm"
-                icon={Check}
-                onClick={() => {
-                  setResolvingCase(caseViewData.case);
-                  setResolveForm({
-                    date: getPhilippinesDate(),
-                    actionTaken: '',
-                    notes: '',
-                    status: 'Completed',
-                  });
-                }}
-              >
-                Resolve Case
-              </Button>
-            )}
           </div>
 
           {(!caseViewData || !caseViewData.case) && (
@@ -957,8 +1040,8 @@ export function FollowUpView({ onNavigate }) {
           )}
 
           {caseViewData && caseViewData.case && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem' }}>
-              {/* Left Column: Case Record Details */}
+            <>
+              {/* Lifecycle Stage Stepper & Actions */}
               <div
                 style={{
                   background: '#ffffff',
@@ -968,130 +1051,565 @@ export function FollowUpView({ onNavigate }) {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '1rem',
-                  height: 'fit-content',
                 }}
               >
-                <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Case Identifier</div>
-                  <h3 style={{ margin: '0.2rem 0', color: '#7e191b', fontSize: '1.25rem' }}>
-                    {caseViewData.case.id}
-                  </h3>
-                  <span className={`fup-category-badge ${getCategoryClass(caseViewData.case.category)}`}>
-                    {caseViewData.case.category}
-                  </span>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.8125rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                   <div>
-                    <span style={{ color: '#64748b' }}>Child Name &amp; ID:</span>
-                    <div style={{ fontWeight: 700, color: '#0f172a' }}>
-                      {caseViewData.case.childName}
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Case Progression &amp; Intervention Pipeline
                     </div>
-                    <div style={{ fontFamily: 'monospace', color: '#ba1607', fontWeight: 600 }}>
-                      {caseViewData.case.childId}
-                    </div>
-                  </div>
-
-                  <div>
-                    <span style={{ color: '#64748b' }}>Barangay &amp; Center:</span>
-                    <div>{caseViewData.case.barangay}</div>
-                    <div style={{ color: '#475569' }}>{caseViewData.case.dayCareCenter}</div>
-                  </div>
-
-                  <div>
-                    <span style={{ color: '#64748b' }}>Action Type:</span>
-                    <div>
-                      <span className={`fup-action-chip ${getActionChipClass(caseViewData.case.actionType)}`}>
-                        {caseViewData.case.actionType}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                      <span className={`fup-category-badge ${getCategoryClass(caseViewData.case.category || caseViewData.case.status)}`}>
+                        {caseViewData.case.category || caseViewData.case.status}
+                      </span>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>
+                        Priority: <strong style={{ color: caseViewData.case.priority === 'Urgent' ? '#dc2626' : '#b45309' }}>{caseViewData.case.priority || 'Medium'}</strong>
                       </span>
                     </div>
                   </div>
 
-                  <div>
-                    <span style={{ color: '#64748b' }}>Assigned Worker:</span>
-                    <div style={{ fontWeight: 600 }}>{caseViewData.case.assignedWorker}</div>
-                    <div style={{ color: '#94a3b8' }}>{caseViewData.case.workerContact}</div>
-                  </div>
+                  {/* Worker Action Buttons */}
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {(caseViewData.case.category === 'Needs Attention' || caseViewData.case.status === 'Needs Attention') && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleUpdateStatus('Pending')}
+                      >
+                        Acknowledge Case
+                      </Button>
+                    )}
 
-                  <div>
-                    <span style={{ color: '#64748b' }}>Timeline Schedule:</span>
-                    <div>Created: {caseViewData.case.createdDate}</div>
-                    <div>Due: {caseViewData.case.dueDate}</div>
-                    {caseViewData.case.resolvedDate && (
-                      <div style={{ color: '#047857', fontWeight: 600 }}>
-                        Resolved: {caseViewData.case.resolvedDate}
-                      </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      icon={FileText}
+                      onClick={() => {
+                        const existingPlan = caseViewData.case.interventionPlan;
+                        setPlanForm({
+                          targetDomains: existingPlan?.targetDomains || ['Gross Motor', 'Nutrition & Health'],
+                          objectives: existingPlan?.objectives || caseViewData.case.reason || '',
+                          activities: existingPlan?.activities || '',
+                          targetReviewDate: existingPlan?.targetReviewDate || addDaysPHT(30),
+                          recordedBy: existingPlan?.recordedBy || caseViewData.case.assignedWorker || 'Maria Santos, CDW I',
+                        });
+                        setIsPlanModalOpen(true);
+                      }}
+                    >
+                      {caseViewData.case.interventionPlan ? 'Edit Intervention Plan' : '+ Create Intervention Plan'}
+                    </Button>
+
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={Calendar}
+                      onClick={() => {
+                        const existingVisit = caseViewData.case.scheduledVisit;
+                        setVisitForm({
+                          visitDate: existingVisit?.visitDate || addDaysPHT(7),
+                          visitingWorker: existingVisit?.visitingWorker || caseViewData.case.assignedWorker || 'Maria Santos, CDW I',
+                          guardianContact: existingVisit?.guardianContact || caseViewData.case.workerContact || '',
+                          agenda: existingVisit?.agenda || `Conduct home visit for ${caseViewData.case.childName}. Review developmental & nutritional progress.`,
+                        });
+                        setIsVisitModalOpen(true);
+                      }}
+                    >
+                      {caseViewData.case.scheduledVisit ? 'Reschedule Home Visit' : 'Schedule Home Visit'}
+                    </Button>
+
+                    {caseViewData.case.category !== 'Completed' && caseViewData.case.status !== 'Completed' && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        icon={Check}
+                        onClick={() => {
+                          setResolvingCase(caseViewData.case);
+                          setResolveForm({
+                            date: getPhilippinesDate(),
+                            actionTaken: '',
+                            notes: '',
+                            status: 'Completed',
+                          });
+                        }}
+                      >
+                        Complete Case
+                      </Button>
                     )}
                   </div>
-
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.5rem' }}>
-                    <span style={{ color: '#64748b' }}>Objective / Reason:</span>
-                    <div style={{ color: '#1e293b', marginTop: '0.2rem' }}>
-                      {caseViewData.case.reason}
-                    </div>
-                  </div>
-
-                  {caseViewData.case.actionTaken && (
-                    <div style={{ background: '#ecfdf5', padding: '0.75rem', borderRadius: '6px' }}>
-                      <span style={{ color: '#047857', fontWeight: 700 }}>Action Taken:</span>
-                      <div style={{ color: '#065f46', marginTop: '0.2rem' }}>
-                        {caseViewData.case.actionTaken}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Right Column: Complete Child Lifecycle Timeline */}
-              <div
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  padding: '1.5rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1.25rem',
-                }}
-              >
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 700, color: '#0f172a' }}>
-                    Child Lifecycle Timeline: Mapping → Enrollment → Health → Development → Follow-ups
-                  </h4>
-                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748b' }}>
-                    Comprehensive chronological trail demonstrating end-to-end follow-through on this persistent child record.
-                  </p>
                 </div>
 
-                <div className="fup-timeline-list">
-                  {caseViewData.timeline && caseViewData.timeline.map((node, i) => {
-                    let IconComponent = Clock;
-                    if (node.type === 'Follow-up') IconComponent = CalendarClock;
-                    else if (node.type === 'Development') IconComponent = Brain;
-                    else if (node.type === 'Health') IconComponent = HeartPulse;
-                    else if (node.type === 'Enrollment') IconComponent = School;
-                    else if (node.type === 'Mapping') IconComponent = Home;
+                {/* 4-Stage Visual Status Progression */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: '0.5rem',
+                    padding: '0.75rem',
+                    background: '#f8fafc',
+                    borderRadius: '8px',
+                    border: '1px solid #f1f5f9',
+                  }}
+                >
+                  {[
+                    { key: 'Needs Attention', label: '1. Needs Attention', desc: 'Auto-flagged from assessment/health/attendance' },
+                    { key: 'Pending', label: '2. Pending Review', desc: 'Case acknowledged & plan formulated' },
+                    { key: 'Scheduled', label: '3. Scheduled Visit', desc: 'Home visit or CDW check set' },
+                    { key: 'Completed', label: '4. Case Completed', desc: 'Action completed & documented' },
+                  ].map((step, idx) => {
+                    const currentCategory = caseViewData.case.category || caseViewData.case.status;
+                    const stepOrder = ['Needs Attention', 'Pending', 'Scheduled', 'Completed'];
+                    const currentIdx = stepOrder.indexOf(currentCategory);
+                    const isCurrent = currentCategory === step.key;
+                    const isPassed = currentIdx >= idx;
 
                     return (
-                      <div key={i} className="fup-timeline-node">
-                        <div className="fup-timeline-marker">
-                          <IconComponent size={13} style={{ color: '#7e191b' }} />
+                      <div
+                        key={step.key}
+                        style={{
+                          padding: '0.625rem 0.75rem',
+                          borderRadius: '6px',
+                          background: isCurrent ? '#ffffff' : 'transparent',
+                          border: isCurrent ? '1.5px solid #7e191b' : '1px solid transparent',
+                          boxShadow: isCurrent ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: isCurrent ? '#7e191b' : isPassed ? '#166534' : '#94a3b8',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                          }}
+                        >
+                          {isPassed && !isCurrent && <CheckCircle2 size={13} style={{ color: '#166534' }} />}
+                          {step.label}
                         </div>
-                        <div className="fup-timeline-header">
-                          <span className="fup-timeline-title">{node.title}</span>
-                          <span className="fup-timeline-date">{node.date}</span>
+                        <div style={{ fontSize: '0.6875rem', color: '#64748b', marginTop: '2px' }}>
+                          {step.desc}
                         </div>
-                        <p className="fup-timeline-desc">{node.description}</p>
-                        {node.author && (
-                          <span className="fup-timeline-author">Logged by: {node.author}</span>
-                        )}
                       </div>
                     );
                   })}
                 </div>
               </div>
-            </div>
+
+              {/* Two Column Layout */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem' }}>
+                {/* Left Column: Case Record Details */}
+                <div
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    padding: '1.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem',
+                    height: 'fit-content',
+                  }}
+                >
+                  <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Case Identifier</div>
+                    <h3 style={{ margin: '0.2rem 0', color: '#7e191b', fontSize: '1.25rem' }}>
+                      {caseViewData.case.id}
+                    </h3>
+                    <span className={`fup-category-badge ${getCategoryClass(caseViewData.case.category || caseViewData.case.status)}`}>
+                      {caseViewData.case.category || caseViewData.case.status}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.8125rem' }}>
+                    <div>
+                      <span style={{ color: '#64748b' }}>Child Name &amp; ID:</span>
+                      <div style={{ fontWeight: 700, color: '#0f172a' }}>
+                        {caseViewData.case.childName}
+                      </div>
+                      <div style={{ fontFamily: 'monospace', color: '#ba1607', fontWeight: 600 }}>
+                        {caseViewData.case.childId}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span style={{ color: '#64748b' }}>Barangay &amp; Center:</span>
+                      <div>{caseViewData.case.barangay}</div>
+                      <div style={{ color: '#475569' }}>{caseViewData.case.dayCareCenter}</div>
+                    </div>
+
+                    <div>
+                      <span style={{ color: '#64748b' }}>Action Type:</span>
+                      <div>
+                        <span className={`fup-action-chip ${getActionChipClass(caseViewData.case.actionType)}`}>
+                          {caseViewData.case.actionType}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span style={{ color: '#64748b' }}>Assigned Worker:</span>
+                      <div style={{ fontWeight: 600 }}>{caseViewData.case.assignedWorker}</div>
+                      <div style={{ color: '#94a3b8' }}>{caseViewData.case.workerContact}</div>
+                    </div>
+
+                    <div>
+                      <span style={{ color: '#64748b' }}>Timeline Schedule:</span>
+                      <div>Created: {caseViewData.case.createdDate || caseViewData.case.createdAt?.slice(0, 10)}</div>
+                      <div>Due: {caseViewData.case.dueDate}</div>
+                      {caseViewData.case.resolvedDate && (
+                        <div style={{ color: '#047857', fontWeight: 600 }}>
+                          Resolved: {caseViewData.case.resolvedDate}
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.5rem' }}>
+                      <span style={{ color: '#64748b' }}>Objective / Reason:</span>
+                      <div style={{ color: '#1e293b', marginTop: '0.2rem' }}>
+                        {caseViewData.case.reason}
+                      </div>
+                    </div>
+
+                    {/* Intervention Plan Card Summary */}
+                    {caseViewData.case.interventionPlan && (
+                      <div style={{ background: '#f0fdf4', padding: '0.75rem', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <span style={{ color: '#166534', fontWeight: 700, fontSize: '0.8125rem' }}>
+                            Intervention Plan
+                          </span>
+                          <span style={{ fontSize: '0.6875rem', color: '#15803d' }}>
+                            Review: {caseViewData.case.interventionPlan.targetReviewDate}
+                          </span>
+                        </div>
+                        {caseViewData.case.interventionPlan.targetDomains?.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', margin: '4px 0' }}>
+                            {caseViewData.case.interventionPlan.targetDomains.map((d) => (
+                              <span key={d} style={{ fontSize: '10px', background: '#dcfce7', color: '#166534', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>
+                                {d}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ color: '#166534', fontSize: '0.75rem', marginTop: '0.25rem', lineHeight: 1.3 }}>
+                          <strong>Activities:</strong> {caseViewData.case.interventionPlan.activities || caseViewData.case.interventionPlan.objectives}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Scheduled Home Visit Card Summary */}
+                    {caseViewData.case.scheduledVisit && (
+                      <div style={{ background: '#eff6ff', padding: '0.75rem', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <span style={{ color: '#1e40af', fontWeight: 700, fontSize: '0.8125rem' }}>
+                            Scheduled Home Visit
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: '#1d4ed8', fontWeight: 600 }}>
+                            {caseViewData.case.scheduledVisit.visitDate}
+                          </span>
+                        </div>
+                        <div style={{ color: '#1e3a8a', fontSize: '0.75rem', lineHeight: 1.3 }}>
+                          <strong>Worker:</strong> {caseViewData.case.scheduledVisit.visitingWorker}
+                          {caseViewData.case.scheduledVisit.guardianContact && (
+                            <div><strong>Contact:</strong> {caseViewData.case.scheduledVisit.guardianContact}</div>
+                          )}
+                          <div><strong>Agenda:</strong> {caseViewData.case.scheduledVisit.agenda}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {caseViewData.case.actionTaken && (
+                      <div style={{ background: '#ecfdf5', padding: '0.75rem', borderRadius: '6px' }}>
+                        <span style={{ color: '#047857', fontWeight: 700 }}>Action Taken:</span>
+                        <div style={{ color: '#065f46', marginTop: '0.2rem' }}>
+                          {caseViewData.case.actionTaken}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Column: Complete Child Lifecycle Timeline */}
+                <div
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    padding: '1.5rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1.25rem',
+                  }}
+                >
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 700, color: '#0f172a' }}>
+                      Child Lifecycle Timeline: Mapping → Enrollment → Health → Development → Follow-ups
+                    </h4>
+                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#64748b' }}>
+                      Comprehensive chronological trail demonstrating end-to-end follow-through on this persistent child record.
+                    </p>
+                  </div>
+
+                  <div className="fup-timeline-list">
+                    {caseViewData.timeline && caseViewData.timeline.map((node, i) => {
+                      let IconComponent = Clock;
+                      if (node.type === 'Follow-up') IconComponent = CalendarClock;
+                      else if (node.type === 'Development' || node.type === 'Development Assessment') IconComponent = Brain;
+                      else if (node.type === 'Health' || node.type === 'Health Monitoring') IconComponent = HeartPulse;
+                      else if (node.type === 'Enrollment') IconComponent = School;
+                      else if (node.type === 'Mapping' || node.type === 'Community Mapping') IconComponent = Home;
+
+                      return (
+                        <div key={i} className="fup-timeline-node">
+                          <div className="fup-timeline-marker">
+                            <IconComponent size={13} style={{ color: '#7e191b' }} />
+                          </div>
+                          <div className="fup-timeline-header">
+                            <span className="fup-timeline-title">{node.title}</span>
+                            <span className="fup-timeline-date">{node.date}</span>
+                          </div>
+                          <p className="fup-timeline-desc">{node.description}</p>
+                          {node.author && (
+                            <span className="fup-timeline-author">Logged by: {node.author}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </>
           )}
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: INTERVENTION PLAN FORMULATION
+          ========================================================================= */}
+      {isPlanModalOpen && (
+        <div className="modal-backdrop" onClick={() => setIsPlanModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FileText size={20} style={{ color: '#ba1607' }} />
+                <h3 className="modal-title">Formulate Early Support Intervention Plan</h3>
+              </div>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setIsPlanModalOpen(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePlan}>
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ background: '#f8fafc', padding: '0.875rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontWeight: 700, color: '#0f172a' }}>
+                    {caseViewData?.case?.id} — {caseViewData?.case?.childName} ({caseViewData?.case?.childId})
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                    Trigger: {caseViewData?.case?.reason}
+                  </div>
+                </div>
+
+                {/* Target Domains */}
+                <div className="dev-form-group">
+                  <label className="dev-form-label">Target Development / Health Domains</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                    {INTERVENTION_DOMAINS.map((dom) => {
+                      const selected = planForm.targetDomains.includes(dom);
+                      return (
+                        <button
+                          key={dom}
+                          type="button"
+                          onClick={() => {
+                            if (selected) {
+                              setPlanForm({
+                                ...planForm,
+                                targetDomains: planForm.targetDomains.filter((d) => d !== dom),
+                              });
+                            } else {
+                              setPlanForm({
+                                ...planForm,
+                                targetDomains: [...planForm.targetDomains, dom],
+                              });
+                            }
+                          }}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: '4px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            border: selected ? '1px solid #7e191b' : '1px solid #cbd5e1',
+                            background: selected ? '#7e191b' : '#ffffff',
+                            color: selected ? '#ffffff' : '#334155',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          {dom}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="dev-form-group">
+                  <label className="dev-form-label">
+                    Specific Interventions &amp; Home Guidance <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <textarea
+                    className="dev-textarea"
+                    rows={3}
+                    placeholder="E.g., Coordinate daily home gross-motor crawling/jumping exercises with parent; provide supplemental food rations via CDC feeding program; weekly attendance check."
+                    value={planForm.activities}
+                    onChange={(e) => setPlanForm({ ...planForm, activities: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="dev-form-group">
+                    <label className="dev-form-label">Target Review Date</label>
+                    <input
+                      type="date"
+                      className="dev-input"
+                      value={planForm.targetReviewDate}
+                      onChange={(e) => setPlanForm({ ...planForm, targetReviewDate: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="dev-form-group">
+                    <label className="dev-form-label">Responsible Worker</label>
+                    <input
+                      type="text"
+                      className="dev-input"
+                      value={planForm.recordedBy}
+                      onChange={(e) => setPlanForm({ ...planForm, recordedBy: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <Button variant="outline" onClick={() => setIsPlanModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  icon={Check}
+                  disabled={isSubmittingPlan}
+                >
+                  {isSubmittingPlan ? 'Saving...' : 'Save Intervention Plan'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: SCHEDULE HOME VISIT
+          ========================================================================= */}
+      {isVisitModalOpen && (
+        <div className="modal-backdrop" onClick={() => setIsVisitModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '580px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Calendar size={20} style={{ color: '#0369a1' }} />
+                <h3 className="modal-title">Schedule Frontline Home Visit</h3>
+              </div>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setIsVisitModalOpen(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveVisit}>
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ background: '#f8fafc', padding: '0.875rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontWeight: 700, color: '#0f172a' }}>
+                    {caseViewData?.case?.id} — {caseViewData?.case?.childName}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                    Address: {caseViewData?.case?.barangay}, City of San Fernando
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="dev-form-group">
+                    <label className="dev-form-label">
+                      Visit Date <span style={{ color: '#dc2626' }}>*</span>
+                    </label>
+                    <input
+                      type="date"
+                      className="dev-input"
+                      value={visitForm.visitDate}
+                      onChange={(e) => setVisitForm({ ...visitForm, visitDate: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="dev-form-group">
+                    <label className="dev-form-label">Visiting CDW / Worker</label>
+                    <input
+                      type="text"
+                      className="dev-input"
+                      value={visitForm.visitingWorker}
+                      onChange={(e) => setVisitForm({ ...visitForm, visitingWorker: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="dev-form-group">
+                  <label className="dev-form-label">Guardian / Parent Contact</label>
+                  <input
+                    type="text"
+                    className="dev-input"
+                    placeholder="e.g. 0917-555-0142"
+                    value={visitForm.guardianContact}
+                    onChange={(e) => setVisitForm({ ...visitForm, guardianContact: e.target.value })}
+                  />
+                </div>
+
+                <div className="dev-form-group">
+                  <label className="dev-form-label">
+                    Visit Purpose &amp; Focus Agenda <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <textarea
+                    className="dev-textarea"
+                    rows={3}
+                    placeholder="E.g., Conduct caregiver interview, evaluate home learning environment, demonstrate motor stimulation techniques."
+                    value={visitForm.agenda}
+                    onChange={(e) => setVisitForm({ ...visitForm, agenda: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <Button variant="outline" onClick={() => setIsVisitModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  icon={Check}
+                  disabled={isSubmittingVisit}
+                >
+                  {isSubmittingVisit ? 'Scheduling...' : 'Confirm Schedule'}
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
