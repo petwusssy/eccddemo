@@ -134,6 +134,8 @@ export function OfficialForm1HomeProfileModal({
         const sanitizedMother = {
           ...existingMother,
           firstName: (existingMother.firstName === 'Rosa' || existingMother.firstName === 'ROSA') ? '' : (existingMother.firstName || ''),
+          lastName: (existingMother.lastName === 'Dela Cruz' || existingMother.lastName === 'DELA CRUZ') ? '' : (existingMother.lastName || ''),
+          middleInitial: existingMother.middleInitial || '',
         };
         setFormData((prev) => ({
           ...prev,
@@ -174,6 +176,17 @@ export function OfficialForm1HomeProfileModal({
           },
         }));
       }
+    } else if (isOpen) {
+      setFormData((prev) => ({
+        ...prev,
+        householdId: '',
+        mother: {
+          ...prev.mother,
+          lastName: '',
+          firstName: '',
+          middleInitial: '',
+        },
+      }));
     }
   }, [isOpen, householdId]);
 
