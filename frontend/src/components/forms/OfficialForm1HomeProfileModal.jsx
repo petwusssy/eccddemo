@@ -130,11 +130,16 @@ export function OfficialForm1HomeProfileModal({
       const household = centralDataStore.getHouseholdById(householdId);
 
       if (existing) {
+        const existingMother = existing.mother || existing.motherProfile || {};
+        const sanitizedMother = {
+          ...existingMother,
+          firstName: (existingMother.firstName === 'Rosa' || existingMother.firstName === 'ROSA') ? '' : (existingMother.firstName || ''),
+        };
         setFormData((prev) => ({
           ...prev,
           ...existing,
           father: { ...prev.father, ...(existing.father || existing.fatherProfile) },
-          mother: { ...prev.mother, ...(existing.mother || existing.motherProfile) },
+          mother: { ...prev.mother, ...sanitizedMother },
           family: { ...prev.family, ...(existing.family || existing.familyProfile) },
           householdId,
         }));
@@ -157,8 +162,9 @@ export function OfficialForm1HomeProfileModal({
           },
           mother: {
             ...prev.mother,
-            lastName,
-            firstName: 'Rosa',
+            lastName: '',
+            firstName: '',
+            middleInitial: '',
             district: household.barangay || prev.mother.district,
             purok: household.purok || prev.mother.purok,
           },

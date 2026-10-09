@@ -230,8 +230,8 @@ export const officialFormsService = {
       },
       motherProfile: {
         ...(existing.motherProfile || {}),
-        lastName: regData.motherLastName || regData.childLastName || '',
-        firstName: regData.motherFirstName || (regData.motherName ? regData.motherName.split(' ')[0] : ''),
+        lastName: regData.motherLastName || (regData.motherName ? regData.motherName.trim().split(' ').slice(1).join(' ') : '') || '',
+        firstName: regData.motherFirstName || (regData.motherName ? regData.motherName.trim().split(' ')[0] : '') || '',
         middleInitial: regData.motherMiddleInitial || '',
         addressDistrict: regData.motherAddress || regData.childAddress || '',
         addressPurok: regData.purok || '',
