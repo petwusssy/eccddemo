@@ -359,6 +359,7 @@ export const officialFormsService = {
     if (b) {
       b.form3Data = form3Data;
     }
+    centralDataStore.notify();
   },
 
   getForm3Data(barangayName) {

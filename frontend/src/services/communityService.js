@@ -45,23 +45,78 @@ function buildBarangays() {
     const devFollowups = kids.filter(
       (c) => (c.followUpCases || []).some((f) => f.status !== 'Closed' && f.status !== 'Resolved')
     ).length;
-    const brgyCenters = centers.filter((c) => norm(c.barangayName || c.barangay) === norm(name));
-    const brgyWorkers = workers.filter((w) => (w.assignedBarangays || []).some((b) => norm(b) === norm(name)));
+    const brgyCenters = centers.filter(
+      (c) => norm(c.barangayName || c.barangay) === norm(name) || norm(c.name).includes(norm(name))
+    );
+
+    const brgyWorkers = workers.filter((w) => {
+      const assignedBrgys = Array.isArray(w.assignedBarangays) ? w.assignedBarangays : [];
+      const assignedBrgy = w.assignedBarangay || '';
+      const inBrgy = assignedBrgys.some((b) => norm(b) === norm(name)) || norm(assignedBrgy) === norm(name);
+      const inCenters = brgyCenters.some((bc) =>
+        (w.assignedCenters || []).some((ac) => norm(ac) === norm(bc.name)) ||
+        norm(w.dayCareCenterName) === norm(bc.name) ||
+        (Array.isArray(bc.assignedWorkers) && bc.assignedWorkers.some((aw) => norm(aw).includes(norm(w.name)) || norm(w.name).includes(norm(aw))))
+      );
+      return inBrgy || inCenters;
+    });
+
+    const cdcs_list = brgyCenters.map((c) => ({
+      id: c.id,
+      code: c.code || `CDC-CSFP-${String(i + 1).padStart(2, '0')}`,
+      name: c.name,
+      status: c.status || 'Accredited (Level 3)',
+      accreditationLevel: c.accreditationLevel || 'Level 3',
+      accreditationNo: c.accreditationNo || `CDC-2024-${String(i + 1).padStart(3, '0')}`,
+      capacity: Number(c.capacity || 60),
+      enrolledChildren: Number(c.enrolledChildren ?? c.enrolledCount ?? 0),
+      address: c.address || `Barangay Hall Compound, ${name}, City of San Fernando, Pampanga`,
+      assignedWorkers: Array.isArray(c.assignedWorkers) ? c.assignedWorkers : [],
+      sessions: c.sessions || 'Morning & Afternoon Sessions',
+      yearEstablished: c.yearEstablished || '2015',
+    }));
+
+    const workers_list = brgyWorkers.map((w) => ({
+      id: w.id,
+      name: w.name,
+      role: w.role || w.designation || 'Child Development Worker',
+      designation: w.designation || w.role || 'Child Development Worker',
+      contactNumber: w.contactNumber || w.contactMobile || '—',
+      email: w.email || '',
+      assignedCenters: w.assignedCenters || (w.dayCareCenterName ? [w.dayCareCenterName] : []),
+      assignedBarangay: w.assignedBarangay || name,
+      accreditationNo: w.accreditationNo || '—',
+      status: w.status || 'Active',
+      yearsOfService: w.yearsOfService || 5,
+    }));
+
+    const total_cdcs = cdcs_list.length;
+    const total_workers = workers_list.length;
+    const accreditationOverview = cdcs_list.length > 0
+      ? (cdcs_list[0].accreditationLevel ? `${cdcs_list[0].accreditationLevel} Accredited` : 'Accredited')
+      : 'Pending Accreditation';
 
     return {
       id: `BRGY-${String(i + 1).padStart(2, '0')}`,
       name,
       district: 'City of San Fernando',
+      province: 'Pampanga',
+      region: 'Region III - Central Luzon',
       totalChildren: kids.length,
       mapped: kids.length,
       enrolled,
       notEnrolled: kids.length - enrolled,
       healthDue,
       devFollowups,
-      centersCount: brgyCenters.length,
-      workersCount: brgyWorkers.length,
-      primaryWorker: brgyWorkers[0]?.name || '—',
-      centers: brgyCenters.map((c) => c.name),
+      total_cdcs,
+      total_workers,
+      centersCount: total_cdcs,
+      workersCount: total_workers,
+      accreditationOverview,
+      primaryWorker: workers_list[0]?.name || (cdcs_list[0]?.assignedWorkers?.[0]) || '—',
+      cdcs_list,
+      workers_list,
+      centers: cdcs_list.map((c) => c.name),
     };
   });
 }
@@ -98,6 +153,11 @@ export const communityService = {
   /** GET /api/barangays/:id */
   async getBarangayById(id) {
     return buildBarangays().find((b) => b.id === id || norm(b.name) === norm(id)) || null;
+  },
+
+  /** GET Form 3 Community Profile dynamically aggregated from Form 7 & Form 6 */
+  async getForm3Profile(barangayName) {
+    return buildBarangays().find((b) => norm(b.name) === norm(barangayName)) || null;
   },
 
   /** GET /api/centers */

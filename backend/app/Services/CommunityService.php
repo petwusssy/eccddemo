@@ -69,19 +69,62 @@ class CommunityService
                 return strtolower(trim($w->barangay?->name ?? '')) === strtolower(trim($name));
             });
 
+            $cdcs_list = $brgyCenters->map(function ($c) {
+                return [
+                    'id' => (string)$c->id,
+                    'code' => $c->code ?? "CDC-CSFP-{$c->id}",
+                    'name' => $c->name,
+                    'status' => $c->status ?? 'Accredited (Level 3)',
+                    'accreditationLevel' => $c->accreditation_level ?? 'Level 3',
+                    'accreditationNo' => $c->accreditation_no ?? '',
+                    'capacity' => (int)($c->capacity ?? 60),
+                    'enrolledChildren' => (int)($c->enrolled_count ?? 0),
+                    'address' => $c->address ?? '',
+                    'assignedWorkers' => is_array($c->assigned_workers) ? $c->assigned_workers : [],
+                    'sessions' => $c->sessions ?? 'Morning & Afternoon Sessions',
+                ];
+            })->values()->all();
+
+            $workers_list = $brgyWorkers->map(function ($w) {
+                return [
+                    'id' => (string)$w->id,
+                    'name' => $w->name,
+                    'role' => $w->role ?? 'Child Development Worker',
+                    'designation' => $w->designation ?? $w->role ?? 'Child Development Worker',
+                    'contactNumber' => $w->contact_number ?? '',
+                    'email' => $w->email ?? '',
+                    'assignedCenters' => is_array($w->assigned_centers) ? $w->assigned_centers : [],
+                    'assignedBarangay' => $w->barangay?->name ?? '',
+                    'status' => $w->status ?? 'Active',
+                ];
+            })->values()->all();
+
+            $totalCdcs = count($cdcs_list);
+            $totalWorkers = count($workers_list);
+            $accreditationOverview = $totalCdcs > 0
+                ? (!empty($cdcs_list[0]['accreditationLevel']) ? "{$cdcs_list[0]['accreditationLevel']} Accredited" : 'Accredited')
+                : 'Pending Accreditation';
+
             $rows[] = [
                 'id' => sprintf('BRGY-%02d', $i + 1),
                 'name' => $name,
                 'district' => 'City of San Fernando',
+                'province' => 'Pampanga',
+                'region' => 'Region III - Central Luzon',
                 'totalChildren' => 0,
                 'mapped' => 0,
                 'enrolled' => 0,
                 'notEnrolled' => 0,
                 'healthDue' => 0,
                 'devFollowups' => 0,
-                'centersCount' => $brgyCenters->count(),
-                'workersCount' => $brgyWorkers->count(),
-                'primaryWorker' => $brgyWorkers->first()?->name ?? '—',
+                'total_cdcs' => $totalCdcs,
+                'total_workers' => $totalWorkers,
+                'centersCount' => $totalCdcs,
+                'workersCount' => $totalWorkers,
+                'accreditationOverview' => $accreditationOverview,
+                'primaryWorker' => $workers_list[0]['name'] ?? ($cdcs_list[0]['assignedWorkers'][0] ?? '—'),
+                'cdcs_list' => $cdcs_list,
+                'workers_list' => $workers_list,
                 'centers' => $brgyCenters->pluck('name')->values()->all(),
             ];
         }
