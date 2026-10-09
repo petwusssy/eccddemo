@@ -30,6 +30,7 @@ import HealthMonitoringView from './components/views/HealthMonitoringView';
 import DevelopmentView from './components/views/DevelopmentView';
 import FollowUpView from './components/views/FollowUpView';
 import CommunityView from './components/views/CommunityView';
+import CentersWorkersView from './components/views/CentersWorkersView';
 import ReportsView from './components/views/ReportsView';
 import AuditLogsView from './components/views/AuditLogsView';
 import SettingsView from './components/views/SettingsView';
@@ -408,11 +409,11 @@ function AuthenticatedApp() {
             <Route path="/dashboard" element={<DashboardOverview onNavigate={handleNavigate} />} />
 
             {/* 2. SYSTEM SETUP & NETWORK */}
-            <Route path="/centers-workers" element={<CommunityView key="centers-workers" initialTab="daycare-centers" onNavigate={handleNavigate} />} />
-            <Route path="/community-network" element={<CommunityView key="community-network" initialTab="barangays" onNavigate={handleNavigate} />} />
+            <Route path="/centers-workers" element={<CentersWorkersView initialTab="daycare-centers" onNavigate={handleNavigate} />} />
+            <Route path="/community-network" element={<CommunityView onNavigate={handleNavigate} />} />
             <Route path="/barangays" element={<Navigate to="/community-network" replace />} />
-            <Route path="/daycare-centers" element={<Navigate to="/centers-workers" replace />} />
-            <Route path="/workers" element={<Navigate to="/centers-workers" replace />} />
+            <Route path="/daycare-centers" element={<CentersWorkersView initialTab="daycare-centers" onNavigate={handleNavigate} />} />
+            <Route path="/workers" element={<CentersWorkersView initialTab="workers" onNavigate={handleNavigate} />} />
 
             {/* 3. REGISTRATION & MAPPING */}
             <Route path="/mapping" element={<CommunityMappingView onNavigate={handleNavigate} />} />
