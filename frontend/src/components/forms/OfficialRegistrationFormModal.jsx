@@ -565,13 +565,13 @@ export function OfficialRegistrationFormModal({
                 label="Emergency Contact Name *"
                 uppercase
                 value={formData.emergencyName}
-                onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value.toUpperCase() })}
+                onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value.replace(/[^a-zA-ZñÑ\s\.\-]/g, '').toUpperCase() })}
                 required
               />
               <Input
                 label="Relationship to Child *"
                 value={formData.emergencyRelationship}
-                onChange={(e) => setFormData({ ...formData, emergencyRelationship: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, emergencyRelationship: e.target.value.replace(/[^a-zA-ZñÑ\s\.\-]/g, '') })}
                 placeholder="e.g. Aunt, Grandmother, Neighbor"
                 required
               />
