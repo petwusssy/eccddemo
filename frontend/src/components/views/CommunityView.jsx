@@ -9,8 +9,6 @@ import {
   Award,
   Users,
   MapPin,
-  List,
-  LayoutGrid,
   Sparkles,
   ChevronRight,
   X,
@@ -37,16 +35,13 @@ export function CommunityView({ onNavigate }) {
   const [barangays, setBarangays] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // View state: 'table' | 'grid'
-  const [viewMode, setViewMode] = useState('table');
-
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [quickFilter, setQuickFilter] = useState('all'); // 'all' | 'with-workers' | 'with-enrolled'
 
-  // Pagination state
+  // Pagination state (9 per page for clean 3-column grid)
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(9);
 
   // Modal inspection states
   const [selectedBarangay, setSelectedBarangay] = useState(null);
@@ -184,28 +179,6 @@ export function CommunityView({ onNavigate }) {
             <span className="comm-tab-badge">{barangays.length || 35}</span>
           </div>
         </div>
-
-        {/* View Switcher: Table vs Grid Cards */}
-        <div className="comm-view-switch">
-          <button
-            type="button"
-            className={`comm-view-switch-btn ${viewMode === 'table' ? 'is-active' : ''}`}
-            onClick={() => setViewMode('table')}
-            title="Table View"
-          >
-            <List size={15} />
-            <span>Table View</span>
-          </button>
-          <button
-            type="button"
-            className={`comm-view-switch-btn ${viewMode === 'grid' ? 'is-active' : ''}`}
-            onClick={() => setViewMode('grid')}
-            title="Grid Cards View"
-          >
-            <LayoutGrid size={15} />
-            <span>Grid Cards</span>
-          </button>
-        </div>
       </div>
 
       {/* =========================================================================
@@ -295,145 +268,9 @@ export function CommunityView({ onNavigate }) {
       </div>
 
       {/* =========================================================================
-          VIEW MODE: TABLE VIEW
+          BARANGAY COMMUNITY PROFILES: GRID CARDS VIEW
           ========================================================================= */}
-      {viewMode === 'table' ? (
-        <div className="comm-table-card mobile-table-to-cards">
-          <table className="comm-table">
-            <thead>
-              <tr>
-                <th>Barangay &amp; LGU</th>
-                <th>Form 7 Infrastructure</th>
-                <th>Form 6 Personnel</th>
-                <th>Accreditation</th>
-                <th style={{ textAlign: 'center' }}>Children 0–4</th>
-                <th style={{ textAlign: 'center' }}>Mapped</th>
-                <th style={{ textAlign: 'center' }}>Enrolled</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748b' }}>
-                    Loading barangay community profiles...
-                  </td>
-                </tr>
-              ) : filteredBarangays.length === 0 ? (
-                <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748b' }}>
-                    No barangays match the search query "{searchQuery}".
-                  </td>
-                </tr>
-              ) : (
-                paginatedBarangays.map((b) => (
-                  <tr key={b.id}>
-                    <td>
-                      <div style={{ fontWeight: 800, color: '#7e191b', fontSize: '0.9375rem' }}>
-                        Barangay {b.name}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>City of San Fernando, Pampanga</span>
-                      </div>
-                    </td>
-
-                    {/* Live Badge: Form 7 CDCs */}
-                    <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                        <span className="comm-badge-cdc">
-                          <School size={12} />
-                          {b.total_cdcs ?? b.centersCount ?? 0} CDC (Form 7)
-                        </span>
-                        {b.centers && b.centers.length > 0 && (
-                          <span style={{ fontSize: '0.6875rem', color: '#64748b' }} title={b.centers.join(', ')}>
-                            {b.centers[0]}
-                            {b.centers.length > 1 && ` +${b.centers.length - 1} more`}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Live Badge: Form 6 CDWs */}
-                    <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                        <span className="comm-badge-cdw">
-                          <UserCheck size={12} />
-                          {b.total_workers ?? b.workersCount ?? 0} CDW (Form 6)
-                        </span>
-                        <span style={{ fontSize: '0.6875rem', color: '#64748b' }}>
-                          {b.primaryWorker || '—'}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Accreditation overview pill */}
-                    <td>
-                      <span className="comm-badge-acc">
-                        <Award size={12} />
-                        {b.accreditationOverview || 'Level 3 Accredited'}
-                      </span>
-                    </td>
-
-                    {/* Demographics counts */}
-                    <td style={{ textAlign: 'center' }}>
-                      <span className="comm-badge-num gray">{b.totalChildren}</span>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span className="comm-badge-num blue">{b.mapped}</span>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span className="comm-badge-num green">{b.enrolled}</span>
-                    </td>
-
-                    {/* Primary Action: View Official Form 3 Profile */}
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          icon={Eye}
-                          onClick={() => setSelectedBarangay(b)}
-                        >
-                          Details
-                        </Button>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={FileText}
-                          onClick={() => handleOpenForm3(b.name)}
-                        >
-                          View Official Form 3 Profile
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-
-          {/* Standardized Pagination Controls */}
-          {filteredBarangays.length > 0 && (
-            <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid #f1f5f9' }}>
-              <Pagination
-                currentPage={currentPage}
-                totalItems={filteredBarangays.length}
-                pageSize={pageSize}
-                onPageChange={setCurrentPage}
-                onPageSizeChange={(newSize) => {
-                  setPageSize(newSize);
-                  setCurrentPage(1);
-                }}
-                pageSizeOptions={[10, 20, 35, 50]}
-              />
-            </div>
-          )}
-        </div>
-      ) : (
-        /* =========================================================================
-            VIEW MODE: GRID CARDS VIEW
-            ========================================================================= */
-        <div>
+      <div>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
               Loading barangay community profiles...
@@ -552,7 +389,6 @@ export function CommunityView({ onNavigate }) {
             </>
           )}
         </div>
-      )}
 
       {/* =========================================================================
           MODAL: BARANGAY DEMOGRAPHICS INSPECTOR
