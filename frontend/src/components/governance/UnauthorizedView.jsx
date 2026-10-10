@@ -29,9 +29,9 @@ export function UnauthorizedView({
           <div style={{ marginTop: '0.25rem', color: '#be123c' }}>
             <strong>Policy Rule:</strong>{' '}
             {attemptedModule === 'admin-console'
-              ? 'The Admin Console (/admin) is exclusive to the CSFP System Administrator (sysadmin@csfp.gov.ph). ECCD Administrative staff and CDTs manage day care operations on the main ECCD portal.'
+              ? 'The Admin Console (/admin) is exclusive to the CSFP System Administrator (sysadmin@csfp.gov.ph). ECCD Administrative staff and field workers manage day care operations on the main ECCD portal.'
               : user?.role === 'cdt' || user?.role === 'field_worker' || user?.role === 'daycare_worker'
-              ? 'Child Development Teachers (CDTs) serve as frontline implementers directly delivering activities and interventions to children and families. Consolidated dashboards, citywide reports, planning, and system administration are restricted to ECCD Administrative staff.'
+              ? 'Child Development Teachers (CDTs) and Workers (CDWs) are frontline field implementers authorized strictly for Community Mapping, Enrollment, Children Records, Development Assessments, and Follow-ups. System setup (Centers & Workers, Community Network), consolidated governance reports, and system configuration are restricted to CSWDO ECCD Administrative staff.'
               : 'ECCD Administrative access is required to consolidate data, coordinate requirements, plan and organize programs and services.'}
           </div>
         </div>

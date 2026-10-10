@@ -194,7 +194,9 @@ export function Sidebar({
                       <>
                         <span className="sidebar-item-text">{item.label}</span>
                         {!isAllowed && (
-                          <Lock size={12} style={{ color: '#f59e0b', marginLeft: 'auto' }} />
+                          <span className="sidebar-locked-tag">
+                            <Lock size={10} /> Locked
+                          </span>
                         )}
                         {isAllowed && item.badge && (
                           <span className={`sidebar-item-badge ${item.badgeUrgent ? 'badge-urgent' : ''}`}>

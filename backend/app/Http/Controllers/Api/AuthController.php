@@ -45,7 +45,7 @@ class AuthController extends Controller
         /** @var \App\Models\User $user */
         $user = auth('api')->user();
         if ($user) {
-            $user->load('role');
+            $user->load(['role', 'worker.dayCareCenter', 'worker.barangay']);
         }
 
         return response()->json([
@@ -65,6 +65,15 @@ class AuthController extends Controller
                         'name' => $user->role->name,
                         'label' => $user->role->label,
                         'permissions' => $user->role->permissions,
+                    ] : null,
+                    'worker' => $user->worker ? [
+                        'id' => $user->worker->id,
+                        'name' => $user->worker->name,
+                        'role' => $user->worker->role,
+                        'barangay_id' => $user->worker->barangay_id,
+                        'day_care_center_id' => $user->worker->day_care_center_id,
+                        'barangay' => $user->worker->barangay ? ['id' => $user->worker->barangay->id, 'name' => $user->worker->barangay->name] : null,
+                        'dayCareCenter' => $user->worker->dayCareCenter ? ['id' => $user->worker->dayCareCenter->id, 'name' => $user->worker->dayCareCenter->name] : null,
                     ] : null,
                 ],
             ],

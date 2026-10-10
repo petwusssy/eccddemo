@@ -52,7 +52,9 @@ class UserSeeder extends Seeder
                 'label' => 'Child Development Teacher (CDT)',
                 'description' => 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
                 'permissions' => [
+                    'dashboard',
                     'community-mapping',
+                    'mapping',
                     'children',
                     'households',
                     'enrollment',
@@ -60,7 +62,6 @@ class UserSeeder extends Seeder
                     'eccd-checklist',
                     'development-assessment',
                     'follow-ups',
-                    'community-network',
                 ],
             ]
         );
@@ -119,22 +120,61 @@ class UserSeeder extends Seeder
         }
         $adminUser->save();
 
-        // 4. Seed 3: Frontline User (Child Development Teacher)
-        // Credentials: cdt@eccd.gov.ph / password
-        $cdtUser = User::firstOrNew(['email' => 'cdt@eccd.gov.ph']);
-        $cdtUser->name = $cdtUser->name ?: 'Remedios D. Garcia, CDT';
-        $cdtUser->role_id = $cdtRole->id;
-        if (!$cdtUser->exists || empty($cdtUser->password)) {
-            $cdtUser->password = Hash::make('password');
-            $cdtUser->temp_password = 'password';
-        } elseif (empty($cdtUser->temp_password)) {
-            $cdtUser->temp_password = 'password';
-        }
-        $cdtUser->save();
+        // 4. Seed 3: Frontline Workers (CDT / CDW) for Hackathon Demo & Field Operations
+        // Credentials: password: "password"
+        $fieldWorkers = [
+            [
+                'email' => 'cdt@eccd.gov.ph',
+                'alias' => 'remedios.garcia@csfp.gov.ph',
+                'name' => 'Remedios D. Garcia, CDT',
+                'worker_name' => 'Remedios D. Garcia, CDT',
+            ],
+            [
+                'email' => 'cdw.dolores@eccd.gov.ph',
+                'alias' => 'maritess.pangilinan@csfp.gov.ph',
+                'name' => 'Maritess S. Pangilinan, CDW',
+                'worker_name' => 'Maritess S. Pangilinan, CDW',
+            ],
+            [
+                'email' => 'cdw.agustin@eccd.gov.ph',
+                'alias' => 'corazon.david@csfp.gov.ph',
+                'name' => 'Corazon M. David, CDW',
+                'worker_name' => 'Corazon M. David, CDW',
+            ],
+            [
+                'email' => 'cdw.isidro@eccd.gov.ph',
+                'alias' => 'josefina.santos@csfp.gov.ph',
+                'name' => 'Josefina T. Santos, CDW',
+                'worker_name' => 'Josefina T. Santos, CDW',
+            ],
+        ];
 
-        // Support existing worker@eccd.gov.ph
+        foreach ($fieldWorkers as $fw) {
+            $userEmails = [$fw['email']];
+            if (!empty($fw['alias'])) {
+                $userEmails[] = $fw['alias'];
+            }
+
+            foreach ($userEmails as $uEmail) {
+                $user = User::firstOrNew(['email' => $uEmail]);
+                $user->name = $fw['name'];
+                $user->role_id = $cdtRole->id;
+                if (!$user->exists || empty($user->password)) {
+                    $user->password = Hash::make('password');
+                    $user->temp_password = 'password';
+                } elseif (empty($user->temp_password)) {
+                    $user->temp_password = 'password';
+                }
+                $user->save();
+
+                // Link worker table record to this user if found
+                \App\Models\Worker::where('name', $fw['worker_name'])->update(['user_id' => $user->id]);
+            }
+        }
+
+        // Support legacy worker@eccd.gov.ph
         $workerUser = User::firstOrNew(['email' => 'worker@eccd.gov.ph']);
-        $workerUser->name = $workerUser->name ?: 'Remedios D. Garcia, CDT';
+        $workerUser->name = 'Remedios D. Garcia, CDT';
         $workerUser->role_id = $cdtRole->id;
         if (!$workerUser->exists || empty($workerUser->password)) {
             $workerUser->password = Hash::make('password');

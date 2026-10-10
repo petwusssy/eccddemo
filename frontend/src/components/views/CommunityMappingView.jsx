@@ -47,6 +47,7 @@ import { Alert } from '../ui/Alert';
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '../ui/Table';
 import { Modal } from '../ui/Modal';
 import { useToast } from '../ui/Toast';
+import { useAuth } from '../auth/AuthProvider';
 import { apiClient } from '../../services/apiClient';
 import { officialFormsService } from '../../services/officialFormsService';
 import { communityMappingService } from '../../services/communityMappingService';
@@ -69,6 +70,7 @@ const AVAILABLE_BARANGAYS = SAN_FERNANDO_BARANGAYS;
 
 export function CommunityMappingView({ onNavigate, initialTab }) {
   const { addToast } = useToast();
+  const { user } = useAuth();
 
   // Navigation tab state
   const [activeTab, setActiveTab] = useState(initialTab || 'stepper'); // 'stepper' | 'activities' | 'assignments' | 'households'
@@ -351,6 +353,14 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
         setCurrentStep(draft.currentStep || 1);
         setSyncStatus('draft');
         setLastSavedTime(draft.timestamp || 'Previous session');
+      } else if (user?.name) {
+        setHouseholdForm((prev) => ({
+          ...prev,
+          workerName: user.name,
+          barangay: (user.assignedBarangays && AVAILABLE_BARANGAYS.includes(user.assignedBarangays))
+            ? user.assignedBarangays
+            : prev.barangay,
+        }));
       }
     } catch (e) {
       console.error('Error loading community mapping data:', e);

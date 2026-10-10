@@ -76,22 +76,18 @@ export const ROLE_PERMISSIONS = {
     description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
     sections: [
       'dashboard',
-      'centers-workers',
-      'community-network',
-      'barangays',
-      'daycare-centers',
-      'workers',
-      'children',
-      'households',
       'community-mapping',
       'mapping',
+      'households',
       'enrollment',
-      'health-monitoring',
-      'eccd-checklist',
+      'children',
       'development-assessment',
+      'eccd-checklist',
+      'health-monitoring',
       'follow-ups',
     ],
-    // Executive-only administrative modules remain restricted: 'reports' (Citywide submissions), 'audit-logs', 'settings'
+    // Strictly Locked for Field Workers (Supervisory & IT only):
+    // 'centers-workers', 'community-network', 'reports', 'settings', 'audit-logs', 'admin'
   },
   // Legacy aliases
   'field_worker': {
@@ -99,19 +95,14 @@ export const ROLE_PERMISSIONS = {
     description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
     sections: [
       'dashboard',
-      'centers-workers',
-      'community-network',
-      'barangays',
-      'daycare-centers',
-      'workers',
-      'children',
-      'households',
       'community-mapping',
       'mapping',
+      'households',
       'enrollment',
-      'health-monitoring',
-      'eccd-checklist',
+      'children',
       'development-assessment',
+      'eccd-checklist',
+      'health-monitoring',
       'follow-ups',
     ],
   },
@@ -120,25 +111,20 @@ export const ROLE_PERMISSIONS = {
     description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
     sections: [
       'dashboard',
-      'centers-workers',
-      'community-network',
-      'barangays',
-      'daycare-centers',
-      'workers',
-      'children',
-      'households',
       'community-mapping',
       'mapping',
+      'households',
       'enrollment',
-      'health-monitoring',
-      'eccd-checklist',
+      'children',
       'development-assessment',
+      'eccd-checklist',
+      'health-monitoring',
       'follow-ups',
     ],
   },
 };
 
-// --- Official Production Accounts ---
+// --- Official Production & Hackathon Demo Accounts ---
 
 export const OFFICIAL_ACCOUNTS = [
   {
@@ -154,6 +140,7 @@ export const OFFICIAL_ACCOUNTS = [
     avatarInitials: 'SA',
     assignedBarangays: 'City-wide IT Infrastructure & System Administration',
     activeSchoolYear: 'SY 2026–2027',
+    badgeType: 'System Administration',
     description: 'Primary administrator in the Admin Console (/admin), managing accounts for ECCD Administrative officers and Child Development Teachers.',
   },
   {
@@ -169,23 +156,80 @@ export const OFFICIAL_ACCOUNTS = [
     avatarInitials: 'ES',
     assignedBarangays: 'All 35 Barangays (City-wide Consolidated Scope)',
     activeSchoolYear: 'SY 2026–2027',
+    badgeType: 'Administrative Head',
     description: 'Responsible for consolidating data, coordinating requirements, planning and organizing programs and services across all 35 barangays.',
   },
   {
     id: 'USR-CDT-002',
     email: 'cdt@eccd.gov.ph',
+    aliasEmail: 'remedios.garcia@csfp.gov.ph',
     password: 'password',
     name: 'Remedios D. Garcia, CDT',
     role: ROLES.CDT,
     designation: 'Child Development Teacher (CDT)',
-    agency: 'San Jose Child Development Center I / CSWDO',
+    agency: 'Sindalan Child Development Center / CSWDO',
     lgu: 'City of San Fernando, Pampanga',
     region: 'Region III — Central Luzon',
     avatarInitials: 'RG',
-    assignedBarangays: 'Brgy. San Jose, Brgy. Dolores',
-    assignedCenter: 'San Jose Child Development Center I',
+    assignedBarangays: 'Sindalan',
+    assignedCenter: 'Sindalan Child Development Center',
     activeSchoolYear: 'SY 2026–2027',
-    description: 'Frontline implementer of ECCD programs and services, directly delivering activities and interventions to children and families.',
+    badgeType: 'Frontline Field Worker',
+    description: 'Frontline teacher delivering child mapping, Form 1 home profile, and ECCD assessments for Barangay Sindalan.',
+  },
+  {
+    id: 'USR-CDW-003',
+    email: 'cdw.dolores@eccd.gov.ph',
+    aliasEmail: 'maritess.pangilinan@csfp.gov.ph',
+    password: 'password',
+    name: 'Maritess S. Pangilinan, CDW',
+    role: ROLES.CDT,
+    designation: 'Child Development Worker (CDW)',
+    agency: 'Dolores Child Development Center / CSWDO',
+    lgu: 'City of San Fernando, Pampanga',
+    region: 'Region III — Central Luzon',
+    avatarInitials: 'MP',
+    assignedBarangays: 'Dolores',
+    assignedCenter: 'Dolores Child Development Center',
+    activeSchoolYear: 'SY 2026–2027',
+    badgeType: 'Frontline Field Worker',
+    description: 'Frontline worker conducting house-to-house child mapping and daycare operations for Barangay Dolores.',
+  },
+  {
+    id: 'USR-CDW-004',
+    email: 'cdw.agustin@eccd.gov.ph',
+    aliasEmail: 'corazon.david@csfp.gov.ph',
+    password: 'password',
+    name: 'Corazon M. David, CDW',
+    role: ROLES.CDT,
+    designation: 'Child Development Worker (CDW)',
+    agency: 'San Agustin Child Development Center / CSWDO',
+    lgu: 'City of San Fernando, Pampanga',
+    region: 'Region III — Central Luzon',
+    avatarInitials: 'CD',
+    assignedBarangays: 'San Agustin',
+    assignedCenter: 'San Agustin Child Development Center',
+    activeSchoolYear: 'SY 2026–2027',
+    badgeType: 'Frontline Field Worker',
+    description: 'Frontline worker conducting house-to-house child mapping and daycare operations for Barangay San Agustin.',
+  },
+  {
+    id: 'USR-CDW-005',
+    email: 'cdw.isidro@eccd.gov.ph',
+    aliasEmail: 'josefina.santos@csfp.gov.ph',
+    password: 'password',
+    name: 'Josefina T. Santos, CDW',
+    role: ROLES.CDT,
+    designation: 'Child Development Worker (CDW)',
+    agency: 'San Isidro Child Development Center / CSWDO',
+    lgu: 'City of San Fernando, Pampanga',
+    region: 'Region III — Central Luzon',
+    avatarInitials: 'JS',
+    assignedBarangays: 'San Isidro',
+    assignedCenter: 'San Isidro Child Development Center',
+    activeSchoolYear: 'SY 2026–2027',
+    badgeType: 'Frontline Field Worker',
+    description: 'Frontline worker conducting house-to-house child mapping and daycare operations for Barangay San Isidro.',
   },
 ];
 
@@ -224,7 +268,7 @@ export function getOfflineUserCredential(email) {
       return store[clean];
     }
   } catch (_) {}
-  return OFFICIAL_ACCOUNTS.find((a) => a.email.toLowerCase() === clean) || null;
+  return OFFICIAL_ACCOUNTS.find((a) => a.email.toLowerCase() === clean || a.aliasEmail?.toLowerCase() === clean) || null;
 }
 
 /**
@@ -567,13 +611,18 @@ export function hasPermission(user, sectionId) {
  * Returns the two standard official roles.
  */
 export function getDemoAccounts() {
-  return DEMO_ACCOUNTS.map(({ email, password, name, role, designation }) => ({
+  return DEMO_ACCOUNTS.map(({ email, aliasEmail, password, name, role, designation, agency, assignedBarangays, assignedCenter, badgeType }) => ({
     email,
+    aliasEmail,
     password: password.replace(/./g, '•').slice(0, -2) + password.slice(-2),
     passwordRaw: password,
     name,
     role,
     roleLabel: ROLE_LABELS[role],
     designation,
+    agency,
+    assignedBarangays,
+    assignedCenter,
+    badgeType: badgeType || (role === ROLES.SYSADMIN ? 'System Administration' : (role === ROLES.ADMIN ? 'Administrative Head' : 'Frontline Field Worker')),
   }));
 }
