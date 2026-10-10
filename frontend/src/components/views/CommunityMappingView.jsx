@@ -71,6 +71,7 @@ const AVAILABLE_BARANGAYS = SAN_FERNANDO_BARANGAYS;
 export function CommunityMappingView({ onNavigate, initialTab }) {
   const { addToast } = useToast();
   const { user } = useAuth();
+  const isECCDAdmin = user?.role === 'eccd_admin' || user?.role === 'sysadmin' || user?.role === 'cswdo_admin';
 
   // Navigation tab state
   const [activeTab, setActiveTab] = useState(initialTab || 'stepper'); // 'stepper' | 'activities' | 'assignments' | 'households'
@@ -99,10 +100,10 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
   const [selectedBarangayForForm3, setSelectedBarangayForForm3] = useState('San Isidro');
 
   // --- HOUSE-TO-HOUSE STEPPER STATE ---
-  const [currentStep, setCurrentStep] = useState(1); // 1: Household, 2: Parent Profiles (1.A/B), 3: Family & Housing (1.C), 4: Children 0–4, 5: Review & Save, 6: Completion
-  const [parentProfileTab, setParentProfileTab] = useState('mother'); // 'mother' | 'father'
+  // Steps: 1: Household, 2: Form 1.A (Father), 3: Form 1.B (Mother), 4: Form 1.C (Family), 5: Children 0–4, 6: Review & Save, 7: Completion
+  const [currentStep, setCurrentStep] = useState(1);
 
-  // Step 1: Household Form
+  // Step 1: Household Form (Location & Address only — Names & Contacts are gathered in Form 1.A/B)
   const [householdForm, setHouseholdForm] = useState({
     id: `HH-2026-${Math.floor(100 + Math.random() * 900)}`,
     parentGuardian: '',
@@ -122,6 +123,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     middleInitial: '',
     birthDate: '',
     age: '',
+    contactNumber: '',
     civilStatus: 'Married',
     district: 'San Isidro',
     purok: 'Purok 1',
@@ -133,13 +135,14 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     occupationalStatusOthers: '',
   });
 
-  // Step 2: Form 1.B Mother's Profile
+  // Step 3: Form 1.B Mother's Profile
   const [motherProfile, setMotherProfile] = useState({
     lastName: '',
     firstName: '',
     middleInitial: '',
     birthDate: '',
     age: '',
+    contactNumber: '',
     civilStatus: 'Married',
     district: 'San Isidro',
     purok: 'Purok 1',
@@ -553,55 +556,39 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     }
   };
 
-  // Proceed to Next Step in 5-Step Sequence
+  // Proceed to Next Step in 6-Step Sequential Sequence
   const handleNextStep = async () => {
     if (currentStep === 1) {
-      if (!householdForm.parentGuardian || !householdForm.address) {
-        addToast('Please fill out Parent/Guardian and Address', 'error');
+      if (!householdForm.address || !householdForm.address.trim()) {
+        addToast('Please enter the physical address / street', 'error');
         return;
-      }
-      // Auto-prefill Father or Mother name from parentGuardian if both are blank
-      if (!fatherProfile.firstName && !fatherProfile.lastName && !motherProfile.firstName && !motherProfile.lastName) {
-        const parts = householdForm.parentGuardian.trim().split(' ');
-        const lName = parts.length > 1 ? parts[parts.length - 1] : '';
-        const fName = parts.length > 0 ? parts.slice(0, -1).join(' ') || parts[0] : '';
-        setMotherProfile((prev) => ({
-          ...prev,
-          firstName: fName,
-          lastName: lName,
-          purok: householdForm.purok || prev.purok,
-          district: householdForm.barangay || prev.district,
-        }));
-        setFatherProfile((prev) => ({
-          ...prev,
-          lastName: lName,
-          purok: householdForm.purok || prev.purok,
-          district: householdForm.barangay || prev.district,
-        }));
       }
       setCurrentStep(2);
     } else if (currentStep === 2) {
-      // Step 2: Parent Profiles validation
-      const hasMother = motherProfile.firstName || motherProfile.lastName;
-      const hasFather = fatherProfile.firstName || fatherProfile.lastName;
-      if (!hasMother && !hasFather && !householdForm.parentGuardian) {
-        addToast('Please provide at least Father or Mother profile details', 'error');
-        return;
-      }
+      // Step 2: Form 1.A Father's Profile -> Proceed to Form 1.B Mother's Profile
       setCurrentStep(3);
     } else if (currentStep === 3) {
-      // Step 3: Family Profile -> proceed to Children Cohort
+      // Step 3: Form 1.B Mother's Profile -> Proceed to Form 1.C Family Profile
+      const hasMother = Boolean(motherProfile.firstName || motherProfile.lastName);
+      const hasFather = Boolean(fatherProfile.firstName || fatherProfile.lastName);
+      if (!hasMother && !hasFather) {
+        addToast('Please provide at least Mother or Father name details in Form 1', 'error');
+        return;
+      }
       setCurrentStep(4);
     } else if (currentStep === 4) {
-      // Step 4: Children Cohort validation
+      // Step 4: Form 1.C Family Profile -> Proceed to Children 0–4 Cohort
+      setCurrentStep(5);
+    } else if (currentStep === 5) {
+      // Step 5: Children Cohort validation
       if (childrenList.length === 0) {
         addToast('Please add at least one child aged 0–4 before continuing', 'error');
         return;
       }
-      setCurrentStep(5);
+      setCurrentStep(6);
       await runDuplicateCheck();
-    } else if (currentStep === 5) {
-      // Step 5: Final Submission
+    } else if (currentStep === 6) {
+      // Step 6: Final Submission
       await handleFinalSubmission();
     }
   };
@@ -616,23 +603,28 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     );
     const form3BarangayId = brgyIndex >= 0 ? `BRGY-${String(brgyIndex + 1).padStart(2, '0')}` : 'BRGY-01';
 
+    // Automatically derive Primary Guardian from Form 1.B (Mother) or Form 1.A (Father)
     const primaryGuardian =
-      householdForm.parentGuardian ||
       (motherProfile.firstName ? `${motherProfile.firstName} ${motherProfile.lastName}` : '') ||
-      (fatherProfile.firstName ? `${fatherProfile.firstName} ${fatherProfile.lastName}` : 'Household Head');
+      (fatherProfile.firstName ? `${fatherProfile.firstName} ${fatherProfile.lastName}` : '') ||
+      householdForm.parentGuardian ||
+      'Household Head';
+
+    // Automatically derive Contact Number from Mother or Father
+    const contactNo = (motherProfile.contactNumber || fatherProfile.contactNumber || householdForm.contactNumber || '').replace(/\D/g, '');
 
     const householdPayload = {
       id: householdForm.id,
       household_no: householdForm.id,
       parentGuardian: String(primaryGuardian).trim().toUpperCase(),
-      contactNumber: householdForm.contactNumber ? householdForm.contactNumber.replace(/\D/g, '') : '',
+      contactNumber: contactNo,
       address: `${householdForm.address}, ${householdForm.purok}`,
       barangay: householdForm.barangay,
       barangayId: form3BarangayId,
       purok: householdForm.purok,
       mappingActivityId: householdForm.activityId,
       childrenCount: childrenList.length,
-      mappedBy: householdForm.workerName || 'CSWDO Field Officer',
+      mappedBy: householdForm.workerName || user?.name || 'CSWDO Field Officer',
       workerId: householdForm.workerId || null,
       mappedDate: new Date().toISOString().slice(0, 10),
       is4Ps: familyProfile.is4Ps,
@@ -647,15 +639,17 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       purok: householdForm.purok,
       address: householdForm.address,
       parentGuardian: primaryGuardian,
-      contactNumber: householdForm.contactNumber,
+      contactNumber: contactNo,
       childrenCount: childrenList.length,
       father: {
         ...fatherProfile,
+        contactNumber: fatherProfile.contactNumber || contactNo,
         district: householdForm.barangay,
         purok: householdForm.purok,
       },
       mother: {
         ...motherProfile,
+        contactNumber: motherProfile.contactNumber || contactNo,
         district: householdForm.barangay,
         purok: householdForm.purok,
       },
@@ -729,7 +723,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
         timestamp: formatPHTTime(new Date(), true),
       });
 
-      setCurrentStep(6);
+      setCurrentStep(7);
       if (isOnline) {
         addToast('Household mapping and Form 1 Profile completed and synced successfully!', 'success');
       } else {
@@ -755,7 +749,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
         children: childrenList,
         timestamp: formatPHTTime(new Date(), true),
       });
-      setCurrentStep(6);
+      setCurrentStep(7);
       addToast('Working offline: Survey and Form 1 saved to local IndexedDB and queued for sync.', 'warning');
     }
   };
@@ -779,6 +773,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       middleInitial: '',
       birthDate: '',
       age: '',
+      contactNumber: '',
       civilStatus: 'Married',
       district: householdForm.barangay,
       purok: householdForm.purok,
@@ -795,6 +790,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       middleInitial: '',
       birthDate: '',
       age: '',
+      contactNumber: '',
       civilStatus: 'Married',
       district: householdForm.barangay,
       purok: householdForm.purok,
@@ -1048,14 +1044,15 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           ========================================================================= */}
       {activeTab === 'stepper' && (
         <div className="mapping-stepper-container">
-          {/* Modern Compact Pill Stepper - 5 Official Steps */}
+          {/* Modern Compact Pill Stepper - 6 Official Steps */}
           <div className="mapping-stepper" role="navigation" aria-label="Mapping Stepper">
             {[
               { num: 1, label: 'Household Info' },
-              { num: 2, label: 'Parent Profiles (1.A/B)' },
-              { num: 3, label: 'Family & Housing (1.C)' },
-              { num: 4, label: `Children 0–4 (${childrenList.length})` },
-              { num: 5, label: 'Review & Save' },
+              { num: 2, label: 'Form 1.A (Father)' },
+              { num: 3, label: 'Form 1.B (Mother)' },
+              { num: 4, label: 'Form 1.C (Family)' },
+              { num: 5, label: `Children 0–4 (${childrenList.length})` },
+              { num: 6, label: 'Review & Save' },
             ].map((step) => {
               const isActive = currentStep === step.num;
               const isDone = currentStep > step.num;
@@ -1086,7 +1083,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
             <Card>
               <CardHeader>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
-                  <CardTitle subtitle="Step 1: Community Mapping demographic identifiers and location">
+                  <CardTitle subtitle="Step 1 of 6: Community Mapping demographic identifiers and location">
                     Household & Address Information
                   </CardTitle>
                   {householdForm.workerName && (
@@ -1128,26 +1125,50 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                       options={AVAILABLE_BARANGAYS.map((b) => ({ value: b, label: b }))}
                     />
 
-                    <Select
-                      label="Assigned Worker (Form 6)"
-                      value={householdForm.workerId || ''}
-                      onChange={(e) => {
-                        const selectedW = workers.find((w) => String(w.id) === String(e.target.value));
-                        setHouseholdForm({
-                          ...householdForm,
-                          workerId: selectedW ? selectedW.id : '',
-                          workerName: selectedW ? selectedW.name : '',
-                          ...(selectedW?.assignedBarangay ? { barangay: selectedW.assignedBarangay } : {}),
-                        });
-                      }}
-                      options={[
-                        { value: '', label: '-- Select Field Worker --' },
-                        ...workers.map((w) => ({
-                          value: w.id,
-                          label: `${w.name} (${w.assignedBarangay || 'Unassigned'})`,
-                        })),
-                      ]}
-                    />
+                    {isECCDAdmin ? (
+                      <Select
+                        label="Assigned Worker (Form 6)"
+                        value={householdForm.workerId || ''}
+                        onChange={(e) => {
+                          const selectedW = workers.find((w) => String(w.id) === String(e.target.value));
+                          setHouseholdForm({
+                            ...householdForm,
+                            workerId: selectedW ? selectedW.id : '',
+                            workerName: selectedW ? selectedW.name : '',
+                            ...(selectedW?.assignedBarangay ? { barangay: selectedW.assignedBarangay } : {}),
+                          });
+                        }}
+                        options={[
+                          { value: '', label: '-- Select Field Worker --' },
+                          ...workers.map((w) => ({
+                            value: w.id,
+                            label: `${w.name} (${w.assignedBarangay || 'Unassigned'})`,
+                          })),
+                        ]}
+                      />
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label className="input-label" style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                          Assigned Worker (CDT/CDW)
+                        </label>
+                        <div style={{
+                          padding: '9px 12px',
+                          backgroundColor: 'var(--color-neutral-100)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: 'var(--radius-md)',
+                          fontSize: 'var(--font-size-sm)',
+                          fontWeight: '600',
+                          color: 'var(--text-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          <Users size={15} style={{ color: 'var(--color-primary-600)' }} />
+                          <span>{householdForm.workerName || user?.name || 'Assigned Frontline Worker'}</span>
+                          <Badge variant="neutral" size="sm" style={{ marginLeft: 'auto' }}>Frontline</Badge>
+                        </div>
+                      </div>
+                    )}
 
                     <Input
                       label="Purok / Sitio / Cluster"
@@ -1159,28 +1180,6 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                         setFatherProfile((prev) => ({ ...prev, purok: p }));
                         setMotherProfile((prev) => ({ ...prev, purok: p }));
                       }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-3)' }}>
-                    <Input
-                      label="Primary Parent / Guardian Full Name"
-                      placeholder="e.g. Maria Santos Dela Cruz"
-                      uppercase
-                      value={householdForm.parentGuardian}
-                      onChange={(e) => setHouseholdForm({ ...householdForm, parentGuardian: e.target.value.toUpperCase() })}
-                      required
-                    />
-
-                    <Input
-                      label="Contact Number"
-                      type="tel"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      placeholder="e.g. 09171234567"
-                      value={householdForm.contactNumber}
-                      onChange={(e) => setHouseholdForm({ ...householdForm, contactNumber: e.target.value.replace(/\D/g, '') })}
-                      leftIcon={<Phone size={14} />}
                     />
                   </div>
 
@@ -1200,7 +1199,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                   Save Draft
                 </Button>
                 <Button variant="primary" size="md" onClick={handleNextStep}>
-                  Next: Parent Profiles (1.A/B)
+                  Next: Form 1.A (Father's Profile)
                   <ArrowRight size={16} />
                 </Button>
               </div>
@@ -1208,348 +1207,170 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           )}
 
           {/* -------------------------------------------------------------
-              STEP 2: PARENT/GUARDIAN PROFILES (FORM 1.A & 1.B)
+              STEP 2: FORM 1.A — FATHER'S PROFILE
               ------------------------------------------------------------- */}
           {currentStep === 2 && (
             <Card>
               <CardHeader>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
-                  <CardTitle subtitle="Step 2: Official Form 1.A Father's Profile & Form 1.B Mother's Profile">
-                    Parent / Guardian Profiles
+                  <CardTitle subtitle="Step 2 of 6: Form 1.A — Father's Demographic & Occupational Profile">
+                    Form 1.A Father's Profile
                   </CardTitle>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <Badge variant={motherProfile.firstName ? 'success' : 'neutral'} size="sm">
-                      Mother: {motherProfile.firstName ? `${motherProfile.firstName} ${motherProfile.lastName}` : 'Pending'}
-                    </Badge>
-                    <Badge variant={fatherProfile.firstName ? 'success' : 'neutral'} size="sm">
-                      Father: {fatherProfile.firstName ? `${fatherProfile.firstName} ${fatherProfile.lastName}` : 'Pending'}
-                    </Badge>
-                  </div>
+                  <Badge variant={fatherProfile.firstName ? 'success' : 'neutral'} size="sm">
+                    {fatherProfile.firstName ? `${fatherProfile.firstName} ${fatherProfile.lastName}` : 'Optional / If Applicable'}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardBody>
-                {/* Sub-tab Switcher for 1.A / 1.B */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: 'var(--space-4)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)' }}>
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${parentProfileTab === 'mother' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setParentProfileTab('mother')}
-                    style={{ borderRadius: '20px', padding: '6px 14px', fontSize: '13px' }}
-                  >
-                    <User size={14} style={{ marginRight: '6px' }} />
-                    Form 1.B Mother's Profile
-                    {motherProfile.firstName ? ' ✓' : ''}
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${parentProfileTab === 'father' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setParentProfileTab('father')}
-                    style={{ borderRadius: '20px', padding: '6px 14px', fontSize: '13px' }}
-                  >
-                    <User size={14} style={{ marginRight: '6px' }} />
-                    Form 1.A Father's Profile
-                    {fatherProfile.firstName ? ' ✓' : ''}
-                  </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                  <div className="official-section-title">1. Personal Information (Father)</div>
+                  <div className="official-grid-5">
+                    <Input
+                      label="Last Name"
+                      uppercase
+                      value={fatherProfile.lastName}
+                      onChange={(e) => setFatherProfile({ ...fatherProfile, lastName: e.target.value.toUpperCase() })}
+                    />
+                    <Input
+                      label="First Name"
+                      uppercase
+                      value={fatherProfile.firstName}
+                      onChange={(e) => setFatherProfile({ ...fatherProfile, firstName: e.target.value.toUpperCase() })}
+                    />
+                    <Input
+                      label="Middle Initial"
+                      uppercase
+                      value={fatherProfile.middleInitial}
+                      onChange={(e) => setFatherProfile({ ...fatherProfile, middleInitial: e.target.value.toUpperCase() })}
+                    />
+                    <Input
+                      type="date"
+                      label="Date of Birth"
+                      value={fatherProfile.birthDate}
+                      onChange={(e) => {
+                        const dob = e.target.value;
+                        let ageVal = fatherProfile.age;
+                        if (dob) {
+                          const bDate = new Date(dob);
+                          const now = new Date();
+                          ageVal = String(now.getFullYear() - bDate.getFullYear());
+                        }
+                        setFatherProfile({ ...fatherProfile, birthDate: dob, age: ageVal });
+                      }}
+                    />
+                    <Input
+                      type="number"
+                      label="Age"
+                      value={fatherProfile.age}
+                      onChange={(e) => setFatherProfile({ ...fatherProfile, age: e.target.value })}
+                    />
+                  </div>
+
+                  <div style={{ maxWidth: '360px' }}>
+                    <Input
+                      label="Father's Contact Number"
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="e.g. 09171234567"
+                      value={fatherProfile.contactNumber || ''}
+                      onChange={(e) => setFatherProfile({ ...fatherProfile, contactNumber: e.target.value.replace(/\D/g, '') })}
+                      leftIcon={<Phone size={14} />}
+                    />
+                  </div>
+
+                  <div className="official-section-title">2. Civil Status</div>
+                  <div className="official-choice-group">
+                    {['Single', 'Married', 'Separated', 'Widower', 'Live-in'].map((status) => (
+                      <div
+                        key={status}
+                        className={`official-choice-item ${fatherProfile.civilStatus === status ? 'is-selected' : ''}`}
+                        onClick={() => setFatherProfile({ ...fatherProfile, civilStatus: status })}
+                      >
+                        <span>{status}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="official-section-title">3. Mother Tongue &amp; Dialects</div>
+                  <div className="official-choice-group">
+                    {['Tagalog', 'Visayan', 'Ilocano', 'Bicolnon', 'Others'].map((lang) => (
+                      <div
+                        key={lang}
+                        className={`official-choice-item ${fatherProfile.motherTongue === lang ? 'is-selected' : ''}`}
+                        onClick={() => setFatherProfile({ ...fatherProfile, motherTongue: lang })}
+                      >
+                        <span>{lang}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {fatherProfile.motherTongue === 'Others' && (
+                    <Input
+                      label="Other Mother Tongue, please specify"
+                      value={fatherProfile.motherTongueOthers}
+                      onChange={(e) => setFatherProfile({ ...fatherProfile, motherTongueOthers: e.target.value })}
+                    />
+                  )}
+                  <Input
+                    label="Other Dialects Spoken at Home"
+                    placeholder="e.g. Kapampangan"
+                    value={fatherProfile.otherDialects}
+                    onChange={(e) => setFatherProfile({ ...fatherProfile, otherDialects: e.target.value })}
+                  />
+
+                  <div className="official-section-title">4. Educational Attainment</div>
+                  <div className="official-choice-group">
+                    {[
+                      'Elem./Graduate',
+                      'High School /Graduate',
+                      'College /Graduate',
+                      'Technical/Vocational Graduate',
+                      'Masteral Unit/Degree',
+                      'Doctoral Unit/Degree',
+                    ].map((edu) => (
+                      <div
+                        key={edu}
+                        className={`official-choice-item ${fatherProfile.educationalAttainment === edu ? 'is-selected' : ''}`}
+                        onClick={() => setFatherProfile({ ...fatherProfile, educationalAttainment: edu })}
+                      >
+                        <span>{edu}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="official-section-title">5. Occupational Status</div>
+                  <div className="official-choice-group">
+                    {['Employed', 'Unemployed', 'Retired', 'OFW', 'Others'].map((occ) => (
+                      <div
+                        key={occ}
+                        className={`official-choice-item ${fatherProfile.occupationalStatus === occ ? 'is-selected' : ''}`}
+                        onClick={() => setFatherProfile({ ...fatherProfile, occupationalStatus: occ })}
+                      >
+                        <span>{occ}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {fatherProfile.occupationalStatus === 'Others' && (
+                    <Input
+                      label="Other Occupation, please specify"
+                      value={fatherProfile.occupationalStatusOthers}
+                      onChange={(e) => setFatherProfile({ ...fatherProfile, occupationalStatusOthers: e.target.value })}
+                    />
+                  )}
                 </div>
-
-                {/* FORM 1.B MOTHER'S PROFILE */}
-                {parentProfileTab === 'mother' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                    <div className="official-section-title">1. Personal Information (Mother)</div>
-                    <div className="official-grid-5">
-                      <Input
-                        label="Last Name"
-                        uppercase
-                        value={motherProfile.lastName}
-                        onChange={(e) => setMotherProfile({ ...motherProfile, lastName: e.target.value.toUpperCase() })}
-                      />
-                      <Input
-                        label="First Name"
-                        uppercase
-                        value={motherProfile.firstName}
-                        onChange={(e) => setMotherProfile({ ...motherProfile, firstName: e.target.value.toUpperCase() })}
-                      />
-                      <Input
-                        label="Middle Initial"
-                        uppercase
-                        value={motherProfile.middleInitial}
-                        onChange={(e) => setMotherProfile({ ...motherProfile, middleInitial: e.target.value.toUpperCase() })}
-                      />
-                      <Input
-                        type="date"
-                        label="Date of Birth"
-                        value={motherProfile.birthDate}
-                        onChange={(e) => {
-                          const dob = e.target.value;
-                          let ageVal = motherProfile.age;
-                          if (dob) {
-                            const bDate = new Date(dob);
-                            const now = new Date();
-                            ageVal = String(now.getFullYear() - bDate.getFullYear());
-                          }
-                          setMotherProfile({ ...motherProfile, birthDate: dob, age: ageVal });
-                        }}
-                      />
-                      <Input
-                        type="number"
-                        label="Age"
-                        value={motherProfile.age}
-                        onChange={(e) => setMotherProfile({ ...motherProfile, age: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="official-grid-2">
-                      <div>
-                        <div className="official-section-title">2. Civil Status</div>
-                        <div className="official-choice-group">
-                          {['Single', 'Married', 'Separated', 'Widower', 'Live-in'].map((status) => (
-                            <div
-                              key={status}
-                              className={`official-choice-item ${motherProfile.civilStatus === status ? 'is-selected' : ''}`}
-                              onClick={() => setMotherProfile({ ...motherProfile, civilStatus: status })}
-                            >
-                              <span>{status}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="official-section-title">3. Pregnancy Status</div>
-                        <div className="official-choice-group">
-                          {['No', 'Yes'].map((opt) => (
-                            <div
-                              key={opt}
-                              className={`official-choice-item ${motherProfile.pregnant === opt ? 'is-selected' : ''}`}
-                              onClick={() => setMotherProfile({ ...motherProfile, pregnant: opt })}
-                            >
-                              <span>{opt === 'Yes' ? '🤰 Currently Pregnant' : 'Not Pregnant'}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="official-section-title">4. Mother Tongue &amp; Dialects</div>
-                    <div className="official-choice-group">
-                      {['Tagalog', 'Visayan', 'Ilocano', 'Bicolano', 'Others'].map((lang) => (
-                        <div
-                          key={lang}
-                          className={`official-choice-item ${motherProfile.motherTongue === lang ? 'is-selected' : ''}`}
-                          onClick={() => setMotherProfile({ ...motherProfile, motherTongue: lang })}
-                        >
-                          <span>{lang}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {motherProfile.motherTongue === 'Others' && (
-                      <Input
-                        label="Other Mother Tongue, please specify"
-                        value={motherProfile.motherTongueOthers}
-                        onChange={(e) => setMotherProfile({ ...motherProfile, motherTongueOthers: e.target.value })}
-                      />
-                    )}
-                    <Input
-                      label="Other Dialects Spoken at Home"
-                      placeholder="e.g. Kapampangan"
-                      value={motherProfile.otherDialects}
-                      onChange={(e) => setMotherProfile({ ...motherProfile, otherDialects: e.target.value })}
-                    />
-
-                    <div className="official-section-title">5. Educational Attainment</div>
-                    <div className="official-choice-group">
-                      {[
-                        'Elem. /Graduate',
-                        'High School/ Graduate',
-                        'College/ Graduate',
-                        'Technical/Vocational Graduate',
-                        'Masteral Unit/Degree',
-                        'Doctoral Unit/Degree',
-                      ].map((edu) => (
-                        <div
-                          key={edu}
-                          className={`official-choice-item ${motherProfile.educationalAttainment === edu ? 'is-selected' : ''}`}
-                          onClick={() => setMotherProfile({ ...motherProfile, educationalAttainment: edu })}
-                        >
-                          <span>{edu}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="official-section-title">6. Occupational Status</div>
-                    <div className="official-choice-group">
-                      {['Employed', 'Unemployed', 'Retired', 'OFW', 'Others'].map((occ) => (
-                        <div
-                          key={occ}
-                          className={`official-choice-item ${motherProfile.occupationalStatus === occ ? 'is-selected' : ''}`}
-                          onClick={() => setMotherProfile({ ...motherProfile, occupationalStatus: occ })}
-                        >
-                          <span>{occ}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {motherProfile.occupationalStatus === 'Others' && (
-                      <Input
-                        label="Other Occupation, please specify"
-                        value={motherProfile.occupationalStatusOthers}
-                        onChange={(e) => setMotherProfile({ ...motherProfile, occupationalStatusOthers: e.target.value })}
-                      />
-                    )}
-
-                    <div className="official-section-title">7. Desired Age for Day Care (CDC) Entry</div>
-                    <div className="official-choice-group">
-                      {['Below 1 year old', '1 year old', '2 years old', '3 years old', '4 years old'].map((ageOption) => (
-                        <div
-                          key={ageOption}
-                          className={`official-choice-item ${motherProfile.interestedAge === ageOption ? 'is-selected' : ''}`}
-                          onClick={() => setMotherProfile({ ...motherProfile, interestedAge: ageOption })}
-                        >
-                          <span>{ageOption}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* FORM 1.A FATHER'S PROFILE */}
-                {parentProfileTab === 'father' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                    <div className="official-section-title">1. Personal Information (Father)</div>
-                    <div className="official-grid-5">
-                      <Input
-                        label="Last Name"
-                        uppercase
-                        value={fatherProfile.lastName}
-                        onChange={(e) => setFatherProfile({ ...fatherProfile, lastName: e.target.value.toUpperCase() })}
-                      />
-                      <Input
-                        label="First Name"
-                        uppercase
-                        value={fatherProfile.firstName}
-                        onChange={(e) => setFatherProfile({ ...fatherProfile, firstName: e.target.value.toUpperCase() })}
-                      />
-                      <Input
-                        label="Middle Initial"
-                        uppercase
-                        value={fatherProfile.middleInitial}
-                        onChange={(e) => setFatherProfile({ ...fatherProfile, middleInitial: e.target.value.toUpperCase() })}
-                      />
-                      <Input
-                        type="date"
-                        label="Date of Birth"
-                        value={fatherProfile.birthDate}
-                        onChange={(e) => {
-                          const dob = e.target.value;
-                          let ageVal = fatherProfile.age;
-                          if (dob) {
-                            const bDate = new Date(dob);
-                            const now = new Date();
-                            ageVal = String(now.getFullYear() - bDate.getFullYear());
-                          }
-                          setFatherProfile({ ...fatherProfile, birthDate: dob, age: ageVal });
-                        }}
-                      />
-                      <Input
-                        type="number"
-                        label="Age"
-                        value={fatherProfile.age}
-                        onChange={(e) => setFatherProfile({ ...fatherProfile, age: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="official-section-title">2. Civil Status</div>
-                    <div className="official-choice-group">
-                      {['Single', 'Married', 'Separated', 'Widower', 'Live-in'].map((status) => (
-                        <div
-                          key={status}
-                          className={`official-choice-item ${fatherProfile.civilStatus === status ? 'is-selected' : ''}`}
-                          onClick={() => setFatherProfile({ ...fatherProfile, civilStatus: status })}
-                        >
-                          <span>{status}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="official-section-title">3. Mother Tongue &amp; Dialects</div>
-                    <div className="official-choice-group">
-                      {['Tagalog', 'Visayan', 'Ilocano', 'Bicolnon', 'Others'].map((lang) => (
-                        <div
-                          key={lang}
-                          className={`official-choice-item ${fatherProfile.motherTongue === lang ? 'is-selected' : ''}`}
-                          onClick={() => setFatherProfile({ ...fatherProfile, motherTongue: lang })}
-                        >
-                          <span>{lang}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {fatherProfile.motherTongue === 'Others' && (
-                      <Input
-                        label="Other Mother Tongue, please specify"
-                        value={fatherProfile.motherTongueOthers}
-                        onChange={(e) => setFatherProfile({ ...fatherProfile, motherTongueOthers: e.target.value })}
-                      />
-                    )}
-                    <Input
-                      label="Other Dialects Spoken at Home"
-                      placeholder="e.g. Kapampangan"
-                      value={fatherProfile.otherDialects}
-                      onChange={(e) => setFatherProfile({ ...fatherProfile, otherDialects: e.target.value })}
-                    />
-
-                    <div className="official-section-title">4. Educational Attainment</div>
-                    <div className="official-choice-group">
-                      {[
-                        'Elem./Graduate',
-                        'High School /Graduate',
-                        'College /Graduate',
-                        'Technical/Vocational Graduate',
-                        'Masteral Unit/Degree',
-                        'Doctoral Unit/Degree',
-                      ].map((edu) => (
-                        <div
-                          key={edu}
-                          className={`official-choice-item ${fatherProfile.educationalAttainment === edu ? 'is-selected' : ''}`}
-                          onClick={() => setFatherProfile({ ...fatherProfile, educationalAttainment: edu })}
-                        >
-                          <span>{edu}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="official-section-title">5. Occupational Status</div>
-                    <div className="official-choice-group">
-                      {['Employed', 'Unemployed', 'Retired', 'OFW', 'Others'].map((occ) => (
-                        <div
-                          key={occ}
-                          className={`official-choice-item ${fatherProfile.occupationalStatus === occ ? 'is-selected' : ''}`}
-                          onClick={() => setFatherProfile({ ...fatherProfile, occupationalStatus: occ })}
-                        >
-                          <span>{occ}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {fatherProfile.occupationalStatus === 'Others' && (
-                      <Input
-                        label="Other Occupation, please specify"
-                        value={fatherProfile.occupationalStatusOthers}
-                        onChange={(e) => setFatherProfile({ ...fatherProfile, occupationalStatusOthers: e.target.value })}
-                      />
-                    )}
-                  </div>
-                )}
               </CardBody>
 
               <div className="mobile-stepper-footer">
                 <Button variant="secondary" size="md" onClick={() => setCurrentStep(1)}>
                   <ArrowLeft size={16} />
-                  Back
+                  Back: Household Info
                 </Button>
                 <Button variant="ghost" size="md" onClick={handleSaveDraft}>
                   <Save size={16} />
                   Save Draft
                 </Button>
                 <Button variant="primary" size="md" onClick={handleNextStep}>
-                  Next: Family & Housing (1.C)
+                  Next: Form 1.B (Mother's Profile)
                   <ArrowRight size={16} />
                 </Button>
               </div>
@@ -1557,12 +1378,215 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           )}
 
           {/* -------------------------------------------------------------
-              STEP 3: FAMILY & HOUSING PROFILE (FORM 1.C)
+              STEP 3: FORM 1.B — MOTHER'S PROFILE
               ------------------------------------------------------------- */}
           {currentStep === 3 && (
             <Card>
               <CardHeader>
-                <CardTitle subtitle="Step 3: Official Form 1.C Housing materials, utilities, socio-economic class, and 4Ps membership">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
+                  <CardTitle subtitle="Step 3 of 6: Form 1.B — Mother's Demographic, Health & Occupational Profile">
+                    Form 1.B Mother's Profile
+                  </CardTitle>
+                  <Badge variant={motherProfile.firstName ? 'success' : 'neutral'} size="sm">
+                    {motherProfile.firstName ? `${motherProfile.firstName} ${motherProfile.lastName}` : 'Primary Caregiver / Pending'}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardBody>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                  <div className="official-section-title">1. Personal Information (Mother)</div>
+                  <div className="official-grid-5">
+                    <Input
+                      label="Last Name"
+                      uppercase
+                      value={motherProfile.lastName}
+                      onChange={(e) => setMotherProfile({ ...motherProfile, lastName: e.target.value.toUpperCase() })}
+                    />
+                    <Input
+                      label="First Name"
+                      uppercase
+                      value={motherProfile.firstName}
+                      onChange={(e) => setMotherProfile({ ...motherProfile, firstName: e.target.value.toUpperCase() })}
+                    />
+                    <Input
+                      label="Middle Initial"
+                      uppercase
+                      value={motherProfile.middleInitial}
+                      onChange={(e) => setMotherProfile({ ...motherProfile, middleInitial: e.target.value.toUpperCase() })}
+                    />
+                    <Input
+                      type="date"
+                      label="Date of Birth"
+                      value={motherProfile.birthDate}
+                      onChange={(e) => {
+                        const dob = e.target.value;
+                        let ageVal = motherProfile.age;
+                        if (dob) {
+                          const bDate = new Date(dob);
+                          const now = new Date();
+                          ageVal = String(now.getFullYear() - bDate.getFullYear());
+                        }
+                        setMotherProfile({ ...motherProfile, birthDate: dob, age: ageVal });
+                      }}
+                    />
+                    <Input
+                      type="number"
+                      label="Age"
+                      value={motherProfile.age}
+                      onChange={(e) => setMotherProfile({ ...motherProfile, age: e.target.value })}
+                    />
+                  </div>
+
+                  <div style={{ maxWidth: '360px' }}>
+                    <Input
+                      label="Mother's Contact Number"
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="e.g. 09171234567"
+                      value={motherProfile.contactNumber || ''}
+                      onChange={(e) => setMotherProfile({ ...motherProfile, contactNumber: e.target.value.replace(/\D/g, '') })}
+                      leftIcon={<Phone size={14} />}
+                    />
+                  </div>
+
+                  <div className="official-grid-2">
+                    <div>
+                      <div className="official-section-title">2. Civil Status</div>
+                      <div className="official-choice-group">
+                        {['Single', 'Married', 'Separated', 'Widower', 'Live-in'].map((status) => (
+                          <div
+                            key={status}
+                            className={`official-choice-item ${motherProfile.civilStatus === status ? 'is-selected' : ''}`}
+                            onClick={() => setMotherProfile({ ...motherProfile, civilStatus: status })}
+                          >
+                            <span>{status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="official-section-title">3. Pregnancy Status</div>
+                      <div className="official-choice-group">
+                        {['No', 'Yes'].map((opt) => (
+                          <div
+                            key={opt}
+                            className={`official-choice-item ${motherProfile.pregnant === opt ? 'is-selected' : ''}`}
+                            onClick={() => setMotherProfile({ ...motherProfile, pregnant: opt })}
+                          >
+                            <span>{opt === 'Yes' ? '🤰 Currently Pregnant' : 'Not Pregnant'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="official-section-title">4. Mother Tongue &amp; Dialects</div>
+                  <div className="official-choice-group">
+                    {['Tagalog', 'Visayan', 'Ilocano', 'Bicolano', 'Others'].map((lang) => (
+                      <div
+                        key={lang}
+                        className={`official-choice-item ${motherProfile.motherTongue === lang ? 'is-selected' : ''}`}
+                        onClick={() => setMotherProfile({ ...motherProfile, motherTongue: lang })}
+                      >
+                        <span>{lang}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {motherProfile.motherTongue === 'Others' && (
+                    <Input
+                      label="Other Mother Tongue, please specify"
+                      value={motherProfile.motherTongueOthers}
+                      onChange={(e) => setMotherProfile({ ...motherProfile, motherTongueOthers: e.target.value })}
+                    />
+                  )}
+                  <Input
+                    label="Other Dialects Spoken at Home"
+                    placeholder="e.g. Kapampangan"
+                    value={motherProfile.otherDialects}
+                    onChange={(e) => setMotherProfile({ ...motherProfile, otherDialects: e.target.value })}
+                  />
+
+                  <div className="official-section-title">5. Educational Attainment</div>
+                  <div className="official-choice-group">
+                    {[
+                      'Elem. /Graduate',
+                      'High School/ Graduate',
+                      'College/ Graduate',
+                      'Technical/Vocational Graduate',
+                      'Masteral Unit/Degree',
+                      'Doctoral Unit/Degree',
+                    ].map((edu) => (
+                      <div
+                        key={edu}
+                        className={`official-choice-item ${motherProfile.educationalAttainment === edu ? 'is-selected' : ''}`}
+                        onClick={() => setMotherProfile({ ...motherProfile, educationalAttainment: edu })}
+                      >
+                        <span>{edu}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="official-section-title">6. Occupational Status</div>
+                  <div className="official-choice-group">
+                    {['Employed', 'Unemployed', 'Retired', 'OFW', 'Others'].map((occ) => (
+                      <div
+                        key={occ}
+                        className={`official-choice-item ${motherProfile.occupationalStatus === occ ? 'is-selected' : ''}`}
+                        onClick={() => setMotherProfile({ ...motherProfile, occupationalStatus: occ })}
+                      >
+                        <span>{occ}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {motherProfile.occupationalStatus === 'Others' && (
+                    <Input
+                      label="Other Occupation, please specify"
+                      value={motherProfile.occupationalStatusOthers}
+                      onChange={(e) => setMotherProfile({ ...motherProfile, occupationalStatusOthers: e.target.value })}
+                    />
+                  )}
+
+                  <div className="official-section-title">7. Desired Age for Day Care (CDC) Entry</div>
+                  <div className="official-choice-group">
+                    {['Below 1 year old', '1 year old', '2 years old', '3 years old', '4 years old'].map((ageOption) => (
+                      <div
+                        key={ageOption}
+                        className={`official-choice-item ${motherProfile.interestedAge === ageOption ? 'is-selected' : ''}`}
+                        onClick={() => setMotherProfile({ ...motherProfile, interestedAge: ageOption })}
+                      >
+                        <span>{ageOption}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardBody>
+
+              <div className="mobile-stepper-footer">
+                <Button variant="secondary" size="md" onClick={() => setCurrentStep(2)}>
+                  <ArrowLeft size={16} />
+                  Back: Form 1.A (Father)
+                </Button>
+                <Button variant="ghost" size="md" onClick={handleSaveDraft}>
+                  <Save size={16} />
+                  Save Draft
+                </Button>
+                <Button variant="primary" size="md" onClick={handleNextStep}>
+                  Next: Form 1.C (Family & Housing)
+                  <ArrowRight size={16} />
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          {/* -------------------------------------------------------------
+              STEP 4: FAMILY & HOUSING PROFILE (FORM 1.C)
+              ------------------------------------------------------------- */}
+          {currentStep === 4 && (
+            <Card>
+              <CardHeader>
+                <CardTitle subtitle="Step 4 of 6: Form 1.C Housing materials, utilities, socio-economic class, and 4Ps membership">
                   Family & Housing Profile (Form 1.C)
                 </CardTitle>
               </CardHeader>
@@ -1818,16 +1842,16 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
               </CardBody>
 
               <div className="mobile-stepper-footer">
-                <Button variant="secondary" size="md" onClick={() => setCurrentStep(2)}>
+                <Button variant="secondary" size="md" onClick={() => setCurrentStep(3)}>
                   <ArrowLeft size={16} />
-                  Back
+                  Back: Form 1.B (Mother)
                 </Button>
                 <Button variant="ghost" size="md" onClick={handleSaveDraft}>
                   <Save size={16} />
                   Save Draft
                 </Button>
                 <Button variant="primary" size="md" onClick={handleNextStep}>
-                  Next: Children (0–4)
+                  Next: Children (0–4 Cohort)
                   <ArrowRight size={16} />
                 </Button>
               </div>
@@ -1835,13 +1859,13 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           )}
 
           {/* -------------------------------------------------------------
-              STEP 4: CHILDREN 0–4 COHORT REGISTRATION
+              STEP 5: CHILDREN 0–4 COHORT REGISTRATION
               ------------------------------------------------------------- */}
-          {currentStep === 4 && (
+          {currentStep === 5 && (
             <Card>
               <CardHeader>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <CardTitle subtitle="Step 4: Register all children aged 0–4 residing in this household">
+                  <CardTitle subtitle="Step 5 of 6: Register all children aged 0–4 residing in this household">
                     Children Aged 0–4 Cohort Registration
                   </CardTitle>
                   <Badge variant="primary" size="sm">
@@ -2025,9 +2049,9 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
               </CardBody>
 
               <div className="mobile-stepper-footer">
-                <Button variant="secondary" size="md" onClick={() => setCurrentStep(3)}>
+                <Button variant="secondary" size="md" onClick={() => setCurrentStep(4)}>
                   <ArrowLeft size={16} />
-                  Back
+                  Back: Form 1.C (Family)
                 </Button>
                 <Button variant="ghost" size="md" onClick={handleSaveDraft}>
                   <Save size={16} />
@@ -2042,13 +2066,13 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           )}
 
           {/* -------------------------------------------------------------
-              STEP 5: RECORD CHECK, REVIEW & SAVE
+              STEP 6: RECORD CHECK, REVIEW & SAVE
               ------------------------------------------------------------- */}
-          {currentStep === 5 && (
+          {currentStep === 6 && (
             <Card>
               <CardHeader>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
-                  <CardTitle subtitle="Step 5: Verify deduplication checks, Form 1 profiles, and household summary before commit">
+                  <CardTitle subtitle="Step 6 of 6: Verify deduplication checks, Form 1 profiles, and household summary before commit">
                     Record Verification, Review & Save
                   </CardTitle>
                   <Button variant="secondary" size="sm" onClick={runDuplicateCheck} disabled={isSearchingMatch}>
@@ -2164,11 +2188,11 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                       </div>
                       <div>
                         <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Assigned Worker:</span>
-                        <div style={{ fontWeight: '600' }}>{householdForm.workerName || 'CSWDO Worker'}</div>
+                        <div style={{ fontWeight: '600' }}>{householdForm.workerName || user?.name || 'CSWDO Worker'}</div>
                       </div>
                       <div>
                         <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Contact:</span>
-                        <div style={{ fontWeight: '600' }}>{householdForm.contactNumber || 'N/A'}</div>
+                        <div style={{ fontWeight: '600' }}>{motherProfile.contactNumber || fatherProfile.contactNumber || 'N/A'}</div>
                       </div>
                     </div>
                   </div>
@@ -2183,14 +2207,14 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                         <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Mother's Profile:</span>
                         <div style={{ fontWeight: '600' }}>{motherProfile.firstName ? `${motherProfile.firstName} ${motherProfile.lastName}` : 'Not Specified'}</div>
                         <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
-                          Status: {motherProfile.civilStatus} • Edu: {motherProfile.educationalAttainment} • Occ: {motherProfile.occupationalStatus}
+                          Status: {motherProfile.civilStatus} • Contact: {motherProfile.contactNumber || 'None'} • Occ: {motherProfile.occupationalStatus}
                         </div>
                       </div>
                       <div>
                         <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Father's Profile:</span>
                         <div style={{ fontWeight: '600' }}>{fatherProfile.firstName ? `${fatherProfile.firstName} ${fatherProfile.lastName}` : 'Not Specified'}</div>
                         <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
-                          Status: {fatherProfile.civilStatus} • Edu: {fatherProfile.educationalAttainment} • Occ: {fatherProfile.occupationalStatus}
+                          Status: {fatherProfile.civilStatus} • Contact: {fatherProfile.contactNumber || 'None'} • Occ: {fatherProfile.occupationalStatus}
                         </div>
                       </div>
                     </div>
@@ -2226,9 +2250,9 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
               </CardBody>
 
               <div className="mobile-stepper-footer">
-                <Button variant="secondary" size="md" onClick={() => setCurrentStep(4)}>
+                <Button variant="secondary" size="md" onClick={() => setCurrentStep(5)}>
                   <ArrowLeft size={16} />
-                  Back
+                  Back: Children (0–4)
                 </Button>
                 <Button
                   variant="primary"
@@ -2244,9 +2268,9 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           )}
 
           {/* -------------------------------------------------------------
-              STEP 6: MAPPING COMPLETION & OUTCOME
+              STEP 7: MAPPING COMPLETION & OUTCOME
               ------------------------------------------------------------- */}
-          {currentStep === 6 && completedSummary && (
+          {currentStep === 7 && completedSummary && (
             <Card style={{ textAlign: 'center', padding: 'var(--space-6) var(--space-4)' }}>
               <div style={{ width: '3.5rem', height: '3.5rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto var(--space-3)' }}>
                 <CheckCircle2 size={32} />
