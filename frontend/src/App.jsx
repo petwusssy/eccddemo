@@ -242,7 +242,6 @@ function AuthenticatedApp() {
       case 'community-mapping':
       case 'mapping':
         return {
-          title: 'Community Mapping (Form 1)',
           breadcrumbs: [
             { label: 'REGISTRATION & MAPPING', onClick: () => navigate('/mapping') },
             { label: 'Community Mapping' },
@@ -251,7 +250,6 @@ function AuthenticatedApp() {
 
       case 'enrollment':
         return {
-          title: 'Center Enrollment & Session Scheduling',
           breadcrumbs: [
             { label: 'REGISTRATION & MAPPING', onClick: () => navigate('/enrollment') },
             { label: 'Enrollment' },
@@ -260,7 +258,6 @@ function AuthenticatedApp() {
 
       case 'children':
         return {
-          title: 'Children Records & Child 360° Directory',
           breadcrumbs: [
             { label: 'REGISTRATION & MAPPING', onClick: () => navigate('/children') },
             { label: 'Children Records (Form 2)' },
@@ -270,7 +267,6 @@ function AuthenticatedApp() {
       case 'eccd-checklist':
       case 'development-assessment':
         return {
-          title: 'Phil-ECCD Developmental Assessment Checklist',
           breadcrumbs: [
             { label: 'ASSESSMENT & MONITORING', onClick: () => navigate('/development-assessment') },
             { label: 'Development Assessment' },
@@ -279,7 +275,6 @@ function AuthenticatedApp() {
 
       case 'health-monitoring':
         return {
-          title: 'Child Health & Growth Monitoring (OPT Plus)',
           breadcrumbs: [
             { label: 'ASSESSMENT & MONITORING', onClick: () => navigate('/health-monitoring') },
             { label: 'Health Monitoring' },
@@ -288,7 +283,6 @@ function AuthenticatedApp() {
 
       case 'follow-ups':
         return {
-          title: 'Case Management & Intervention Follow-ups',
           breadcrumbs: [
             { label: 'ASSESSMENT & MONITORING', onClick: () => navigate('/follow-ups') },
             { label: 'Follow-ups' },
