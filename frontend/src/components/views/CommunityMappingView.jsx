@@ -34,6 +34,9 @@ import {
   Cloud,
   ExternalLink,
   Paperclip,
+  User,
+  Heart,
+  DollarSign,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardBody } from '../ui/Card';
 import { Button } from '../ui/Button';
@@ -44,6 +47,8 @@ import { Alert } from '../ui/Alert';
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '../ui/Table';
 import { Modal } from '../ui/Modal';
 import { useToast } from '../ui/Toast';
+import { apiClient } from '../../services/apiClient';
+import { officialFormsService } from '../../services/officialFormsService';
 import { communityMappingService } from '../../services/communityMappingService';
 import { communityService } from '../../services/communityService';
 import { centralDataStore } from '../../services/centralDataStore';
@@ -58,7 +63,7 @@ import {
   syncPendingSurveysToBackend,
 } from '../../services/offlineMappingStore';
 import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
-import { formatPHTTime } from '../../utils/phTime';
+import { formatPHTTime, getPhilippinesDate } from '../../utils/phTime';
 
 const AVAILABLE_BARANGAYS = SAN_FERNANDO_BARANGAYS;
 
@@ -92,7 +97,8 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
   const [selectedBarangayForForm3, setSelectedBarangayForForm3] = useState('San Isidro');
 
   // --- HOUSE-TO-HOUSE STEPPER STATE ---
-  const [currentStep, setCurrentStep] = useState(1); // 1: Household, 2: Children, 3: Match Check, 4: Review, 5: Completion
+  const [currentStep, setCurrentStep] = useState(1); // 1: Household, 2: Parent Profiles (1.A/B), 3: Family & Housing (1.C), 4: Children 0–4, 5: Review & Save, 6: Completion
+  const [parentProfileTab, setParentProfileTab] = useState('mother'); // 'mother' | 'father'
 
   // Step 1: Household Form
   const [householdForm, setHouseholdForm] = useState({
@@ -105,6 +111,75 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     activityId: 'ACT-MAP-2026-001',
     workerId: '',
     workerName: '',
+  });
+
+  // Step 2: Form 1.A Father's Profile
+  const [fatherProfile, setFatherProfile] = useState({
+    lastName: '',
+    firstName: '',
+    middleInitial: '',
+    birthDate: '',
+    age: '',
+    civilStatus: 'Married',
+    district: 'San Isidro',
+    purok: 'Purok 1',
+    motherTongue: 'Tagalog',
+    motherTongueOthers: '',
+    otherDialects: 'Kapampangan',
+    educationalAttainment: 'High School /Graduate',
+    occupationalStatus: 'Employed',
+    occupationalStatusOthers: '',
+  });
+
+  // Step 2: Form 1.B Mother's Profile
+  const [motherProfile, setMotherProfile] = useState({
+    lastName: '',
+    firstName: '',
+    middleInitial: '',
+    birthDate: '',
+    age: '',
+    civilStatus: 'Married',
+    district: 'San Isidro',
+    purok: 'Purok 1',
+    pregnant: 'No',
+    motherTongue: 'Tagalog',
+    motherTongueOthers: '',
+    otherDialects: 'Kapampangan',
+    educationalAttainment: 'College /Graduate',
+    occupationalStatus: 'Employed',
+    occupationalStatusOthers: '',
+    interestedAge: '3 years old',
+  });
+
+  // Step 3: Form 1.C Family Profile
+  const [familyProfile, setFamilyProfile] = useState({
+    ownership: 'Owned',
+    materials: 'Concrete',
+    nature: 'Multiple Rooms',
+    incomeClass: 'P10,000 - P20,000',
+    is4Ps: false,
+    withToilet: true,
+    withOpenPlayArea: true,
+    bedroom: true,
+    diningRoom: true,
+    sala: true,
+    kitchen: true,
+    runningWater: true,
+    electricity: true,
+    aircon: false,
+    mobilePhone: true,
+    computer: true,
+    internet: true,
+    cdDvdPlayer: false,
+    television: true,
+    radio: true,
+    books: true,
+    storyBooks: true,
+    boardGames: true,
+    toys: true,
+    immediateMembersCount: 4,
+    relativesCount: 0,
+    nonRelativesCount: 0,
   });
 
   // Step 2: Children in this household
@@ -269,6 +344,9 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       const draft = communityMappingService.getDraft();
       if (draft && draft.householdForm) {
         setHouseholdForm(draft.householdForm);
+        if (draft.fatherProfile) setFatherProfile(draft.fatherProfile);
+        if (draft.motherProfile) setMotherProfile(draft.motherProfile);
+        if (draft.familyProfile) setFamilyProfile(draft.familyProfile);
         setChildrenList(draft.childrenList || []);
         setCurrentStep(draft.currentStep || 1);
         setSyncStatus('draft');
@@ -377,6 +455,9 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
   const handleSaveDraft = () => {
     const draftPayload = {
       householdForm,
+      fatherProfile,
+      motherProfile,
+      familyProfile,
       childrenList,
       currentStep,
       timestamp: formatPHTTime(new Date(), false),
@@ -434,7 +515,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     setChildrenList(childrenList.filter((c) => c.tempId !== tempId));
   };
 
-  // Run Check Existing Records (Step 3)
+  // Run Check Existing Records (Deduplication Logic)
   const runDuplicateCheck = async () => {
     setIsSearchingMatch(true);
     try {
@@ -462,29 +543,60 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     }
   };
 
-  // Proceed to Next Step
+  // Proceed to Next Step in 5-Step Sequence
   const handleNextStep = async () => {
     if (currentStep === 1) {
       if (!householdForm.parentGuardian || !householdForm.address) {
         addToast('Please fill out Parent/Guardian and Address', 'error');
         return;
       }
+      // Auto-prefill Father or Mother name from parentGuardian if both are blank
+      if (!fatherProfile.firstName && !fatherProfile.lastName && !motherProfile.firstName && !motherProfile.lastName) {
+        const parts = householdForm.parentGuardian.trim().split(' ');
+        const lName = parts.length > 1 ? parts[parts.length - 1] : '';
+        const fName = parts.length > 0 ? parts.slice(0, -1).join(' ') || parts[0] : '';
+        setMotherProfile((prev) => ({
+          ...prev,
+          firstName: fName,
+          lastName: lName,
+          purok: householdForm.purok || prev.purok,
+          district: householdForm.barangay || prev.district,
+        }));
+        setFatherProfile((prev) => ({
+          ...prev,
+          lastName: lName,
+          purok: householdForm.purok || prev.purok,
+          district: householdForm.barangay || prev.district,
+        }));
+      }
       setCurrentStep(2);
     } else if (currentStep === 2) {
+      // Step 2: Parent Profiles validation
+      const hasMother = motherProfile.firstName || motherProfile.lastName;
+      const hasFather = fatherProfile.firstName || fatherProfile.lastName;
+      if (!hasMother && !hasFather && !householdForm.parentGuardian) {
+        addToast('Please provide at least Father or Mother profile details', 'error');
+        return;
+      }
+      setCurrentStep(3);
+    } else if (currentStep === 3) {
+      // Step 3: Family Profile -> proceed to Children Cohort
+      setCurrentStep(4);
+    } else if (currentStep === 4) {
+      // Step 4: Children Cohort validation
       if (childrenList.length === 0) {
         addToast('Please add at least one child aged 0–4 before continuing', 'error');
         return;
       }
-      setCurrentStep(3);
+      setCurrentStep(5);
       await runDuplicateCheck();
-    } else if (currentStep === 3) {
-      setCurrentStep(4);
-    } else if (currentStep === 4) {
+    } else if (currentStep === 5) {
+      // Step 5: Final Submission
       await handleFinalSubmission();
     }
   };
 
-  // Final Step 4 Submission: Save household and children with Offline-First IndexedDB resilience
+  // Final Submission: Save Household, Full Form 1 (Home Profile), and Children 0–4 Cohort
   const handleFinalSubmission = async () => {
     setSyncStatus('saving');
     const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
@@ -494,10 +606,15 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     );
     const form3BarangayId = brgyIndex >= 0 ? `BRGY-${String(brgyIndex + 1).padStart(2, '0')}` : 'BRGY-01';
 
+    const primaryGuardian =
+      householdForm.parentGuardian ||
+      (motherProfile.firstName ? `${motherProfile.firstName} ${motherProfile.lastName}` : '') ||
+      (fatherProfile.firstName ? `${fatherProfile.firstName} ${fatherProfile.lastName}` : 'Household Head');
+
     const householdPayload = {
       id: householdForm.id,
       household_no: householdForm.id,
-      parentGuardian: String(householdForm.parentGuardian || '').trim().toUpperCase(),
+      parentGuardian: String(primaryGuardian).trim().toUpperCase(),
       contactNumber: householdForm.contactNumber ? householdForm.contactNumber.replace(/\D/g, '') : '',
       address: `${householdForm.address}, ${householdForm.purok}`,
       barangay: householdForm.barangay,
@@ -508,7 +625,35 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       mappedBy: householdForm.workerName || 'CSWDO Field Officer',
       workerId: householdForm.workerId || null,
       mappedDate: new Date().toISOString().slice(0, 10),
+      is4Ps: familyProfile.is4Ps,
       status: 'Completed',
+    };
+
+    const completeForm1Payload = {
+      householdId: householdForm.id,
+      householdNo: householdForm.id,
+      barangay: householdForm.barangay,
+      barangayId: form3BarangayId,
+      purok: householdForm.purok,
+      address: householdForm.address,
+      parentGuardian: primaryGuardian,
+      contactNumber: householdForm.contactNumber,
+      childrenCount: childrenList.length,
+      father: {
+        ...fatherProfile,
+        district: householdForm.barangay,
+        purok: householdForm.purok,
+      },
+      mother: {
+        ...motherProfile,
+        district: householdForm.barangay,
+        purok: householdForm.purok,
+      },
+      family: {
+        ...familyProfile,
+      },
+      nameOfCDT: householdForm.workerName || 'Child Development Worker',
+      dateConducted: getPhilippinesDate(),
     };
 
     // 1. Immediately write to IndexedDB (idb) with pending status so data is never lost offline
@@ -517,6 +662,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       id: surveyId,
       householdId: householdForm.id,
       household: householdPayload,
+      form1Data: completeForm1Payload,
       children: childrenList,
       syncStatus: 'pending',
     });
@@ -525,18 +671,8 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       // 2. Create household bound to Form 3 Barangay
       const createdHh = await communityMappingService.createHousehold(householdPayload);
 
-      // Save Form 1 Master Profile for this household
-      officialFormsService.saveForm1Data(createdHh.id, {
-        householdId: createdHh.id,
-        barangay: householdForm.barangay,
-        barangayId: form3BarangayId,
-        purok: householdForm.purok,
-        address: householdForm.address,
-        parentGuardian: householdForm.parentGuardian,
-        contactNumber: householdForm.contactNumber,
-        childrenCount: childrenList.length,
-        mappedDate: formatPHTTime(new Date(), false),
-      });
+      // Save complete Form 1 Master Profile for this household
+      officialFormsService.saveForm1Data(createdHh.id, completeForm1Payload);
 
       // 3. Register children and auto-push to Mapped but Not Enrolled Queue
       const savedChildren = [];
@@ -550,11 +686,13 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           ageYears: child.ageYears,
           ageMonths: child.ageMonths,
           householdId: createdHh.id,
-          parentGuardian: householdForm.parentGuardian,
+          parentGuardian: primaryGuardian,
           barangay: householdForm.barangay,
           barangayId: form3BarangayId,
-          enrollmentStatus: 'Not Enrolled',
-          enrollmentCenter: 'Pending CDC Assignment',
+          enrollmentStatus: child.enrollmentStatus || 'Not Enrolled',
+          enrollmentCenter: child.enrollmentCenter || (child.enrollmentStatus === 'Enrolled' ? 'Assigned CDC' : 'Pending CDC Assignment'),
+          documentUrl: child.documentUrl,
+          documentName: child.documentName,
           existingChildId: child.decision === 'same' && child.matchedRecord ? child.matchedRecord.id : null,
         });
         savedChildren.push(regRes.child);
@@ -581,11 +719,11 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
         timestamp: formatPHTTime(new Date(), true),
       });
 
-      setCurrentStep(5);
+      setCurrentStep(6);
       if (isOnline) {
-        addToast('Household mapping completed and synced successfully!', 'success');
+        addToast('Household mapping and Form 1 Profile completed and synced successfully!', 'success');
       } else {
-        addToast('Saved offline to IndexedDB. Record queued for sync!', 'info');
+        addToast('Saved offline to IndexedDB. Form 1 record queued for sync!', 'info');
       }
 
       await loadData();
@@ -596,17 +734,19 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
         id: `SURVEY-${householdForm.id}`,
         householdId: householdForm.id,
         household: householdPayload,
+        form1Data: completeForm1Payload,
         children: childrenList,
         syncStatus: 'pending',
       });
+      officialFormsService.saveForm1Data(householdForm.id, completeForm1Payload);
       setSyncStatus('draft');
       setCompletedSummary({
         household: householdPayload,
         children: childrenList,
         timestamp: formatPHTTime(new Date(), true),
       });
-      setCurrentStep(5);
-      addToast('Working offline: Survey saved to local IndexedDB and queued for sync.', 'warning');
+      setCurrentStep(6);
+      addToast('Working offline: Survey and Form 1 saved to local IndexedDB and queued for sync.', 'warning');
     }
   };
 
@@ -622,6 +762,69 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       activityId: householdForm.activityId,
       workerId: householdForm.workerId,
       workerName: householdForm.workerName,
+    });
+    setFatherProfile({
+      lastName: '',
+      firstName: '',
+      middleInitial: '',
+      birthDate: '',
+      age: '',
+      civilStatus: 'Married',
+      district: householdForm.barangay,
+      purok: householdForm.purok,
+      motherTongue: 'Tagalog',
+      motherTongueOthers: '',
+      otherDialects: 'Kapampangan',
+      educationalAttainment: 'High School /Graduate',
+      occupationalStatus: 'Employed',
+      occupationalStatusOthers: '',
+    });
+    setMotherProfile({
+      lastName: '',
+      firstName: '',
+      middleInitial: '',
+      birthDate: '',
+      age: '',
+      civilStatus: 'Married',
+      district: householdForm.barangay,
+      purok: householdForm.purok,
+      pregnant: 'No',
+      motherTongue: 'Tagalog',
+      motherTongueOthers: '',
+      otherDialects: 'Kapampangan',
+      educationalAttainment: 'College /Graduate',
+      occupationalStatus: 'Employed',
+      occupationalStatusOthers: '',
+      interestedAge: '3 years old',
+    });
+    setFamilyProfile({
+      ownership: 'Owned',
+      materials: 'Concrete',
+      nature: 'Multiple Rooms',
+      incomeClass: 'P10,000 - P20,000',
+      is4Ps: false,
+      withToilet: true,
+      withOpenPlayArea: true,
+      bedroom: true,
+      diningRoom: true,
+      sala: true,
+      kitchen: true,
+      runningWater: true,
+      electricity: true,
+      aircon: false,
+      mobilePhone: true,
+      computer: true,
+      internet: true,
+      cdDvdPlayer: false,
+      television: true,
+      radio: true,
+      books: true,
+      storyBooks: true,
+      boardGames: true,
+      toys: true,
+      immediateMembersCount: 4,
+      relativesCount: 0,
+      nonRelativesCount: 0,
     });
     setChildrenList([]);
     setCompletedSummary(null);
@@ -835,13 +1038,14 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           ========================================================================= */}
       {activeTab === 'stepper' && (
         <div className="mapping-stepper-container">
-          {/* Modern Compact Pill Stepper */}
+          {/* Modern Compact Pill Stepper - 5 Official Steps */}
           <div className="mapping-stepper" role="navigation" aria-label="Mapping Stepper">
             {[
               { num: 1, label: 'Household Info' },
-              { num: 2, label: `Children 0–4 (${childrenList.length})` },
-              { num: 3, label: 'Record Check' },
-              { num: 4, label: 'Review & Save' },
+              { num: 2, label: 'Parent Profiles (1.A/B)' },
+              { num: 3, label: 'Family & Housing (1.C)' },
+              { num: 4, label: `Children 0–4 (${childrenList.length})` },
+              { num: 5, label: 'Review & Save' },
             ].map((step) => {
               const isActive = currentStep === step.num;
               const isDone = currentStep > step.num;
@@ -866,14 +1070,14 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           </div>
 
           {/* -------------------------------------------------------------
-              STEP 1: HOUSEHOLD INFORMATION
+              STEP 1: HOUSEHOLD & ADDRESS INFORMATION
               ------------------------------------------------------------- */}
           {currentStep === 1 && (
             <Card>
               <CardHeader>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
-                  <CardTitle>
-                    Household Information
+                  <CardTitle subtitle="Step 1: Community Mapping demographic identifiers and location">
+                    Household & Address Information
                   </CardTitle>
                   {householdForm.workerName && (
                     <Badge variant="primary" size="sm">
@@ -908,6 +1112,8 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                             ? { workerId: matchingWorker.id, workerName: matchingWorker.name }
                             : {}),
                         });
+                        setFatherProfile((prev) => ({ ...prev, district: newBrgy }));
+                        setMotherProfile((prev) => ({ ...prev, district: newBrgy }));
                       }}
                       options={AVAILABLE_BARANGAYS.map((b) => ({ value: b, label: b }))}
                     />
@@ -937,13 +1143,18 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                       label="Purok / Sitio / Cluster"
                       placeholder="e.g. Purok 3 (Riverside)"
                       value={householdForm.purok}
-                      onChange={(e) => setHouseholdForm({ ...householdForm, purok: e.target.value })}
+                      onChange={(e) => {
+                        const p = e.target.value;
+                        setHouseholdForm({ ...householdForm, purok: p });
+                        setFatherProfile((prev) => ({ ...prev, purok: p }));
+                        setMotherProfile((prev) => ({ ...prev, purok: p }));
+                      }}
                     />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-3)' }}>
                     <Input
-                      label="Parent / Guardian Full Name"
+                      label="Primary Parent / Guardian Full Name"
                       placeholder="e.g. Maria Santos Dela Cruz"
                       uppercase
                       value={householdForm.parentGuardian}
@@ -979,6 +1190,633 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                   Save Draft
                 </Button>
                 <Button variant="primary" size="md" onClick={handleNextStep}>
+                  Next: Parent Profiles (1.A/B)
+                  <ArrowRight size={16} />
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          {/* -------------------------------------------------------------
+              STEP 2: PARENT/GUARDIAN PROFILES (FORM 1.A & 1.B)
+              ------------------------------------------------------------- */}
+          {currentStep === 2 && (
+            <Card>
+              <CardHeader>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
+                  <CardTitle subtitle="Step 2: Official Form 1.A Father's Profile & Form 1.B Mother's Profile">
+                    Parent / Guardian Profiles
+                  </CardTitle>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <Badge variant={motherProfile.firstName ? 'success' : 'neutral'} size="sm">
+                      Mother: {motherProfile.firstName ? `${motherProfile.firstName} ${motherProfile.lastName}` : 'Pending'}
+                    </Badge>
+                    <Badge variant={fatherProfile.firstName ? 'success' : 'neutral'} size="sm">
+                      Father: {fatherProfile.firstName ? `${fatherProfile.firstName} ${fatherProfile.lastName}` : 'Pending'}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardBody>
+                {/* Sub-tab Switcher for 1.A / 1.B */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: 'var(--space-4)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)' }}>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${parentProfileTab === 'mother' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setParentProfileTab('mother')}
+                    style={{ borderRadius: '20px', padding: '6px 14px', fontSize: '13px' }}
+                  >
+                    <User size={14} style={{ marginRight: '6px' }} />
+                    Form 1.B Mother's Profile
+                    {motherProfile.firstName ? ' ✓' : ''}
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${parentProfileTab === 'father' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setParentProfileTab('father')}
+                    style={{ borderRadius: '20px', padding: '6px 14px', fontSize: '13px' }}
+                  >
+                    <User size={14} style={{ marginRight: '6px' }} />
+                    Form 1.A Father's Profile
+                    {fatherProfile.firstName ? ' ✓' : ''}
+                  </button>
+                </div>
+
+                {/* FORM 1.B MOTHER'S PROFILE */}
+                {parentProfileTab === 'mother' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                    <div className="official-section-title">1. Personal Information (Mother)</div>
+                    <div className="official-grid-5">
+                      <Input
+                        label="Last Name"
+                        uppercase
+                        value={motherProfile.lastName}
+                        onChange={(e) => setMotherProfile({ ...motherProfile, lastName: e.target.value.toUpperCase() })}
+                      />
+                      <Input
+                        label="First Name"
+                        uppercase
+                        value={motherProfile.firstName}
+                        onChange={(e) => setMotherProfile({ ...motherProfile, firstName: e.target.value.toUpperCase() })}
+                      />
+                      <Input
+                        label="Middle Initial"
+                        uppercase
+                        value={motherProfile.middleInitial}
+                        onChange={(e) => setMotherProfile({ ...motherProfile, middleInitial: e.target.value.toUpperCase() })}
+                      />
+                      <Input
+                        type="date"
+                        label="Date of Birth"
+                        value={motherProfile.birthDate}
+                        onChange={(e) => {
+                          const dob = e.target.value;
+                          let ageVal = motherProfile.age;
+                          if (dob) {
+                            const bDate = new Date(dob);
+                            const now = new Date();
+                            ageVal = String(now.getFullYear() - bDate.getFullYear());
+                          }
+                          setMotherProfile({ ...motherProfile, birthDate: dob, age: ageVal });
+                        }}
+                      />
+                      <Input
+                        type="number"
+                        label="Age"
+                        value={motherProfile.age}
+                        onChange={(e) => setMotherProfile({ ...motherProfile, age: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="official-grid-2">
+                      <div>
+                        <div className="official-section-title">2. Civil Status</div>
+                        <div className="official-choice-group">
+                          {['Single', 'Married', 'Separated', 'Widower', 'Live-in'].map((status) => (
+                            <div
+                              key={status}
+                              className={`official-choice-item ${motherProfile.civilStatus === status ? 'is-selected' : ''}`}
+                              onClick={() => setMotherProfile({ ...motherProfile, civilStatus: status })}
+                            >
+                              <span>{status}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="official-section-title">3. Pregnancy Status</div>
+                        <div className="official-choice-group">
+                          {['No', 'Yes'].map((opt) => (
+                            <div
+                              key={opt}
+                              className={`official-choice-item ${motherProfile.pregnant === opt ? 'is-selected' : ''}`}
+                              onClick={() => setMotherProfile({ ...motherProfile, pregnant: opt })}
+                            >
+                              <span>{opt === 'Yes' ? '🤰 Currently Pregnant' : 'Not Pregnant'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="official-section-title">4. Mother Tongue &amp; Dialects</div>
+                    <div className="official-choice-group">
+                      {['Tagalog', 'Visayan', 'Ilocano', 'Bicolano', 'Others'].map((lang) => (
+                        <div
+                          key={lang}
+                          className={`official-choice-item ${motherProfile.motherTongue === lang ? 'is-selected' : ''}`}
+                          onClick={() => setMotherProfile({ ...motherProfile, motherTongue: lang })}
+                        >
+                          <span>{lang}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {motherProfile.motherTongue === 'Others' && (
+                      <Input
+                        label="Other Mother Tongue, please specify"
+                        value={motherProfile.motherTongueOthers}
+                        onChange={(e) => setMotherProfile({ ...motherProfile, motherTongueOthers: e.target.value })}
+                      />
+                    )}
+                    <Input
+                      label="Other Dialects Spoken at Home"
+                      placeholder="e.g. Kapampangan"
+                      value={motherProfile.otherDialects}
+                      onChange={(e) => setMotherProfile({ ...motherProfile, otherDialects: e.target.value })}
+                    />
+
+                    <div className="official-section-title">5. Educational Attainment</div>
+                    <div className="official-choice-group">
+                      {[
+                        'Elem. /Graduate',
+                        'High School/ Graduate',
+                        'College/ Graduate',
+                        'Technical/Vocational Graduate',
+                        'Masteral Unit/Degree',
+                        'Doctoral Unit/Degree',
+                      ].map((edu) => (
+                        <div
+                          key={edu}
+                          className={`official-choice-item ${motherProfile.educationalAttainment === edu ? 'is-selected' : ''}`}
+                          onClick={() => setMotherProfile({ ...motherProfile, educationalAttainment: edu })}
+                        >
+                          <span>{edu}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="official-section-title">6. Occupational Status</div>
+                    <div className="official-choice-group">
+                      {['Employed', 'Unemployed', 'Retired', 'OFW', 'Others'].map((occ) => (
+                        <div
+                          key={occ}
+                          className={`official-choice-item ${motherProfile.occupationalStatus === occ ? 'is-selected' : ''}`}
+                          onClick={() => setMotherProfile({ ...motherProfile, occupationalStatus: occ })}
+                        >
+                          <span>{occ}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {motherProfile.occupationalStatus === 'Others' && (
+                      <Input
+                        label="Other Occupation, please specify"
+                        value={motherProfile.occupationalStatusOthers}
+                        onChange={(e) => setMotherProfile({ ...motherProfile, occupationalStatusOthers: e.target.value })}
+                      />
+                    )}
+
+                    <div className="official-section-title">7. Desired Age for Day Care (CDC) Entry</div>
+                    <div className="official-choice-group">
+                      {['Below 1 year old', '1 year old', '2 years old', '3 years old', '4 years old'].map((ageOption) => (
+                        <div
+                          key={ageOption}
+                          className={`official-choice-item ${motherProfile.interestedAge === ageOption ? 'is-selected' : ''}`}
+                          onClick={() => setMotherProfile({ ...motherProfile, interestedAge: ageOption })}
+                        >
+                          <span>{ageOption}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* FORM 1.A FATHER'S PROFILE */}
+                {parentProfileTab === 'father' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                    <div className="official-section-title">1. Personal Information (Father)</div>
+                    <div className="official-grid-5">
+                      <Input
+                        label="Last Name"
+                        uppercase
+                        value={fatherProfile.lastName}
+                        onChange={(e) => setFatherProfile({ ...fatherProfile, lastName: e.target.value.toUpperCase() })}
+                      />
+                      <Input
+                        label="First Name"
+                        uppercase
+                        value={fatherProfile.firstName}
+                        onChange={(e) => setFatherProfile({ ...fatherProfile, firstName: e.target.value.toUpperCase() })}
+                      />
+                      <Input
+                        label="Middle Initial"
+                        uppercase
+                        value={fatherProfile.middleInitial}
+                        onChange={(e) => setFatherProfile({ ...fatherProfile, middleInitial: e.target.value.toUpperCase() })}
+                      />
+                      <Input
+                        type="date"
+                        label="Date of Birth"
+                        value={fatherProfile.birthDate}
+                        onChange={(e) => {
+                          const dob = e.target.value;
+                          let ageVal = fatherProfile.age;
+                          if (dob) {
+                            const bDate = new Date(dob);
+                            const now = new Date();
+                            ageVal = String(now.getFullYear() - bDate.getFullYear());
+                          }
+                          setFatherProfile({ ...fatherProfile, birthDate: dob, age: ageVal });
+                        }}
+                      />
+                      <Input
+                        type="number"
+                        label="Age"
+                        value={fatherProfile.age}
+                        onChange={(e) => setFatherProfile({ ...fatherProfile, age: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="official-section-title">2. Civil Status</div>
+                    <div className="official-choice-group">
+                      {['Single', 'Married', 'Separated', 'Widower', 'Live-in'].map((status) => (
+                        <div
+                          key={status}
+                          className={`official-choice-item ${fatherProfile.civilStatus === status ? 'is-selected' : ''}`}
+                          onClick={() => setFatherProfile({ ...fatherProfile, civilStatus: status })}
+                        >
+                          <span>{status}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="official-section-title">3. Mother Tongue &amp; Dialects</div>
+                    <div className="official-choice-group">
+                      {['Tagalog', 'Visayan', 'Ilocano', 'Bicolnon', 'Others'].map((lang) => (
+                        <div
+                          key={lang}
+                          className={`official-choice-item ${fatherProfile.motherTongue === lang ? 'is-selected' : ''}`}
+                          onClick={() => setFatherProfile({ ...fatherProfile, motherTongue: lang })}
+                        >
+                          <span>{lang}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {fatherProfile.motherTongue === 'Others' && (
+                      <Input
+                        label="Other Mother Tongue, please specify"
+                        value={fatherProfile.motherTongueOthers}
+                        onChange={(e) => setFatherProfile({ ...fatherProfile, motherTongueOthers: e.target.value })}
+                      />
+                    )}
+                    <Input
+                      label="Other Dialects Spoken at Home"
+                      placeholder="e.g. Kapampangan"
+                      value={fatherProfile.otherDialects}
+                      onChange={(e) => setFatherProfile({ ...fatherProfile, otherDialects: e.target.value })}
+                    />
+
+                    <div className="official-section-title">4. Educational Attainment</div>
+                    <div className="official-choice-group">
+                      {[
+                        'Elem./Graduate',
+                        'High School /Graduate',
+                        'College /Graduate',
+                        'Technical/Vocational Graduate',
+                        'Masteral Unit/Degree',
+                        'Doctoral Unit/Degree',
+                      ].map((edu) => (
+                        <div
+                          key={edu}
+                          className={`official-choice-item ${fatherProfile.educationalAttainment === edu ? 'is-selected' : ''}`}
+                          onClick={() => setFatherProfile({ ...fatherProfile, educationalAttainment: edu })}
+                        >
+                          <span>{edu}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="official-section-title">5. Occupational Status</div>
+                    <div className="official-choice-group">
+                      {['Employed', 'Unemployed', 'Retired', 'OFW', 'Others'].map((occ) => (
+                        <div
+                          key={occ}
+                          className={`official-choice-item ${fatherProfile.occupationalStatus === occ ? 'is-selected' : ''}`}
+                          onClick={() => setFatherProfile({ ...fatherProfile, occupationalStatus: occ })}
+                        >
+                          <span>{occ}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {fatherProfile.occupationalStatus === 'Others' && (
+                      <Input
+                        label="Other Occupation, please specify"
+                        value={fatherProfile.occupationalStatusOthers}
+                        onChange={(e) => setFatherProfile({ ...fatherProfile, occupationalStatusOthers: e.target.value })}
+                      />
+                    )}
+                  </div>
+                )}
+              </CardBody>
+
+              <div className="mobile-stepper-footer">
+                <Button variant="secondary" size="md" onClick={() => setCurrentStep(1)}>
+                  <ArrowLeft size={16} />
+                  Back
+                </Button>
+                <Button variant="ghost" size="md" onClick={handleSaveDraft}>
+                  <Save size={16} />
+                  Save Draft
+                </Button>
+                <Button variant="primary" size="md" onClick={handleNextStep}>
+                  Next: Family & Housing (1.C)
+                  <ArrowRight size={16} />
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          {/* -------------------------------------------------------------
+              STEP 3: FAMILY & HOUSING PROFILE (FORM 1.C)
+              ------------------------------------------------------------- */}
+          {currentStep === 3 && (
+            <Card>
+              <CardHeader>
+                <CardTitle subtitle="Step 3: Official Form 1.C Housing materials, utilities, socio-economic class, and 4Ps membership">
+                  Family & Housing Profile (Form 1.C)
+                </CardTitle>
+              </CardHeader>
+              <CardBody>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                  {/* 1. Ownership & Materials */}
+                  <div className="official-section-title">1. Housing Ownership &amp; Materials</div>
+                  <div className="official-grid-2">
+                    <div>
+                      <label className="input-label" style={{ fontWeight: '600', display: 'block', marginBottom: '4px' }}>Ownership</label>
+                      <div className="official-choice-group">
+                        {['Owned', 'Rented', 'With parents', 'With relatives'].map((opt) => (
+                          <div
+                            key={opt}
+                            className={`official-choice-item ${familyProfile.ownership === opt ? 'is-selected' : ''}`}
+                            onClick={() => setFamilyProfile({ ...familyProfile, ownership: opt })}
+                          >
+                            <span>{opt}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="input-label" style={{ fontWeight: '600', display: 'block', marginBottom: '4px' }}>Construction Materials</label>
+                      <div className="official-choice-group">
+                        {['Concrete', 'Wood', 'Nipa', 'Make shift'].map((mat) => (
+                          <div
+                            key={mat}
+                            className={`official-choice-item ${familyProfile.materials === mat ? 'is-selected' : ''}`}
+                            onClick={() => setFamilyProfile({ ...familyProfile, materials: mat })}
+                          >
+                            <span>{mat}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. Nature of House & Rooms */}
+                  <div className="official-section-title">2. Nature of House &amp; Room Layout</div>
+                  <div className="official-choice-group" style={{ marginBottom: 'var(--space-2)' }}>
+                    {['Multiple Rooms', 'One Room'].map((roomType) => (
+                      <div
+                        key={roomType}
+                        className={`official-choice-item ${familyProfile.nature === roomType ? 'is-selected' : ''}`}
+                        onClick={() => setFamilyProfile({ ...familyProfile, nature: roomType })}
+                      >
+                        <strong>{roomType}</strong>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="official-grid-3">
+                    <label className={`official-choice-item ${familyProfile.withToilet ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.withToilet}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, withToilet: e.target.checked })}
+                      />
+                      <span>With Sanitary Toilet</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.withOpenPlayArea ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.withOpenPlayArea}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, withOpenPlayArea: e.target.checked })}
+                      />
+                      <span>With Open Play Area</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.bedroom ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.bedroom}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, bedroom: e.target.checked })}
+                      />
+                      <span>Bedroom</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.diningRoom ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.diningRoom}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, diningRoom: e.target.checked })}
+                      />
+                      <span>Dining Room</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.sala ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.sala}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, sala: e.target.checked })}
+                      />
+                      <span>Living Room (Sala)</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.kitchen ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.kitchen}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, kitchen: e.target.checked })}
+                      />
+                      <span>Kitchen</span>
+                    </label>
+                  </div>
+
+                  {/* 3. Utilities & Connectivity */}
+                  <div className="official-section-title">3. Utilities &amp; Connectivity</div>
+                  <div className="official-grid-4">
+                    <label className={`official-choice-item ${familyProfile.runningWater ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.runningWater}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, runningWater: e.target.checked })}
+                      />
+                      <span>Running Water</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.electricity ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.electricity}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, electricity: e.target.checked })}
+                      />
+                      <span>Electricity</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.internet ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.internet}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, internet: e.target.checked })}
+                      />
+                      <span>Internet Access</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.mobilePhone ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.mobilePhone}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, mobilePhone: e.target.checked })}
+                      />
+                      <span>Mobile Phone</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.television ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.television}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, television: e.target.checked })}
+                      />
+                      <span>Television</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.computer ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.computer}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, computer: e.target.checked })}
+                      />
+                      <span>Computer / Tablet</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.radio ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.radio}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, radio: e.target.checked })}
+                      />
+                      <span>Radio</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.aircon ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.aircon}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, aircon: e.target.checked })}
+                      />
+                      <span>Air Conditioning</span>
+                    </label>
+                  </div>
+
+                  {/* 4. Learning & Recreation */}
+                  <div className="official-section-title">4. Learning Materials &amp; Play Resources</div>
+                  <div className="official-grid-4">
+                    <label className={`official-choice-item ${familyProfile.books ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.books}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, books: e.target.checked })}
+                      />
+                      <span>Books</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.storyBooks ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.storyBooks}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, storyBooks: e.target.checked })}
+                      />
+                      <span>Story Books</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.toys ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.toys}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, toys: e.target.checked })}
+                      />
+                      <span>Educational Toys</span>
+                    </label>
+                    <label className={`official-choice-item ${familyProfile.boardGames ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={familyProfile.boardGames}
+                        onChange={(e) => setFamilyProfile({ ...familyProfile, boardGames: e.target.checked })}
+                      />
+                      <span>Board Games / Puzzles</span>
+                    </label>
+                  </div>
+
+                  {/* 5. Socio-Economic Profile */}
+                  <div className="official-section-title">5. Socio-Economic Profile &amp; 4Ps Program</div>
+                  <div className="official-grid-3">
+                    <div>
+                      <label className="input-label" style={{ fontWeight: '600', display: 'block', marginBottom: '4px' }}>4Ps Beneficiary Membership</label>
+                      <div className="official-choice-group">
+                        <div
+                          className={`official-choice-item ${familyProfile.is4Ps ? 'is-selected' : ''}`}
+                          onClick={() => setFamilyProfile({ ...familyProfile, is4Ps: true })}
+                        >
+                          <CheckCircle2 size={13} />
+                          <span>4Ps Beneficiary (Yes)</span>
+                        </div>
+                        <div
+                          className={`official-choice-item ${!familyProfile.is4Ps ? 'is-selected' : ''}`}
+                          onClick={() => setFamilyProfile({ ...familyProfile, is4Ps: false })}
+                        >
+                          <span>Non-4Ps (No)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Select
+                      label="Monthly Family Income Class"
+                      value={familyProfile.incomeClass}
+                      onChange={(e) => setFamilyProfile({ ...familyProfile, incomeClass: e.target.value })}
+                      options={[
+                        { value: 'Below ₱10,000', label: 'Below ₱10,000 (Low Income)' },
+                        { value: '₱10,000 - ₱20,000', label: '₱10,000 - ₱20,000 (Lower Middle)' },
+                        { value: '₱20,000 - ₱40,000', label: '₱20,000 - ₱40,000 (Middle)' },
+                        { value: 'Above ₱40,000', label: 'Above ₱40,000 (Upper Middle / High)' },
+                      ]}
+                    />
+
+                    <Input
+                      label="Immediate Members Living in House"
+                      type="number"
+                      value={familyProfile.immediateMembersCount}
+                      onChange={(e) => setFamilyProfile({ ...familyProfile, immediateMembersCount: parseInt(e.target.value || 0, 10) })}
+                    />
+                  </div>
+                </div>
+              </CardBody>
+
+              <div className="mobile-stepper-footer">
+                <Button variant="secondary" size="md" onClick={() => setCurrentStep(2)}>
+                  <ArrowLeft size={16} />
+                  Back
+                </Button>
+                <Button variant="ghost" size="md" onClick={handleSaveDraft}>
+                  <Save size={16} />
+                  Save Draft
+                </Button>
+                <Button variant="primary" size="md" onClick={handleNextStep}>
                   Next: Children (0–4)
                   <ArrowRight size={16} />
                 </Button>
@@ -987,14 +1825,14 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           )}
 
           {/* -------------------------------------------------------------
-              STEP 2: CHILDREN 0–4
+              STEP 4: CHILDREN 0–4 COHORT REGISTRATION
               ------------------------------------------------------------- */}
-          {currentStep === 2 && (
+          {currentStep === 4 && (
             <Card>
               <CardHeader>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <CardTitle subtitle="Children residing in household (Ages 0–4)">
-                    Children Aged 0–4 Roster
+                  <CardTitle subtitle="Step 4: Register all children aged 0–4 residing in this household">
+                    Children Aged 0–4 Cohort Registration
                   </CardTitle>
                   <Badge variant="primary" size="sm">
                     {childrenList.length} Child(ren) Added
@@ -1005,7 +1843,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                 {/* Child Add Form */}
                 <form onSubmit={handleAddChildToHousehold} style={{ backgroundColor: 'var(--bg-canvas)', padding: 'var(--space-4)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-4)', border: '1px solid var(--border-subtle)' }}>
                   <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'bold', color: 'var(--color-primary-900)', display: 'block', marginBottom: 'var(--space-3)' }}>
-                    + Add Child to {householdForm.parentGuardian}'s Household
+                    + Register Child to {householdForm.parentGuardian || 'Household'}'s Roster
                   </span>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
@@ -1056,7 +1894,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                       value={currentChildInput.enrollmentStatus}
                       onChange={(e) => setCurrentChildInput({ ...currentChildInput, enrollmentStatus: e.target.value })}
                       options={[
-                        { value: 'Not Enrolled', label: 'Not Enrolled' },
+                        { value: 'Not Enrolled', label: 'Not Enrolled (Mapped Queue)' },
                         { value: 'Enrolled', label: 'Enrolled in Day Care (CDC)' },
                         { value: 'SNP', label: 'Supervised Neighborhood Play' },
                       ]}
@@ -1078,7 +1916,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                   <div style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-2) var(--space-3)', backgroundColor: 'var(--color-neutral-50, #f8fafc)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border-subtle)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--text-secondary)' }}>
-                        Supporting Document / PSA / Intake Attachment (AWS S3)
+                        Supporting Document / PSA Birth Certificate / Intake Form (AWS S3)
                       </label>
                       {currentChildInput.documentUrl && (
                         <span style={{ fontSize: '11px', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
@@ -1177,12 +2015,16 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
               </CardBody>
 
               <div className="mobile-stepper-footer">
-                <Button variant="secondary" size="md" onClick={() => setCurrentStep(1)}>
+                <Button variant="secondary" size="md" onClick={() => setCurrentStep(3)}>
                   <ArrowLeft size={16} />
                   Back
                 </Button>
+                <Button variant="ghost" size="md" onClick={handleSaveDraft}>
+                  <Save size={16} />
+                  Save Draft
+                </Button>
                 <Button variant="primary" size="md" onClick={handleNextStep}>
-                  Next: Record Check ({childrenList.length})
+                  Next: Record Check & Review ({childrenList.length})
                   <ArrowRight size={16} />
                 </Button>
               </div>
@@ -1190,14 +2032,14 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           )}
 
           {/* -------------------------------------------------------------
-              STEP 3: EXISTING RECORD CHECK (DEDUPLICATION LOGIC)
+              STEP 5: RECORD CHECK, REVIEW & SAVE
               ------------------------------------------------------------- */}
-          {currentStep === 3 && (
+          {currentStep === 5 && (
             <Card>
               <CardHeader>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <CardTitle subtitle="Central registry cross-reference and deduplication">
-                    Existing Record Verification & Deduplication
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
+                  <CardTitle subtitle="Step 5: Verify deduplication checks, Form 1 profiles, and household summary before commit">
+                    Record Verification, Review & Save
                   </CardTitle>
                   <Button variant="secondary" size="sm" onClick={runDuplicateCheck} disabled={isSearchingMatch}>
                     Re-check Records
@@ -1205,127 +2047,101 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                 </div>
               </CardHeader>
               <CardBody>
-                {isSearchingMatch ? (
-                  <div style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
-                    <div style={{ fontSize: 'var(--font-size-md)', fontWeight: '600', color: 'var(--color-primary-900)' }}>
-                      Searching existing ECCD records...
-                    </div>
-                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-muted)' }}>
-                      Comparing names, birthdates, and residential barangay records in CSWDO database.
-                    </p>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-
-                    {childrenList.map((child, index) => (
-                      <div key={child.tempId} className="child-duplicate-check-box">
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-                          <div>
-                            <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'bold' }}>
-                              Child #{index + 1}: {child.firstName} {child.middleName} {child.lastName}
-                            </span>
-                            <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', marginLeft: 'var(--space-2)' }}>
-                              (DOB: {child.birthDate} • {child.sex})
-                            </span>
-                          </div>
-
-                          {child.matchedRecord ? (
-                            <Badge variant="warning" dot={true}>
-                              Possible Match Found
-                            </Badge>
-                          ) : (
-                            <Badge variant="success">
-                              No Existing Match
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* If match found */}
-                        {child.matchedRecord ? (
-                          <div>
-                            <div className="match-found-banner">
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontWeight: '600', color: 'var(--color-warning-primary)', marginBottom: 'var(--space-1)' }}>
-                                <AlertTriangle size={16} />
-                                Match Found in Central Registry!
-                              </div>
-                              <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-primary)' }}>
-                                Existing Record ID: <strong>{child.matchedRecord.id}</strong> — {child.matchedRecord.firstName} {child.matchedRecord.lastName} ({child.matchedRecord.barangay})
-                              </div>
-                              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
-                                Parent recorded: {child.matchedRecord.parentGuardian} • Current Status: {child.matchedRecord.enrollmentStatus}
-                              </div>
-                            </div>
-
-                            <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
-                              <button
-                                type="button"
-                                className={`btn btn-md ${child.decision === 'same' ? 'btn-primary' : 'btn-secondary'}`}
-                                onClick={() => {
-                                  const updated = [...childrenList];
-                                  updated[index].decision = 'same';
-                                  setChildrenList(updated);
-                                }}
-                              >
-                                <CheckCircle2 size={16} />
-                                “This is the same child” (Link ID: {child.matchedRecord.id})
-                              </button>
-
-                              <button
-                                type="button"
-                                className={`btn btn-md ${child.decision === 'new' ? 'btn-primary' : 'btn-secondary'}`}
-                                onClick={() => {
-                                  const updated = [...childrenList];
-                                  updated[index].decision = 'new';
-                                  setChildrenList(updated);
-                                }}
-                              >
-                                “Create new child” (Generate New ID)
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--color-success-bg)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)' }}>
-                            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-success-primary)' }}>
-                              <strong>Clean Record:</strong> No prior duplicates detected. A new unique Child ID (format: <code>ECCD-2026-XXXXXX</code>) will be generated.
-                            </div>
-                            <Badge variant="success">New Child Record</Badge>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardBody>
-
-              <div className="mobile-stepper-footer">
-                <Button variant="secondary" size="md" onClick={() => setCurrentStep(2)}>
-                  <ArrowLeft size={16} />
-                  Back
-                </Button>
-                <Button variant="primary" size="md" onClick={handleNextStep}>
-                  Next: Review & Save
-                  <ArrowRight size={16} />
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {/* -------------------------------------------------------------
-              STEP 4: REVIEW & SAVE
-              ------------------------------------------------------------- */}
-          {currentStep === 4 && (
-            <Card>
-              <CardHeader>
-                <CardTitle subtitle="Verify household profile and children entries before saving">
-                  Review & Save Household Mapping
-                </CardTitle>
-              </CardHeader>
-              <CardBody>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                  {/* Household Summary Box */}
+                  {/* Deduplication Record Cross-Reference */}
+                  <div>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      1. Registry Deduplication Verification ({childrenList.length} Child/Children):
+                    </span>
+
+                    {isSearchingMatch ? (
+                      <div style={{ textAlign: 'center', padding: 'var(--space-4)' }}>
+                        <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: '600', color: 'var(--color-primary-900)' }}>
+                          Checking central database for duplicate records...
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+                        {childrenList.map((child, index) => (
+                          <div key={child.tempId} className="child-duplicate-check-box" style={{ padding: 'var(--space-3)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                              <div>
+                                <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'bold' }}>
+                                  Child #{index + 1}: {child.firstName} {child.middleName} {child.lastName}
+                                </span>
+                                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', marginLeft: 'var(--space-2)' }}>
+                                  (DOB: {child.birthDate} • {child.sex})
+                                </span>
+                              </div>
+
+                              {child.matchedRecord ? (
+                                <Badge variant="warning" dot={true}>
+                                  Possible Match Found
+                                </Badge>
+                              ) : (
+                                <Badge variant="success">
+                                  Clean Record
+                                </Badge>
+                              )}
+                            </div>
+
+                            {child.matchedRecord ? (
+                              <div>
+                                <div className="match-found-banner">
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontWeight: '600', color: 'var(--color-warning-primary)', marginBottom: 'var(--space-1)' }}>
+                                    <AlertTriangle size={16} />
+                                    Match Found in Central Registry!
+                                  </div>
+                                  <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-primary)' }}>
+                                    Existing Record ID: <strong>{child.matchedRecord.id}</strong> — {child.matchedRecord.firstName} {child.matchedRecord.lastName} ({child.matchedRecord.barangay})
+                                  </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
+                                  <button
+                                    type="button"
+                                    className={`btn btn-sm ${child.decision === 'same' ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => {
+                                      const updated = [...childrenList];
+                                      updated[index].decision = 'same';
+                                      setChildrenList(updated);
+                                    }}
+                                  >
+                                    <CheckCircle2 size={14} />
+                                    “This is the same child” (Link ID: {child.matchedRecord.id})
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className={`btn btn-sm ${child.decision === 'new' ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => {
+                                      const updated = [...childrenList];
+                                      updated[index].decision = 'new';
+                                      setChildrenList(updated);
+                                    }}
+                                  >
+                                    “Create new child” (Generate New ID)
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--color-success-bg)', padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius-sm)' }}>
+                                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-success-primary)' }}>
+                                  <strong>Clean Record:</strong> Unique ECCD Child ID will be generated upon save and added to Mapped queue.
+                                </div>
+                                <Badge variant="success">New Child Record</Badge>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Summary 1: Household & Address */}
                   <div style={{ backgroundColor: 'var(--bg-canvas)', padding: 'var(--space-4)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
                     <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                      Household Profile
+                      2. Household &amp; Address Summary
                     </span>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
                       <div>
@@ -1333,61 +2149,74 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                         <div style={{ fontWeight: '600' }}>{householdForm.id}</div>
                       </div>
                       <div>
-                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Parent / Guardian:</span>
-                        <div style={{ fontWeight: '600' }}>{householdForm.parentGuardian}</div>
+                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Barangay &amp; Purok:</span>
+                        <div style={{ fontWeight: '600' }}>{householdForm.barangay}, {householdForm.purok}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Assigned Worker:</span>
+                        <div style={{ fontWeight: '600' }}>{householdForm.workerName || 'CSWDO Worker'}</div>
                       </div>
                       <div>
                         <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Contact:</span>
                         <div style={{ fontWeight: '600' }}>{householdForm.contactNumber || 'N/A'}</div>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Summary 2: Form 1.A & 1.B Parent Profiles */}
+                  <div style={{ backgroundColor: 'var(--bg-canvas)', padding: 'var(--space-4)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                      3. Form 1.A &amp; 1.B Parent Profiles
+                    </span>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
                       <div>
-                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Location:</span>
-                        <div style={{ fontWeight: '600' }}>{householdForm.address}, {householdForm.purok}, {householdForm.barangay}</div>
+                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Mother's Profile:</span>
+                        <div style={{ fontWeight: '600' }}>{motherProfile.firstName ? `${motherProfile.firstName} ${motherProfile.lastName}` : 'Not Specified'}</div>
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
+                          Status: {motherProfile.civilStatus} • Edu: {motherProfile.educationalAttainment} • Occ: {motherProfile.occupationalStatus}
+                        </div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Father's Profile:</span>
+                        <div style={{ fontWeight: '600' }}>{fatherProfile.firstName ? `${fatherProfile.firstName} ${fatherProfile.lastName}` : 'Not Specified'}</div>
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
+                          Status: {fatherProfile.civilStatus} • Edu: {fatherProfile.educationalAttainment} • Occ: {fatherProfile.occupationalStatus}
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Children Summary List */}
-                  <div>
+                  {/* Summary 3: Form 1.C Housing & 4Ps Profile */}
+                  <div style={{ backgroundColor: 'var(--bg-canvas)', padding: 'var(--space-4)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
                     <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                      Identified Children ({childrenList.length})
+                      4. Form 1.C Housing &amp; 4Ps Profile
                     </span>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
-                      {childrenList.map((c, i) => (
-                        <div key={c.tempId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-3)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)' }}>
-                          <div>
-                            <div style={{ fontWeight: '600' }}>
-                              {c.firstName} {c.middleName} {c.lastName}
-                            </div>
-                            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
-                              Age: {c.ageYears} yrs {c.ageMonths} mos • DOB: {c.birthDate} • Enrollment: <strong>{c.enrollmentStatus}</strong>
-                            </div>
-                            {c.documentUrl && (
-                              <div style={{ fontSize: '11px', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
-                                <Cloud size={11} /> AWS S3 Document: <a href={c.documentUrl} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontWeight: 'bold' }}>{c.documentName || 'View Attachment'}</a>
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            {c.decision === 'same' && c.matchedRecord ? (
-                              <Badge variant="info">
-                                Linked ID: {c.matchedRecord.id} (No Duplicate)
-                              </Badge>
-                            ) : (
-                              <Badge variant="success">
-                                New Unique ID Generated
-                              </Badge>
-                            )}
-                          </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+                      <div>
+                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Ownership &amp; Materials:</span>
+                        <div style={{ fontWeight: '600' }}>{familyProfile.ownership} ({familyProfile.materials})</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>4Ps Beneficiary:</span>
+                        <div style={{ fontWeight: '600', color: familyProfile.is4Ps ? '#16a34a' : 'var(--text-primary)' }}>
+                          {familyProfile.is4Ps ? '✓ Enrolled in 4Ps' : 'Non-4Ps'}
                         </div>
-                      ))}
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Income Class:</span>
+                        <div style={{ fontWeight: '600' }}>{familyProfile.incomeClass}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Toilet &amp; Running Water:</span>
+                        <div style={{ fontWeight: '600' }}>{familyProfile.withToilet ? '✓ Toilet' : 'No Toilet'} • {familyProfile.runningWater ? '✓ Water' : 'No Water'}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </CardBody>
 
               <div className="mobile-stepper-footer">
-                <Button variant="secondary" size="md" onClick={() => setCurrentStep(3)}>
+                <Button variant="secondary" size="md" onClick={() => setCurrentStep(4)}>
                   <ArrowLeft size={16} />
                   Back
                 </Button>
@@ -1405,25 +2234,25 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           )}
 
           {/* -------------------------------------------------------------
-              STEP 5: MAPPING COMPLETION (8. MAPPING COMPLETION)
+              STEP 6: MAPPING COMPLETION & OUTCOME
               ------------------------------------------------------------- */}
-          {currentStep === 5 && completedSummary && (
+          {currentStep === 6 && completedSummary && (
             <Card style={{ textAlign: 'center', padding: 'var(--space-6) var(--space-4)' }}>
               <div style={{ width: '3.5rem', height: '3.5rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto var(--space-3)' }}>
                 <CheckCircle2 size={32} />
               </div>
 
               <h2 className="text-h2" style={{ color: 'var(--color-success-primary)', marginBottom: 'var(--space-2)' }}>
-                Household Mapping Completed!
+                Household &amp; Form 1 Mapping Completed!
               </h2>
-              <p style={{ color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto var(--space-5)' }}>
-                Household <strong>{completedSummary.household.id}</strong> in {completedSummary.household.barangay} has been officially recorded into the CSWDO ECCD master database.
+              <p style={{ color: 'var(--text-secondary)', maxWidth: '520px', margin: '0 auto var(--space-5)' }}>
+                Household <strong>{completedSummary.household.id}</strong> in {completedSummary.household.barangay} and complete <strong>Official Form 1 (Home Profile)</strong> records have been recorded into the CSWDO ECCD master database and queued for central sync.
               </p>
 
               {/* Completion Outcome Metrics */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-3)', maxWidth: '640px', margin: '0 auto var(--space-6)', textAlign: 'left' }}>
                 <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--bg-canvas)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Household Status</span>
+                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Form 1 Status</span>
                   <div style={{ fontWeight: 'bold', color: 'var(--color-success-primary)' }}>100% Complete</div>
                 </div>
 
@@ -1433,8 +2262,8 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                 </div>
 
                 <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--bg-canvas)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Enrollment Status</span>
-                  <div style={{ fontWeight: 'bold' }}>Captured & Logged</div>
+                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>Enrollment Queue</span>
+                  <div style={{ fontWeight: 'bold', color: 'var(--color-info-primary)' }}>Pushed to Queue</div>
                 </div>
               </div>
 
