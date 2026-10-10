@@ -2,6 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Worker;
+use App\Models\DayCareCenter;
+use App\Models\Household;
+use App\Models\Child;
+
 class CommunityMappingService
 {
     /**
@@ -111,6 +116,64 @@ class CommunityMappingService
      */
     public function getActivities(): array
     {
+        try {
+            $workers = Worker::with(['barangay', 'dayCareCenter'])->where('status', 'Active')->get();
+            if ($workers->isNotEmpty()) {
+                $assignments = [];
+                foreach ($workers as $w) {
+                    $brgyName = $w->barangay?->name ?? 'San Isidro';
+                    $centerName = $w->dayCareCenter?->name ?? 'Child Development Center';
+
+                    // Connect to active mapping rounds for this barangay
+                    $matchingActivity = null;
+                    foreach (self::$activities as $act) {
+                        if (empty($act['archived']) && in_array($brgyName, $act['barangays'] ?? [])) {
+                            $matchingActivity = $act;
+                            break;
+                        }
+                    }
+                    if (!$matchingActivity) {
+                        $matchingActivity = self::$activities[0] ?? [
+                            'id' => 'ACT-MAP-2026-001',
+                            'name' => '2026 Annual CSWDO House-to-House Child Mapping Drive',
+                        ];
+                    }
+
+                    $mappedCount = Household::where('barangay_id', $w->barangay_id)->count();
+                    $childrenCount = Child::whereHas('household', function ($q) use ($w) {
+                        $q->where('barangay_id', $w->barangay_id);
+                    })->count();
+
+                    $target = 60;
+                    $progress = $target > 0 ? min(100, round(($mappedCount / $target) * 100)) : 0;
+
+                    $assignments[] = [
+                        'workerId' => (string) $w->id,
+                        'workerName' => $w->name,
+                        'role' => $w->role,
+                        'assignedBarangay' => $brgyName,
+                        'assignedCenter' => $centerName,
+                        'assignedCenters' => [$centerName],
+                        'activityId' => $matchingActivity['id'],
+                        'activityName' => $matchingActivity['name'],
+                        'progress' => $progress,
+                        'householdsMapped' => $mappedCount,
+                        'childrenIdentified' => $childrenCount,
+                        'remainingHouseholds' => max(0, $target - $mappedCount),
+                        'status' => 'Active in Field',
+                    ];
+                }
+
+                return [
+                    'activities' => self::$activities,
+                    'assignments' => $assignments,
+                    'totalActivities' => count(self::$activities),
+                ];
+            }
+        } catch (\Throwable $e) {
+            // fallback to default assignments
+        }
+
         return [
             'activities' => self::$activities,
             'assignments' => self::$assignments,

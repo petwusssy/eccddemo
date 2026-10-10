@@ -45,6 +45,8 @@ import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '.
 import { Modal } from '../ui/Modal';
 import { useToast } from '../ui/Toast';
 import { communityMappingService } from '../../services/communityMappingService';
+import { communityService } from '../../services/communityService';
+import { centralDataStore } from '../../services/centralDataStore';
 import { OfficialForm1HomeProfileModal } from '../forms/OfficialForm1HomeProfileModal';
 import { OfficialForm3CommunityProfileModal } from '../forms/OfficialForm3CommunityProfileModal';
 import { OfflineSyncBanner } from '../ui/OfflineSyncBanner';
@@ -59,14 +61,6 @@ import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
 import { formatPHTTime } from '../../utils/phTime';
 
 const AVAILABLE_BARANGAYS = SAN_FERNANDO_BARANGAYS;
-
-const AVAILABLE_WORKERS = [
-  { id: 'USR-FW-009', name: 'Rodel Mendoza', role: 'Community Development Officer II' },
-  { id: 'USR-FW-010', name: 'Maria Santos', role: 'Child Development Worker I' },
-  { id: 'USR-FW-011', name: 'Lourdes David', role: 'Child Development Worker II' },
-  { id: 'USR-FW-012', name: 'Grace Pineda', role: 'Child Development Worker II' },
-  { id: 'USR-FW-013', name: 'Elena Manalo', role: 'Child Development Worker I' },
-];
 
 export function CommunityMappingView({ onNavigate, initialTab }) {
   const { addToast } = useToast();
@@ -83,6 +77,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
   // Service datasets
   const [activities, setActivities] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [workers, setWorkers] = useState(() => centralDataStore.getWorkers() || []);
   const [households, setHouseholds] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -108,6 +103,8 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     barangay: 'San Isidro',
     purok: 'Purok 1',
     activityId: 'ACT-MAP-2026-001',
+    workerId: '',
+    workerName: '',
   });
 
   // Step 2: Children in this household
@@ -196,9 +193,15 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const actsData = await communityMappingService.getActivities();
+      const [actsData, rawWorkers] = await Promise.all([
+        communityMappingService.getActivities(),
+        communityService.getWorkers(),
+      ]);
       setActivities(actsData.activities || []);
       setAssignments(actsData.assignments || []);
+      if (rawWorkers && rawWorkers.length > 0) {
+        setWorkers(rawWorkers);
+      }
 
       const hhData = await communityMappingService.getHouseholds();
       const offlineSurveys = await getAllOfflineSurveys();
@@ -290,6 +293,85 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       window.removeEventListener('eccd:offline-sync-completed', handleStoreUpdate);
     };
   }, []);
+
+  // Single Source of Truth: dynamic Form 6 Worker assignments linked to centers and activities
+  const dynamicAssignments = useMemo(() => {
+    const workerPool = (workers && workers.length > 0)
+      ? workers
+      : (assignments && assignments.length > 0
+          ? assignments.map((a) => ({
+              id: a.workerId,
+              name: a.workerName,
+              assignedBarangay: a.assignedBarangay,
+              assignedCenters: [a.assignedCenter || 'Child Development Center'],
+              role: a.role || 'Child Development Worker',
+              status: a.status || 'Active',
+            }))
+          : []);
+
+    if (workerPool.length === 0) return assignments;
+
+    return workerPool.map((w) => {
+      const assignedBrgy = w.assignedBarangay || 'San Isidro';
+      const assignedCenter =
+        (Array.isArray(w.assignedCenters) && w.assignedCenters[0]) ||
+        w.center ||
+        w.centerName ||
+        w.dayCareCenterName ||
+        'Child Development Center';
+
+      // Connect to active mapping rounds for this worker's barangay
+      const activeDrive =
+        activities.find(
+          (act) =>
+            !act.archived &&
+            (act.barangays || []).some(
+              (b) => (b || '').toLowerCase().trim() === assignedBrgy.toLowerCase().trim()
+            )
+        ) ||
+        activities.find((act) => !act.archived) ||
+        activities[0] || {
+          id: 'ACT-MAP-2026-001',
+          name: '2026 Annual CSWDO House-to-House Child Mapping Drive',
+        };
+
+      // Real-time metrics computed directly from Form 1 surveyed households
+      const brgyHouseholds = households.filter((h) => {
+        const matchBrgy = (h.barangay || '').toLowerCase().trim() === assignedBrgy.toLowerCase().trim();
+        const matchWorker =
+          (h.mappedBy && (h.mappedBy === w.name || h.mappedBy.includes(w.name))) ||
+          (h.workerId && h.workerId === w.id);
+        return matchBrgy || matchWorker;
+      });
+
+      const householdsMapped = brgyHouseholds.length;
+      const childrenIdentified = brgyHouseholds.reduce(
+        (acc, h) =>
+          acc + (h.children?.length || (h.childrenAges ? h.childrenAges.length : 0) || h.childrenCount || 1),
+        0
+      );
+
+      const targetHH = 60; // Standard cohort coverage target
+      const remainingHouseholds = Math.max(0, targetHH - householdsMapped);
+      const progress = targetHH > 0 ? Math.min(100, Math.round((householdsMapped / targetHH) * 100)) : 0;
+
+      return {
+        workerId: w.id,
+        workerName: w.name,
+        role: w.role || w.designation || 'Child Development Worker',
+        assignedBarangay: assignedBrgy,
+        assignedCenter,
+        assignedCenters: [assignedCenter],
+        activityId: activeDrive.id,
+        activityName: activeDrive.name,
+        progress,
+        householdsMapped,
+        childrenIdentified,
+        remainingHouseholds,
+        status: (w.status || '').toLowerCase() === 'inactive' ? 'On Leave' : 'Active in Field',
+      };
+    });
+  }, [workers, assignments, activities, households]);
 
   // Save draft locally
   const handleSaveDraft = () => {
@@ -423,7 +505,8 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       purok: householdForm.purok,
       mappingActivityId: householdForm.activityId,
       childrenCount: childrenList.length,
-      mappedBy: 'CSWDO Field Officer',
+      mappedBy: householdForm.workerName || 'CSWDO Field Officer',
+      workerId: householdForm.workerId || null,
       mappedDate: new Date().toISOString().slice(0, 10),
       status: 'Completed',
     };
@@ -537,6 +620,8 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       barangay: householdForm.barangay, // retain barangay for rapid consecutive mapping
       purok: householdForm.purok,
       activityId: householdForm.activityId,
+      workerId: householdForm.workerId,
+      workerName: householdForm.workerName,
     });
     setChildrenList([]);
     setCompletedSummary(null);
@@ -552,7 +637,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       return;
     }
 
-    const assignedWorkers = AVAILABLE_WORKERS.filter((w) =>
+    const assignedWorkers = workers.filter((w) =>
       newActivityForm.assignedWorkerIds.includes(w.id)
     );
 
@@ -576,10 +661,10 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     e.preventDefault();
     if (!selectedActivityForAssign) return;
 
-    const workers = AVAILABLE_WORKERS.filter((w) => assignWorkerIds.includes(w.id));
+    const selectedWorkers = workers.filter((w) => assignWorkerIds.includes(w.id));
     await communityMappingService.assignWorkers(
       selectedActivityForAssign.id,
-      workers,
+      selectedWorkers,
       assignBarangay
     );
 
@@ -659,7 +744,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
               <Users size={16} />
             </div>
           </div>
-          <div className="kpi-value" style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-success-primary)', margin: 0 }}>{assignments.length}</div>
+          <div className="kpi-value" style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--color-success-primary)', margin: 0 }}>{dynamicAssignments.length}</div>
         </div>
 
         <div className="kpi-card card-primary" style={{ padding: 'var(--space-3) var(--space-4)' }}>
@@ -739,7 +824,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
             style={{ borderRadius: '20px', padding: '6px 14px', fontSize: '13px' }}
           >
             <Users size={16} style={{ marginRight: '6px' }} />
-            Field Worker Assignments ({assignments.length})
+            Field Worker Assignments ({dynamicAssignments.length})
           </button>
         </div>
       )}
@@ -786,15 +871,21 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
           {currentStep === 1 && (
             <Card>
               <CardHeader>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
                   <CardTitle>
                     Household Information
                   </CardTitle>
+                  {householdForm.workerName && (
+                    <Badge variant="primary" size="sm">
+                      <Users size={12} style={{ marginRight: '4px' }} />
+                      Field Worker: {householdForm.workerName}
+                    </Badge>
+                  )}
                 </div>
               </CardHeader>
               <CardBody>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-3)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-3)' }}>
                     <Input
                       label="Household ID"
                       value={householdForm.id}
@@ -805,8 +896,41 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                     <Select
                       label="Barangay"
                       value={householdForm.barangay}
-                      onChange={(e) => setHouseholdForm({ ...householdForm, barangay: e.target.value })}
+                      onChange={(e) => {
+                        const newBrgy = e.target.value;
+                        const matchingWorker = workers.find(
+                          (w) => (w.assignedBarangay || '').toLowerCase() === newBrgy.toLowerCase()
+                        );
+                        setHouseholdForm({
+                          ...householdForm,
+                          barangay: newBrgy,
+                          ...(matchingWorker
+                            ? { workerId: matchingWorker.id, workerName: matchingWorker.name }
+                            : {}),
+                        });
+                      }}
                       options={AVAILABLE_BARANGAYS.map((b) => ({ value: b, label: b }))}
+                    />
+
+                    <Select
+                      label="Assigned Worker (Form 6)"
+                      value={householdForm.workerId || ''}
+                      onChange={(e) => {
+                        const selectedW = workers.find((w) => String(w.id) === String(e.target.value));
+                        setHouseholdForm({
+                          ...householdForm,
+                          workerId: selectedW ? selectedW.id : '',
+                          workerName: selectedW ? selectedW.name : '',
+                          ...(selectedW?.assignedBarangay ? { barangay: selectedW.assignedBarangay } : {}),
+                        });
+                      }}
+                      options={[
+                        { value: '', label: '-- Select Field Worker --' },
+                        ...workers.map((w) => ({
+                          value: w.id,
+                          label: `${w.name} (${w.assignedBarangay || 'Unassigned'})`,
+                        })),
+                      ]}
                     />
 
                     <Input
@@ -1469,8 +1593,8 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       {activeTab === 'assignments' && (
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--space-4)' }}>
-            {assignments.map((asn, idx) => (
-              <div key={idx} className="assignment-card">
+            {dynamicAssignments.map((asn, idx) => (
+              <div key={asn.workerId || idx} className="assignment-card">
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
                     <Badge variant="primary" size="sm">
@@ -1484,6 +1608,10 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                   <h3 className="text-h3" style={{ fontSize: 'var(--font-size-md)', marginBottom: 'var(--space-1)' }}>
                     {asn.workerName}
                   </h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 'var(--font-size-xs)', color: 'var(--color-primary-700)', fontWeight: '600', marginBottom: 'var(--space-1)' }}>
+                    <Building2 size={13} />
+                    <span>{asn.assignedCenter}</span>
+                  </div>
                   <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', marginBottom: 'var(--space-3)' }}>
                     {asn.activityName}
                   </p>
@@ -1524,10 +1652,13 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                     variant="secondary"
                     size="sm"
                     onClick={() => {
-                      setHouseholdForm({
-                        ...householdForm,
+                      setHouseholdForm((prev) => ({
+                        ...prev,
                         barangay: asn.assignedBarangay,
-                      });
+                        workerId: asn.workerId,
+                        workerName: asn.workerName,
+                        activityId: asn.activityId || prev.activityId,
+                      }));
                       setActiveTab('stepper');
                       setCurrentStep(1);
                     }}
@@ -1746,7 +1877,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                 Assigned Service Providers / Field Workers:
               </label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-                {AVAILABLE_WORKERS.map((w) => {
+                {workers.map((w) => {
                   const isSelected = newActivityForm.assignedWorkerIds.includes(w.id);
                   return (
                     <button
@@ -1768,7 +1899,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                       }}
                     >
                       {isSelected ? '✓ ' : '+ '}
-                      {w.name} ({w.role})
+                      {w.name} ({w.role || 'CDW'})
                     </button>
                   );
                 })}
@@ -1812,7 +1943,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                   Select Field Workers to Dispatch:
                 </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                  {AVAILABLE_WORKERS.map((w) => {
+                  {workers.map((w) => {
                     const isSelected = assignWorkerIds.includes(w.id);
                     return (
                       <div
@@ -1837,7 +1968,7 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
                       >
                         <div>
                           <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{w.name}</div>
-                          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>{w.role}</div>
+                          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>{w.role || w.assignedBarangay || 'Child Development Worker'}</div>
                         </div>
                         <input
                           type="checkbox"

@@ -166,15 +166,72 @@ export const communityMappingService = {
       });
       if (res.ok) {
         const json = await res.json();
-        return json.data || json;
+        const data = json.data || json;
+        if (data && data.activities && data.assignments && data.assignments.length > 0) {
+          return data;
+        }
       }
     } catch (e) {
       // Fallback to local store
     }
+
+    // Single source of truth: compile assignments dynamically from registered Form 6 workers
+    const workers = (centralDataStore.getWorkers() || []).filter((w) => w.status !== 'Inactive');
+    const households = centralDataStore.getHouseholds() || [];
+    const activitiesList = activitiesState.length > 0 ? activitiesState : DEFAULT_ACTIVITIES;
+
+    const dynamicAssignments = workers.map((w) => {
+      const brgy = w.assignedBarangay || 'San Isidro';
+      const center =
+        (Array.isArray(w.assignedCenters) ? w.assignedCenters[0] : w.assignedCenters) ||
+        w.centerName ||
+        w.dayCareCenterName ||
+        'Child Development Center';
+
+      const matchingActivity =
+        activitiesList.find(
+          (act) =>
+            !act.archived &&
+            (act.barangays || []).some((b) => (b || '').toLowerCase().trim() === brgy.toLowerCase().trim())
+        ) ||
+        activitiesList.find((act) => !act.archived) ||
+        activitiesList[0];
+
+      const mappedHHs = households.filter((h) => {
+        const matchBrgy = (h.barangay || '').toLowerCase().trim() === brgy.toLowerCase().trim();
+        const matchWorker = (h.mappedBy && h.mappedBy === w.name) || (h.workerId && h.workerId === w.id);
+        return matchBrgy || matchWorker;
+      });
+
+      const householdsMapped = mappedHHs.length;
+      const childrenIdentified = mappedHHs.reduce(
+        (acc, h) => acc + (h.children?.length || (h.childrenAges ? h.childrenAges.length : 0) || h.childrenCount || 1),
+        0
+      );
+      const target = 60;
+      const progress = target > 0 ? Math.min(100, Math.round((householdsMapped / target) * 100)) : 0;
+
+      return {
+        workerId: w.id,
+        workerName: w.name,
+        role: w.role || w.designation || 'Child Development Worker',
+        assignedBarangay: brgy,
+        assignedCenter: center,
+        assignedCenters: [center],
+        activityId: matchingActivity?.id || 'ACT-MAP-2026-001',
+        activityName: matchingActivity?.name || '2026 Annual CSWDO House-to-House Child Mapping Drive',
+        progress,
+        householdsMapped,
+        childrenIdentified,
+        remainingHouseholds: Math.max(0, target - householdsMapped),
+        status: 'Active in Field',
+      };
+    });
+
     return {
-      activities: [...activitiesState],
-      assignments: [...assignmentsState],
-      totalActivities: activitiesState.length,
+      activities: [...activitiesList],
+      assignments: dynamicAssignments.length > 0 ? dynamicAssignments : [...assignmentsState],
+      totalActivities: activitiesList.length,
     };
   },
 
