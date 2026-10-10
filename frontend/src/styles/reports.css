@@ -505,9 +505,34 @@
   line-height: 1.5;
 }
 
-/* --- Print Media Query --- */
+/* Official Report Letterhead Styling */
+.official-report-letterhead {
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.official-report-letterhead img {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.08));
+}
+
+/* --- Print Media Query & Government Export Rendering --- */
 @media print {
-  /* Hide all outside application elements */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print,
+  .gov-masthead,
   .app-sidebar,
   .app-header,
   .reports-category-panel,
@@ -518,40 +543,65 @@
     display: none !important;
   }
 
-  body, html {
-    background: #ffffff !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .reports-layout {
-    gap: 0 !important;
-  }
-
-  .report-doc-wrapper {
+  .app-container,
+  .app-main,
+  .app-content,
+  .reports-layout,
+  .report-doc-wrapper,
+  .report-document,
+  .official-form-4-view,
+  .official-form-5-view,
+  .official-form-8-view,
+  .official-form-9-view {
     width: 100% !important;
+    max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
   }
 
   .report-document {
-    border: none !important;
-    box-shadow: none !important;
     padding: 0 !important;
-    max-width: 100% !important;
   }
 
-  .report-gov-header {
-    border-bottom: 2px solid #000000 !important;
+  .official-report-letterhead {
+    margin-bottom: 14pt !important;
+  }
+
+  .report-data-table {
+    border-collapse: collapse !important;
+    width: 100% !important;
   }
 
   .report-data-table th {
-    background: #e2e8f0 !important;
+    background: #f1f5f9 !important;
     color: #000000 !important;
-    border: 1px solid #000000 !important;
+    border: 1px solid #475569 !important;
+    font-size: 10pt !important;
   }
 
   .report-data-table td {
-    border: 1px solid #cccccc !important;
+    border: 1px solid #cbd5e1 !important;
+    font-size: 9.5pt !important;
+  }
+
+  table {
+    page-break-inside: auto;
+    width: 100% !important;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
   }
 }

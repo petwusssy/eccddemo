@@ -18,6 +18,7 @@ import { Badge } from '../ui/Badge';
 import { officialFormsService } from '../../services/officialFormsService';
 import { useToast } from '../ui/Toast';
 import { BARANGAY_OPTIONS } from '../../data/sanFernandoBarangays';
+import { OfficialReportHeader } from '../reports/OfficialReportHeader';
 
 export function OfficialForm4ConsolidatedReport({ initialBarangay = 'All', initialCenter = 'All', initialYear = '2026' } = {}) {
   const { addToast } = useToast();
@@ -178,23 +179,16 @@ export function OfficialForm4ConsolidatedReport({ initialBarangay = 'All', initi
 
       {/* Official Form 4 Document Container */}
       <div style={{ background: 'white', border: '1px solid #cbd5e1', borderRadius: 'var(--radius-lg)', padding: 'var(--space-6)', maxWidth: '960px', margin: '0 auto' }}>
-        {/* Header Block */}
-        <div className="official-doc-header">
-          <div className="agency-title">Early Childhood Care and Development Council</div>
-          <span className="form-code-badge">FORM 4</span>
-          <h1 className="form-main-title">CONSOLIDATED FAMILY PROFILE</h1>
-          <div style={{ fontSize: 'var(--font-size-xs)', color: '#475569', marginTop: '4px' }}>
-            City Social Welfare and Development Office • City of San Fernando, Pampanga
-          </div>
-          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-            Barangay Scope: <strong>{filterBarangay}</strong> • Center Scope: <strong>{filterCenter}</strong> • As of: <strong>{consolidation.metadata.generatedAt}</strong>
-          </div>
-        </div>
-
-        {/* Legal Instruction Notice */}
-        <div className="official-instruction-banner">
-          <strong>Official Consolidation Notice:</strong> In accordance with ECCD Council guidelines, this report consolidates Father Profile (4A), Mother Profile (4B), and Family Profile (4C) directly from the centralized child and household registry.
-        </div>
+        {/* Header Block with Official Seals */}
+        <OfficialReportHeader
+          formCode="ECCD FORM 4"
+          formTitle="CONSOLIDATED FAMILY PROFILE"
+          subtitle="City Social Welfare and Development Office • City of San Fernando, Pampanga"
+          period="April 2014 Format"
+          scopeDetails={`Barangay Scope: ${filterBarangay} • Center Scope: ${filterCenter}`}
+          generatedAt={consolidation.metadata.generatedAt}
+          legalNotice="Official Consolidation Notice: In accordance with ECCD Council guidelines, this report consolidates Father Profile (4A), Mother Profile (4B), and Family Profile (4C) directly from the centralized child and household registry."
+        />
 
         {/* =====================================================================
             FORM 4A: FATHER'S PROFILE

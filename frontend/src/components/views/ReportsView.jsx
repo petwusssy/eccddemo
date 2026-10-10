@@ -22,6 +22,7 @@ import { OfficialForm4ConsolidatedReport } from '../forms/OfficialForm4Consolida
 import { OfficialForm5ConsolidatedReport } from '../forms/OfficialForm5ConsolidatedReport';
 import { OfficialForm8ConsolidatedReport } from '../forms/OfficialForm8ConsolidatedReport';
 import { OfficialForm9ConsolidatedReport } from '../forms/OfficialForm9ConsolidatedReport';
+import { OfficialReportHeader } from '../reports/OfficialReportHeader';
 
 export function ReportsView({ onNavigate }) {
   const [selectedCategory, setSelectedCategory] = useState(REPORT_CATEGORIES[0].id);
@@ -382,39 +383,15 @@ export function ReportsView({ onNavigate }) {
       ) : (
       <div className="report-doc-wrapper">
         <div className="report-document">
-          {/* Header */}
-          <div className="report-gov-header">
-            <div className="report-gov-seal-left">
-              <span>LGU CSFP</span>
-            </div>
-
-            <div className="report-gov-titles">
-              <div className="report-gov-republic">Republic of the Philippines</div>
-              <div className="report-gov-province">Province of Pampanga</div>
-              <div className="report-gov-city">CITY OF SAN FERNANDO</div>
-              <div className="report-gov-office">City Social Welfare and Development Office (CSWDO)</div>
-              <div className="report-gov-system">ECCD CARE — Child Assessment, Registration & Early-support System</div>
-            </div>
-
-            <div className="report-gov-seal-right">
-              <span>CSWDO</span>
-            </div>
-          </div>
-
-          {/* Report Title & Form Control Number */}
-          <div className="report-title-section">
-            <div>
-              <div className="report-doc-title">
-                {reportData?.meta?.title || currentCategoryObj.title}
-              </div>
-              <div className="report-doc-sub">
-                {currentCategoryObj.description}
-              </div>
-            </div>
-            <div className="report-form-code-badge">
-              {reportData?.meta?.formCode || currentCategoryObj.formCode}
-            </div>
-          </div>
+          {/* Official Philippine Government & LGU Report Letterhead */}
+          <OfficialReportHeader
+            formCode={reportData?.meta?.formCode || currentCategoryObj.formCode}
+            formTitle={reportData?.meta?.title || currentCategoryObj.title}
+            subtitle={currentCategoryObj.description}
+            period={filters.year !== 'all' ? filters.year : 'SY 2026–2027'}
+            scopeDetails={`Barangay: ${filters.barangay !== 'all' ? filters.barangay : 'City-wide Scope'} • Center: ${filters.dayCareCenter !== 'all' ? filters.dayCareCenter : 'All Centers'}`}
+            generatedAt={reportData?.meta?.generatedDate}
+          />
 
           {/* Centralized Concept & Generation Metadata */}
           <div className="report-concept-banner">

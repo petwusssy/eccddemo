@@ -12,6 +12,7 @@ import { Card, CardBody } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { officialFormsService } from '../../services/officialFormsService';
 import { useToast } from '../ui/Toast';
+import { OfficialReportHeader } from '../reports/OfficialReportHeader';
 
 export function OfficialForm9ConsolidatedReport({ initialBarangay = 'All' } = {}) {
   const { addToast } = useToast();
@@ -142,22 +143,16 @@ export function OfficialForm9ConsolidatedReport({ initialBarangay = 'All' } = {}
 
       {/* Official Form 9 Document Container (Exact Layout from April 2014 3-Page Form) */}
       <div style={{ background: 'white', border: '1px solid #cbd5e1', borderRadius: 'var(--radius-lg)', padding: 'var(--space-6)', maxWidth: '100%', margin: '0 auto' }}>
-        {/* Header Block */}
-        <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', fontWeight: 'bold' }}>
-            Early Childhood Care and Development Council
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '6px 0' }}>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>April 2014</span>
-            <h1 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-              Form 9 - CONSOLIDATED CHILD DEVELOPMENT CENTER PROFILE
-            </h1>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>Official LGU Masterlist</span>
-          </div>
-          <div style={{ fontSize: '11px', color: '#ba1607', fontWeight: 600 }}>
-            City Social Welfare and Development Office • City of San Fernando, Pampanga
-          </div>
-        </div>
+        {/* Official Header Block with 4 Seals */}
+        <OfficialReportHeader
+          formCode="ECCD FORM 9"
+          formTitle="CONSOLIDATED CHILD DEVELOPMENT CENTER PROFILE"
+          subtitle="City Social Welfare and Development Office • City of San Fernando, Pampanga"
+          period="April 2014 Format"
+          scopeDetails={`Barangay Scope: ${filterBarangay}`}
+          generatedAt={consolidation.generalInfo.generatedAt}
+          legalNotice="Official LGU Masterlist: In accordance with ECCD Council guidelines (April 2014 Form 9), this report consolidates all accredited Child Development Centers, learning facilities, and classroom utilities across the 35 barangays."
+        />
 
         {/* I. General Information */}
         <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px', marginBottom: '18px' }}>

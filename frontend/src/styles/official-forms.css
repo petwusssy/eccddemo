@@ -282,26 +282,59 @@
 
 /* Print Stylesheet for Official Reports */
 @media print {
-  body {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 10mm;
+  }
+
+  body, html {
     background: white !important;
     color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .app-sidebar,
   .app-header,
+  .gov-masthead,
   .btn,
   .official-stepper-bar,
   .no-print {
     display: none !important;
   }
 
+  .official-form-4-view,
+  .official-form-5-view,
+  .official-form-8-view,
+  .official-form-9-view {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   .official-table {
-    border: 1px solid #000 !important;
+    border: 1px solid #334155 !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
   }
 
   .official-table th,
   .official-table td {
-    border: 1px solid #000 !important;
+    border: 1px solid #94a3b8 !important;
     color: black !important;
+    padding: 4px 6px !important;
+  }
+
+  .official-table th {
+    background: #f1f5f9 !important;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
   }
 }

@@ -19,6 +19,7 @@ import { Badge } from '../ui/Badge';
 import { officialFormsService } from '../../services/officialFormsService';
 import { useToast } from '../ui/Toast';
 import { BARANGAY_OPTIONS } from '../../data/sanFernandoBarangays';
+import { OfficialReportHeader } from '../reports/OfficialReportHeader';
 
 export function OfficialForm5ConsolidatedReport({ onClose, initialBarangay = 'All', initialCenter = 'All', initialYear = '2026' } = {}) {
   const { addToast } = useToast();
@@ -261,34 +262,16 @@ export function OfficialForm5ConsolidatedReport({ onClose, initialBarangay = 'Al
 
       {/* Official Form 5 Document Container (Exact Layout from June 2015 8-Page Form) */}
       <div style={{ background: 'white', border: '1px solid #cbd5e1', borderRadius: 'var(--radius-lg)', padding: 'var(--space-6)', maxWidth: '960px', margin: '0 auto' }}>
-        {/* Header Block */}
-        <div className="official-doc-header">
-          <div className="agency-title" style={{ fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Early Childhood Care and Development Council
-          </div>
-          <div style={{ borderBottom: '2px solid #0f172a', margin: '6px 0 16px' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>June 2015</span>
-            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#0f172a' }}>Official ECCD Form</span>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>Official Consolidated Record</span>
-          </div>
-
-          <h1 className="form-main-title" style={{ fontSize: '18px', fontWeight: '800', textAlign: 'center', margin: '8px 0', letterSpacing: '0.02em', color: '#0f172a' }}>
-            FORM 5- CONSOLIDATED CHILDREN’S PROFILE
-          </h1>
-
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', margin: '12px 0 20px', fontSize: '13px', color: '#1e293b' }}>
-            <span>Number of Children Surveyed:</span>
-            <span style={{ borderBottom: '1px solid #0f172a', minWidth: '180px', display: 'inline-block', textAlign: 'center', fontWeight: 'bold' }}>
-              {consolidation.metadata.totalChildrenSurveyed}
-            </span>
-          </div>
-        </div>
-
-        {/* Legal Notice */}
-        <div style={{ background: 'var(--bg-subtle, #f8f2f2)', borderLeft: '4px solid #7e191b', padding: '10px 14px', fontSize: '11px', color: '#334155', marginBottom: '20px', borderRadius: '4px' }}>
-          <strong>Consolidated Single-Source Intake:</strong> This profile aggregates live demographic, anthropometric, health, and logistical data directly from verified Form 2 Child Profiles without manual re-entry.
-        </div>
+        {/* Official Header Block with 4 Seals */}
+        <OfficialReportHeader
+          formCode="ECCD FORM 5"
+          formTitle="CONSOLIDATED CHILDREN’S PROFILE"
+          subtitle="City Social Welfare and Development Office • City of San Fernando, Pampanga"
+          period="June 2015 Format"
+          scopeDetails={`Barangay Scope: ${filterBarangay} • Target Year: ${filterYear} • Total Surveyed Children: ${consolidation.metadata.totalChildrenSurveyed}`}
+          generatedAt={consolidation.metadata.generatedAt || new Date().toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' })}
+          legalNotice="Consolidated Single-Source Intake: This profile aggregates live demographic, anthropometric, health, and logistical data directly from verified Form 2 Child Profiles without manual re-entry."
+        />
 
         {/* 1. Age & 2. Sex in Grid */}
         <div className="official-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
