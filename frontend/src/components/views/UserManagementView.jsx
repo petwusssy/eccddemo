@@ -126,7 +126,6 @@ export function UserManagementView({ currentUser, onNavigate }) {
     if (u?.active_password) return u.active_password;
     const cred = getOfflineUserCredential(u?.email);
     if (cred?.password) return cred.password;
-    if (u?.email === 'admin@eccd.gov.ph') return 'Eccd@$SULpX';
     return 'password';
   };
 
@@ -342,6 +341,29 @@ export function UserManagementView({ currentUser, onNavigate }) {
         >
           + Create Staff Account
         </Button>
+      </div>
+
+      {/* LGU IT System Admin Notice: Centralized Credentials Directory */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1px solid #bfdbfe',
+          borderRadius: 'var(--radius-lg, 10px)',
+          padding: '1rem 1.25rem',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '0.875rem',
+        }}
+      >
+        <Key size={20} style={{ color: '#2563eb', flexShrink: 0, marginTop: '2px' }} />
+        <div style={{ fontSize: '13px', color: '#1e293b', lineHeight: 1.5 }}>
+          <div style={{ fontWeight: 700, color: '#1d4ed8', marginBottom: '2px', fontSize: '13.5px' }}>
+            LGU IT Administrative Security Directory — Master Accounts &amp; Credentials
+          </div>
+          <div>
+            All official system accounts (<strong>CSFP IT SysAdmin</strong>, <strong>ECCD Admin</strong>, and <strong>CDT / CDW Field Workers</strong>) are provisioned with the standard default password <code style={{ background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, fontFamily: 'monospace' }}>password</code>. Use the unmask <Eye size={13} style={{ display: 'inline', verticalAlign: 'middle', margin: '0 2px' }} /> and copy <Copy size={13} style={{ display: 'inline', verticalAlign: 'middle', margin: '0 2px' }} /> buttons below to inspect and distribute credentials to authorized personnel.
+          </div>
+        </div>
       </div>
 
       {/* 2. Official Role Hierarchy & Distribution Table */}

@@ -26,12 +26,8 @@ import {
   Clock,
   ShieldAlert,
   LogIn,
-  Zap,
-  MapPin,
-  Building2,
 } from 'lucide-react';
 import { useAuth, AUTH_STATUS } from './AuthProvider';
-import { getDemoAccounts, ROLES } from '../../services/authService';
 import { Button } from '../ui/Button';
 import { Checkbox } from '../ui/Checkbox';
 import '../../styles/login.css';
@@ -96,31 +92,6 @@ export function LoginPage({ isAdminPortal: propIsAdminPortal }) {
         return;
       }
       // On success, AuthProvider updates status → App renders AppShell or AdminShell
-    } catch {
-      setFormError('A network error occurred. Please check your connection and try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // --- Hackathon One-Click Quick Login ---
-  const handleQuickDemoLogin = async (acc) => {
-    setEmail(acc.email);
-    setPassword(acc.passwordRaw);
-    setFormError('');
-    setFieldErrors({});
-    setIsSubmitting(true);
-
-    try {
-      const result = await login({ email: acc.email, password: acc.passwordRaw });
-      if (!result.ok) {
-        setFormError(result.error?.message || 'Authentication failed. Please try again.');
-        return;
-      }
-      if (isAdminPortal && result.data?.user?.role === 'cdt') {
-        await logout();
-        setFormError('Access Restricted: This console is strictly reserved for CSFP System Administrators. Teachers and daycare workers, please use the standard ECCD portal at "/" to sign in.');
-      }
     } catch {
       setFormError('A network error occurred. Please check your connection and try again.');
     } finally {
@@ -430,13 +401,6 @@ export function LoginPage({ isAdminPortal: propIsAdminPortal }) {
             </Button>
           </form>
 
-          {/* Quick Demo Login Panel for Hackathon Presentation */}
-          <DemoAccountsPanel
-            onSelectAccount={handleQuickDemoLogin}
-            isSubmitting={isSubmitting}
-            isAdminPortal={isAdminPortal}
-          />
-
           {/* Privacy Notice (ui-a11y: inform user about data handling) */}
           <PrivacyNotice />
 
@@ -454,110 +418,6 @@ export function LoginPage({ isAdminPortal: propIsAdminPortal }) {
 }
 
 // --- Sub-Components (react-patterns: small, focused, presentational) ---
-
-function DemoAccountsPanel({ onSelectAccount, isSubmitting, isAdminPortal }) {
-  const [tab, setTab] = useState(isAdminPortal ? 'admin' : 'field');
-  const demoAccounts = getDemoAccounts();
-
-  const fieldAccounts = demoAccounts.filter((a) => a.role === ROLES.CDT || a.role === 'cdt');
-  const adminAccounts = demoAccounts.filter((a) => a.role !== ROLES.CDT && a.role !== 'cdt');
-
-  const displayedAccounts = tab === 'field' ? fieldAccounts : adminAccounts;
-
-  return (
-    <div className="demo-accounts-panel">
-      <div className="demo-accounts-header">
-        <div className="demo-accounts-header-title">
-          <Zap size={14} style={{ color: '#eab308' }} />
-          <span>Hackathon Demo Accounts</span>
-        </div>
-
-        <div className="demo-tabs-toggle">
-          <button
-            type="button"
-            className={`demo-tab-btn ${tab === 'field' ? 'is-active' : ''}`}
-            onClick={() => setTab('field')}
-          >
-            Field Workers ({fieldAccounts.length})
-          </button>
-          <button
-            type="button"
-            className={`demo-tab-btn ${tab === 'admin' ? 'is-active' : ''}`}
-            onClick={() => setTab('admin')}
-          >
-            Admin / IT ({adminAccounts.length})
-          </button>
-        </div>
-      </div>
-
-      <div style={{ background: '#f8fafc', padding: '6px 12px', borderBottom: '1px solid var(--border-subtle)', fontSize: '11px', color: '#475569' }}>
-        {tab === 'field' ? (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <Lock size={11} style={{ color: '#d97706' }} />
-            <span><strong>CDT / CDW Persona:</strong> Allowed for frontline mapping, enrollment, records, assessments. <em>Administrative modules are locked.</em></span>
-          </span>
-        ) : (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <Building2 size={11} style={{ color: '#4f46e5' }} />
-            <span><strong>Administrative Persona:</strong> Unlocked city-wide consolidation, governance forms, and system administration.</span>
-          </span>
-        )}
-      </div>
-
-      <div>
-        {displayedAccounts.map((acc) => {
-          const isField = acc.role === ROLES.CDT || acc.role === 'cdt';
-          const badgeClass = isField
-            ? 'demo-badge-field'
-            : acc.role === ROLES.SYSADMIN
-            ? 'demo-badge-sys'
-            : 'demo-badge-admin';
-
-          return (
-            <div
-              key={acc.email}
-              className="demo-account-row"
-              onClick={() => !isSubmitting && onSelectAccount(acc)}
-              title="Click to automatically sign in with this account"
-            >
-              <div className="demo-account-info">
-                <div className="demo-account-name-row">
-                  <span className="demo-account-name">{acc.name}</span>
-                  <span className={`demo-badge-pill ${badgeClass}`}>{acc.badgeType}</span>
-                </div>
-
-                <div className="demo-account-sub">
-                  <MapPin size={11} style={{ color: '#dc2626' }} />
-                  <span>{acc.assignedCenter || acc.agency || 'City-wide Scope'}</span>
-                  {acc.assignedBarangays && (
-                    <span style={{ color: '#94a3b8' }}>• Brgy. {acc.assignedBarangays}</span>
-                  )}
-                </div>
-
-                <div className="demo-account-email">
-                  {acc.email} • Password: <code style={{ color: '#0284c7' }}>{acc.passwordRaw}</code>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="demo-login-btn"
-                disabled={isSubmitting}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectAccount(acc);
-                }}
-              >
-                <Zap size={11} />
-                <span>Quick Login</span>
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 function LoginLeftPanel() {
   return (

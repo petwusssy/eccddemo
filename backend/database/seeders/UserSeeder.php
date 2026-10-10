@@ -108,15 +108,15 @@ class UserSeeder extends Seeder
         $sysUser->save();
 
         // 3. Seed 2: ECCD Administrative (CSWDO Daycare Operations & Supervisory Head)
-        // Credentials: admin@eccd.gov.ph / Eccd@$SULpX
+        // Credentials: admin@eccd.gov.ph / password
         $adminUser = User::firstOrNew(['email' => 'admin@eccd.gov.ph']);
         $adminUser->name = $adminUser->name ?: 'Ma. Elena D. Santos, RSW (ECCD Admin)';
         $adminUser->role_id = $adminRole->id;
         if (!$adminUser->exists || empty($adminUser->password)) {
-            $adminUser->password = Hash::make('Eccd@$SULpX');
-            $adminUser->temp_password = 'Eccd@$SULpX';
+            $adminUser->password = Hash::make('password');
+            $adminUser->temp_password = 'password';
         } elseif (empty($adminUser->temp_password)) {
-            $adminUser->temp_password = 'Eccd@$SULpX';
+            $adminUser->temp_password = 'password';
         }
         $adminUser->save();
 

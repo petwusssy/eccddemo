@@ -146,7 +146,7 @@ export const OFFICIAL_ACCOUNTS = [
   {
     id: 'USR-ADMIN-001',
     email: 'admin@eccd.gov.ph',
-    password: 'Eccd@$SULpX',
+    password: 'password',
     name: 'Ma. Elena D. Santos, RSW',
     role: ROLES.ADMIN,
     designation: 'ECCD Administrative Officer / CSWDO Supervisor',
@@ -265,6 +265,10 @@ export function getOfflineUserCredential(email) {
   try {
     const store = JSON.parse(localStorage.getItem(CREDENTIALS_STORE_KEY) || '{}');
     if (store[clean]) {
+      if (store[clean].password === 'Eccd@$SULpX') {
+        store[clean].password = 'password';
+        localStorage.setItem(CREDENTIALS_STORE_KEY, JSON.stringify(store));
+      }
       return store[clean];
     }
   } catch (_) {}

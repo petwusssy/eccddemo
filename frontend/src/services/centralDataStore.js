@@ -131,7 +131,7 @@ export const SEED_USERS = [
     username: 'admin.cswdo',
     name: 'Ma. Elena D. Santos, RSW',
     email: 'admin@eccd.gov.ph',
-    password: 'Eccd@$SULpX',
+    password: 'password',
     roleId: 'ROLE-ADMIN',
     role: 'eccd_admin',
     designation: 'ECCD Administrative Officer / CSWDO Supervisor',

@@ -28,7 +28,7 @@ class UserManagementController extends Controller
                 'name' => $u->name,
                 'email' => $u->email,
                 'role_id' => $u->role_id,
-                'active_password' => $u->temp_password ?? ($u->email === 'admin@eccd.gov.ph' ? 'Eccd@$SULpX' : 'password'),
+                'active_password' => $u->temp_password ?? 'password',
                 'role' => $u->role ? [
                     'id' => $u->role->id,
                     'name' => $u->role->name,

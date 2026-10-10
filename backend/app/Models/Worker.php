@@ -39,6 +39,11 @@ class Worker extends Model
         return $this->belongsTo(DayCareCenter::class, 'day_care_center_id');
     }
 
+    public function barangay(): BelongsTo
+    {
+        return $this->belongsTo(Barangay::class, 'barangay_id');
+    }
+
     public function mappingActivities(): BelongsToMany
     {
         return $this->belongsToMany(

@@ -36,7 +36,7 @@ class PasswordPersistenceTest extends TestCase
         // 2. Old password should fail authentication
         $failedLogin = $this->postJson('/api/auth/login', [
             'email' => 'admin@eccd.gov.ph',
-            'password' => 'Eccd@$SULpX',
+            'password' => 'password',
         ]);
         $failedLogin->assertStatus(401);
 
