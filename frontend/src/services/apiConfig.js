@@ -33,6 +33,14 @@ export function getApiBaseUrl() {
     }
   }
 
+  // If running locally on laptop (localhost / 127.0.0.1), use direct local Laravel backend
+  if (typeof window !== 'undefined' && window.location) {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://127.0.0.1:8000';
+    }
+  }
+
   const envUrl =
     typeof import.meta !== 'undefined' &&
     import.meta.env &&

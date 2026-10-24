@@ -4,7 +4,10 @@ namespace App\Services;
 
 use App\Models\Barangay;
 use App\Models\DayCareCenter;
+use App\Models\Role;
+use App\Models\User;
 use App\Models\Worker;
+use Illuminate\Support\Facades\Hash;
 
 class CommunityService
 {
@@ -360,7 +363,21 @@ class CommunityService
         $fullName = !empty($data['name']) ? $data['name'] : trim(($data['firstName'] ?? '') . ' ' . ($data['lastName'] ?? ''));
         if (empty($fullName)) $fullName = 'Child Development Worker';
 
+        // Auto-provision user account for Form 6 worker with password "password12"
+        $cleanName = preg_replace('/,?\s*(CDW|CDT|RSW).*$/i', '', $fullName);
+        $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '.', $cleanName), '.'));
+        $email = !empty($data['email']) ? strtolower(trim($data['email'])) : ($slug . '@csfp.gov.ph');
+
+        $cdtRole = Role::where('name', 'cdt')->first();
+        $user = User::firstOrNew(['email' => $email]);
+        $user->name = $fullName;
+        $user->role_id = $cdtRole ? $cdtRole->id : 3;
+        $user->password = Hash::make('password12');
+        $user->temp_password = 'password12';
+        $user->save();
+
         $worker = Worker::create([
+            'user_id' => $user->id,
             'name' => $fullName,
             'role' => $data['role'] ?? 'Child Development Worker',
             'day_care_center_id' => $center?->id,

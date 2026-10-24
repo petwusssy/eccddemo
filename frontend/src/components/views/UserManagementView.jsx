@@ -126,7 +126,7 @@ export function UserManagementView({ currentUser, onNavigate }) {
     if (u?.active_password) return u.active_password;
     const cred = getOfflineUserCredential(u?.email);
     if (cred?.password) return cred.password;
-    return 'password';
+    return 'password12';
   };
 
   const toggleRevealPassword = (userId) => {

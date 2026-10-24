@@ -142,7 +142,7 @@ export const SEED_USERS = [
     username: 'remedios.garcia',
     name: 'Remedios D. Garcia, CDT',
     email: 'cdt@eccd.gov.ph',
-    password: 'password',
+    password: 'password12',
     roleId: 'ROLE-CDT',
     role: 'cdt',
     designation: 'Child Development Teacher (CDT)',
@@ -153,7 +153,7 @@ export const SEED_USERS = [
     username: 'maritess.pangilinan',
     name: 'Maritess S. Pangilinan, CDW',
     email: 'cdw.dolores@eccd.gov.ph',
-    password: 'password',
+    password: 'password12',
     roleId: 'ROLE-CDT',
     role: 'cdt',
     designation: 'Child Development Worker (CDW)',
@@ -164,7 +164,7 @@ export const SEED_USERS = [
     username: 'corazon.david',
     name: 'Corazon M. David, CDW',
     email: 'cdw.agustin@eccd.gov.ph',
-    password: 'password',
+    password: 'password12',
     roleId: 'ROLE-CDT',
     role: 'cdt',
     designation: 'Child Development Worker (CDW)',
@@ -175,7 +175,84 @@ export const SEED_USERS = [
     username: 'josefina.santos',
     name: 'Josefina T. Santos, CDW',
     email: 'cdw.isidro@eccd.gov.ph',
-    password: 'password',
+    password: 'password12',
+    roleId: 'ROLE-CDT',
+    role: 'cdt',
+    designation: 'Child Development Worker (CDW)',
+    status: 'Active',
+  },
+  {
+    id: 'USR-006',
+    username: 'baltazar.natividad',
+    name: 'Baltazar Natividad',
+    email: 'baltazar.natividad@csfp.gov.ph',
+    password: 'password12',
+    roleId: 'ROLE-CDT',
+    role: 'cdt',
+    designation: 'Child Development Worker (CDW)',
+    status: 'Active',
+  },
+  {
+    id: 'USR-007',
+    username: 'carmelita.manalo',
+    name: 'Carmelita R. Manalo, CDW',
+    email: 'carmelita.manalo@csfp.gov.ph',
+    password: 'password12',
+    roleId: 'ROLE-CDT',
+    role: 'cdt',
+    designation: 'Child Development Worker (CDW)',
+    status: 'Active',
+  },
+  {
+    id: 'USR-008',
+    username: 'lourdes.pineda',
+    name: 'Lourdes E. Pineda, CDW',
+    email: 'lourdes.pineda@csfp.gov.ph',
+    password: 'password12',
+    roleId: 'ROLE-CDT',
+    role: 'cdt',
+    designation: 'Child Development Worker (CDW)',
+    status: 'Active',
+  },
+  {
+    id: 'USR-009',
+    username: 'rowena.castro',
+    name: 'Rowena B. Castro, CDW',
+    email: 'rowena.castro@csfp.gov.ph',
+    password: 'password12',
+    roleId: 'ROLE-CDT',
+    role: 'cdt',
+    designation: 'Child Development Worker (CDW)',
+    status: 'Active',
+  },
+  {
+    id: 'USR-010',
+    username: 'esperanza.henson',
+    name: 'Esperanza L. Henson, CDW',
+    email: 'esperanza.henson@csfp.gov.ph',
+    password: 'password12',
+    roleId: 'ROLE-CDT',
+    role: 'cdt',
+    designation: 'Child Development Worker (CDW)',
+    status: 'Active',
+  },
+  {
+    id: 'USR-011',
+    username: 'luisa.guinto',
+    name: 'Ma. Luisa F. Guinto, CDW',
+    email: 'luisa.guinto@csfp.gov.ph',
+    password: 'password12',
+    roleId: 'ROLE-CDT',
+    role: 'cdt',
+    designation: 'Child Development Worker (CDW)',
+    status: 'Active',
+  },
+  {
+    id: 'USR-012',
+    username: 'flordeliza.mercado',
+    name: 'Flordeliza S. Mercado, CDW',
+    email: 'flordeliza.mercado@csfp.gov.ph',
+    password: 'password12',
     roleId: 'ROLE-CDT',
     role: 'cdt',
     designation: 'Child Development Worker (CDW)',
@@ -878,7 +955,37 @@ class CentralDataStore {
 
   // --- ENTITY COLLECTION GETTERS ---
   getRoles() { return this.data.roles; }
-  getUsers() { return this.data.users; }
+  getUsers() {
+    if (!Array.isArray(this.data.users)) this.data.users = [];
+    if (Array.isArray(this.data.workers)) {
+      this.data.workers.forEach((w) => {
+        const wEmail = (w.email || `${w.name.toLowerCase().replace(/[\s,.]+/g, '.')}@csfp.gov.ph`).toLowerCase().trim();
+        const exists = this.data.users.find(
+          (u) => u.email?.toLowerCase() === wEmail || u.name?.toLowerCase() === w.name?.toLowerCase()
+        );
+        if (!exists) {
+          this.data.users.push({
+            id: `USR-${w.id}`,
+            username: wEmail.split('@')[0],
+            name: w.name,
+            email: wEmail,
+            password: 'password12',
+            roleId: 'ROLE-CDT',
+            role: 'cdt',
+            designation: w.designation || w.role || 'Child Development Worker',
+            status: 'Active',
+            centerName: Array.isArray(w.assignedCenters) ? w.assignedCenters[0] : (w.centerBeingServed || null),
+            barangay: w.assignedBarangay || null,
+            contact: w.contactNumber || w.contactMobile || '',
+            createdAt: w.createdAt || getPhilippinesDateTime(),
+          });
+        } else if (!exists.password || exists.password === 'password') {
+          exists.password = 'password12';
+        }
+      });
+    }
+    return this.data.users;
+  }
   updateUserPassword(identifier, newPassword) {
     if (!Array.isArray(this.data.users)) this.data.users = [];
     const idx = this.data.users.findIndex(
@@ -1058,6 +1165,30 @@ class CentralDataStore {
     };
 
     this.data.workers.unshift(newWorker);
+
+    // Auto-provision user account with password "password12"
+    if (!Array.isArray(this.data.users)) this.data.users = [];
+    const wEmail = newWorker.email.toLowerCase().trim();
+    const existingUser = this.data.users.find(
+      (u) => u.email?.toLowerCase() === wEmail || u.name?.toLowerCase() === fullName.toLowerCase()
+    );
+    if (!existingUser) {
+      this.data.users.push({
+        id: `USR-${newId}`,
+        username: wEmail.split('@')[0],
+        name: fullName,
+        email: newWorker.email,
+        password: 'password12',
+        roleId: 'ROLE-CDT',
+        role: 'cdt',
+        designation: newWorker.designation || 'Child Development Worker',
+        status: 'Active',
+        centerName: centerName || null,
+        barangay: brgy || null,
+        contact: newWorker.contactNumber,
+        createdAt: getPhilippinesDateTime(),
+      });
+    }
 
     // Link to CDC assignedWorkers
     if (centerName && Array.isArray(this.data.dayCareCenters)) {

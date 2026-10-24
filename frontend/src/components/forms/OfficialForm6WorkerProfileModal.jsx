@@ -20,6 +20,7 @@ import { Select } from '../ui/Select';
 import { officialFormsService } from '../../services/officialFormsService';
 import { centralDataStore } from '../../services/centralDataStore';
 import { communityService } from '../../services/communityService';
+import { updateOfflineUserCredential } from '../../services/authService';
 import { SAN_FERNANDO_BARANGAYS } from '../../data/sanFernandoBarangays';
 import { useToast } from '../ui/Toast';
 import { getPhilippinesDate } from '../../utils/phTime';
@@ -239,6 +240,10 @@ export function OfficialForm6WorkerProfileModal({
       contactMobile: formData.contactMobile,
       email: formData.email,
     }).catch(() => {});
+
+    if (savedWorker?.email) {
+      updateOfflineUserCredential(savedWorker.email, 'password12');
+    }
 
     addToast('Official Form 6 (CDW Profile) registered and linked to CDC successfully.', 'success');
     if (onSuccess) onSuccess(savedWorker);

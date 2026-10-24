@@ -120,8 +120,8 @@ class UserSeeder extends Seeder
         }
         $adminUser->save();
 
-        // 4. Seed 3: Frontline Workers (CDT / CDW) for Hackathon Demo & Field Operations
-        // Credentials: password: "password"
+        // 4. Seed 3: Frontline Workers (CDT / CDW / Form 6) for Operations & Admin Directory
+        // Credentials: password: "password12"
         $fieldWorkers = [
             [
                 'email' => 'cdt@eccd.gov.ph',
@@ -147,6 +147,42 @@ class UserSeeder extends Seeder
                 'name' => 'Josefina T. Santos, CDW',
                 'worker_name' => 'Josefina T. Santos, CDW',
             ],
+            [
+                'email' => 'cdw.calulut@eccd.gov.ph',
+                'alias' => 'carmelita.manalo@csfp.gov.ph',
+                'name' => 'Carmelita R. Manalo, CDW',
+                'worker_name' => 'Carmelita R. Manalo, CDW',
+            ],
+            [
+                'email' => 'cdw.bulaon@eccd.gov.ph',
+                'alias' => 'lourdes.pineda@csfp.gov.ph',
+                'name' => 'Lourdes E. Pineda, CDW',
+                'worker_name' => 'Lourdes E. Pineda, CDW',
+            ],
+            [
+                'email' => 'cdw.sanjose@eccd.gov.ph',
+                'alias' => 'rowena.castro@csfp.gov.ph',
+                'name' => 'Rowena B. Castro, CDW',
+                'worker_name' => 'Rowena B. Castro, CDW',
+            ],
+            [
+                'email' => 'cdw.sannicolas@eccd.gov.ph',
+                'alias' => 'esperanza.henson@csfp.gov.ph',
+                'name' => 'Esperanza L. Henson, CDW',
+                'worker_name' => 'Esperanza L. Henson, CDW',
+            ],
+            [
+                'email' => 'cdw.santorosario@eccd.gov.ph',
+                'alias' => 'luisa.guinto@csfp.gov.ph',
+                'name' => 'Ma. Luisa F. Guinto, CDW',
+                'worker_name' => 'Ma. Luisa F. Guinto, CDW',
+            ],
+            [
+                'email' => 'cdw.telabastagan@eccd.gov.ph',
+                'alias' => 'flordeliza.mercado@csfp.gov.ph',
+                'name' => 'Flordeliza S. Mercado, CDW',
+                'worker_name' => 'Flordeliza S. Mercado, CDW',
+            ],
         ];
 
         foreach ($fieldWorkers as $fw) {
@@ -159,12 +195,8 @@ class UserSeeder extends Seeder
                 $user = User::firstOrNew(['email' => $uEmail]);
                 $user->name = $fw['name'];
                 $user->role_id = $cdtRole->id;
-                if (!$user->exists || empty($user->password)) {
-                    $user->password = Hash::make('password');
-                    $user->temp_password = 'password';
-                } elseif (empty($user->temp_password)) {
-                    $user->temp_password = 'password';
-                }
+                $user->password = Hash::make('password12');
+                $user->temp_password = 'password12';
                 $user->save();
 
                 // Link worker table record to this user if found
@@ -176,12 +208,27 @@ class UserSeeder extends Seeder
         $workerUser = User::firstOrNew(['email' => 'worker@eccd.gov.ph']);
         $workerUser->name = 'Remedios D. Garcia, CDT';
         $workerUser->role_id = $cdtRole->id;
-        if (!$workerUser->exists || empty($workerUser->password)) {
-            $workerUser->password = Hash::make('password');
-            $workerUser->temp_password = 'password';
-        } elseif (empty($workerUser->temp_password)) {
-            $workerUser->temp_password = 'password';
-        }
+        $workerUser->password = Hash::make('password12');
+        $workerUser->temp_password = 'password12';
         $workerUser->save();
+
+        // 5. Ensure all other registered Worker records (including Form 6 submissions) have credentials
+        $allWorkers = \App\Models\Worker::all();
+        foreach ($allWorkers as $w) {
+            if (!$w->user_id || !User::find($w->user_id)) {
+                $cleanName = preg_replace('/,?\s*(CDW|CDT|RSW).*$/i', '', $w->name);
+                $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '.', $cleanName), '.'));
+                $email = $slug . '@csfp.gov.ph';
+
+                $wUser = User::firstOrNew(['email' => $email]);
+                $wUser->name = $w->name;
+                $wUser->role_id = $cdtRole->id;
+                $wUser->password = Hash::make('password12');
+                $wUser->temp_password = 'password12';
+                $wUser->save();
+
+                $w->update(['user_id' => $wUser->id]);
+            }
+        }
     }
 }

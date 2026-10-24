@@ -14,10 +14,53 @@ use Illuminate\Validation\Rule;
 class UserManagementController extends Controller
 {
     /**
+     * Auto-sync credentials for all registered Form 6 workers.
+     * Ensures every worker has a user account with active password "password12".
+     */
+    protected function syncWorkerAccounts(): void
+    {
+        $cdtRole = Role::where('name', 'cdt')->first() ?? Role::find(3);
+        $workers = Worker::with('user')->get();
+
+        foreach ($workers as $worker) {
+            $user = $worker->user;
+
+            if (!$user) {
+                $cleanName = preg_replace('/,?\s*(CDW|CDT|RSW).*$/i', '', $worker->name);
+                $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '.', $cleanName), '.'));
+                $email = $slug . '@csfp.gov.ph';
+
+                $user = User::where('email', $email)->orWhere('name', $worker->name)->first();
+                if (!$user) {
+                    $user = new User();
+                    $user->name = $worker->name;
+                    $user->email = $email;
+                    $user->role_id = $cdtRole?->id ?? 3;
+                    $user->password = Hash::make('password12');
+                    $user->temp_password = 'password12';
+                    $user->save();
+                }
+
+                $worker->user_id = $user->id;
+                $worker->save();
+            }
+
+            // Ensure worker's active password is "password12"
+            if (empty($user->temp_password) || $user->temp_password === 'password') {
+                $user->temp_password = 'password12';
+                $user->password = Hash::make('password12');
+                $user->save();
+            }
+        }
+    }
+
+    /**
      * List all users with roles, worker assignments, and centers.
      */
     public function index(Request $request)
     {
+        $this->syncWorkerAccounts();
+
         $users = User::with(['role', 'worker.dayCareCenter', 'worker.barangay'])
             ->orderBy('id', 'asc')
             ->get();
@@ -28,7 +71,7 @@ class UserManagementController extends Controller
                 'name' => $u->name,
                 'email' => $u->email,
                 'role_id' => $u->role_id,
-                'active_password' => $u->temp_password ?? 'password',
+                'active_password' => $u->temp_password ?? 'password12',
                 'role' => $u->role ? [
                     'id' => $u->role->id,
                     'name' => $u->role->name,

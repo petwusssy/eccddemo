@@ -1,0 +1,9 @@
+.git
+.env
+.env.backup
+.env.example
+node_modules
+vendor
+.phpunit.result.cache
+tests
+storage/logs/*.log
