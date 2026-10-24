@@ -1,4 +1,4 @@
-FROM php:8.3-cli-alpine
+FROM php:8.4-cli-alpine
 
 # Install system dependencies & CA certificates for cloud database SSL
 RUN apk add --no-cache \
