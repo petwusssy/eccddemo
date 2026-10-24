@@ -42,5 +42,5 @@ EXPOSE 10000
 
 ENV PHP_CLI_SERVER_WORKERS=4
 
-# Clear config cache on start so Render runtime env vars are dynamically loaded
-CMD sh -c "php artisan config:clear && php artisan route:clear && php artisan serve --host=0.0.0.0 --port=\${PORT:-10000}"
+# Run migration and start server automatically (No paid Render Shell needed!)
+CMD sh -c "php artisan config:clear && php artisan route:clear && php artisan migrate --seed --force && php artisan serve --host=0.0.0.0 --port=\${PORT:-10000}"
