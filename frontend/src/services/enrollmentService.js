@@ -177,8 +177,6 @@ export const enrollmentService = {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify({
           ...payload,
@@ -193,8 +191,6 @@ export const enrollmentService = {
           headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-            'Bypass-Tunnel-Reminder': 'true',
           },
           body: JSON.stringify({
             enrollmentStatus: 'Enrolled',

@@ -169,8 +169,6 @@ export const developmentService = {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify({
           ...payload,

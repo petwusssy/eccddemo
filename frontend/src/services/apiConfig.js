@@ -4,7 +4,7 @@
  *
  * Provides a single source of truth for the API base URL:
  * - Dynamically evaluates import.meta.env.VITE_API_URL
- * - Graceful fallback to 'http://127.0.0.1:8000'
+ * - Points directly to live Render backend: https://eccd-backend-cpal.onrender.com
  * - Eliminates hardcoded relative paths (e.g. '/api/...') to prevent 404 errors on Vercel deployments
  * - Normalizes endpoints, stripping redundant '/api' or trailing slashes
  */
@@ -12,32 +12,25 @@
 /**
  * Get the configured dynamic API base URL.
  * Priority:
- * 1. User runtime setting in localStorage (enables phone/Vercel to point to laptop IP or tunnel)
+ * 1. User runtime setting in localStorage (custom server override)
  * 2. Vite build-time env VITE_API_URL
- * 3. Localhost fallback http://127.0.0.1:8000
+ * 3. Default Render Production API URL: https://eccd-backend-cpal.onrender.com
  * @returns {string} Normalized base URL without trailing slash
  */
-export const DEFAULT_PRODUCTION_TUNNEL_URL = 'https://bulginess-encroach-revise.ngrok-free.dev';
+export const DEFAULT_PRODUCTION_API_URL = 'https://eccd-backend-cpal.onrender.com';
+export const DEFAULT_PRODUCTION_TUNNEL_URL = DEFAULT_PRODUCTION_API_URL;
 
 export function getApiBaseUrl() {
   if (typeof window !== 'undefined' && window.localStorage) {
     const customUrl = window.localStorage.getItem('eccd_backend_api_url');
     if (customUrl && typeof customUrl === 'string' && customUrl.trim() !== '') {
       const clean = customUrl.trim().replace(/\/+$/, '');
-      // Automatically purge stale loca.lt tunnels
-      if (clean.includes('loca.lt')) {
+      // Automatically purge stale tunnels or localhosts
+      if (clean.includes('ngrok') || clean.includes('loca.lt') || clean.includes('127.0.0.1') || clean.includes('localhost')) {
         window.localStorage.removeItem('eccd_backend_api_url');
       } else {
         return clean;
       }
-    }
-  }
-
-  // If running locally on laptop (localhost / 127.0.0.1), use direct local Laravel backend
-  if (typeof window !== 'undefined' && window.location) {
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return 'http://127.0.0.1:8000';
     }
   }
 
@@ -50,23 +43,7 @@ export function getApiBaseUrl() {
     return envUrl.trim().replace(/\/+$/, '');
   }
 
-  // If running in browser on remote hosting (Vercel, GitHub Pages, etc.)
-  if (typeof window !== 'undefined' && window.location) {
-    const host = window.location.hostname;
-    const isCloudHosted = host.includes('vercel.app') || host.includes('github.io') || host.includes('netlify.app');
-    if (isCloudHosted) {
-      // Automatically route all devices (mobile phones, tablets, PCs) to live CSWDO backend tunnel
-      return DEFAULT_PRODUCTION_TUNNEL_URL;
-    }
-
-    const isRemote = host !== 'localhost' && host !== '127.0.0.1';
-    if (isRemote) {
-      // In local dev LAN mode (e.g. 192.168.x.x:5173), Vite dev server proxies /api directly to Laravel
-      return window.location.origin;
-    }
-  }
-
-  return 'http://127.0.0.1:8000';
+  return DEFAULT_PRODUCTION_API_URL;
 }
 
 export function setCustomApiUrl(url) {
@@ -85,12 +62,7 @@ export function clearCustomApiUrl() {
 }
 
 export function isUsingLocalhostOnRemote() {
-  if (typeof window === 'undefined') return false;
-  const host = window.location.hostname;
-  const isRemote = host !== 'localhost' && host !== '127.0.0.1';
-  const currentBase = getApiBaseUrl();
-  const pointsToLocalhost = currentBase.includes('127.0.0.1') || currentBase.includes('localhost');
-  return isRemote && pointsToLocalhost;
+  return false;
 }
 
 export const API_BASE_URL = getApiBaseUrl();
@@ -167,8 +139,6 @@ export async function checkBackendHealth(testUrl = null, force = false) {
       const res = await fetch(`${base}/api/dashboard/summary`, {
         headers: {
           Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
         signal: controller.signal,
       });

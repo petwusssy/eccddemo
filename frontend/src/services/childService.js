@@ -26,6 +26,7 @@ export const childService = {
    * Single Source of Truth: centralDataStore.js (backend sync handled centrally)
    */
   async getChildren(filters = {}) {
+    await centralDataStore.syncWithBackend().catch(() => {});
     let list = centralDataStore.getChildren() || [];
 
     if (filters.search) {

@@ -255,7 +255,7 @@ export function Header({
                 border: '1px solid #fecdd3',
                 cursor: 'pointer',
               }}
-              title="CSWDO backend is offline or tunnel disconnected. Click to open Server Settings."
+              title="CSWDO backend is offline or unreachable. Click to open Server Settings."
             >
               <AlertTriangle size={12} style={{ color: '#e11d48' }} />
               <span>Backend Offline</span>

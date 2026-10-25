@@ -55,8 +55,6 @@ export function SettingsView({ onNavigate }) {
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-            'Bypass-Tunnel-Reminder': 'true',
           },
         });
         if (res.ok) {

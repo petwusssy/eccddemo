@@ -28,7 +28,6 @@ import {
   getApiBaseUrl,
   setCustomApiUrl,
   clearCustomApiUrl,
-  isUsingLocalhostOnRemote,
 } from '../../services/apiConfig';
 import { centralDataStore } from '../../services/centralDataStore';
 
@@ -214,8 +213,6 @@ export function OfflineSyncBanner({ onSyncComplete }) {
       const res = await fetch(testUrl, {
         headers: {
           Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
       });
       if (res.ok) {
@@ -260,31 +257,47 @@ export function OfflineSyncBanner({ onSyncComplete }) {
     }
   };
 
-  const isRemoteLocalhost = isUsingLocalhostOnRemote();
 
   return (
     <>
       <div
-        className={`rounded-xl border p-4 mb-5 transition-all shadow-sm ${
-          !isOnline
-            ? 'bg-amber-500/15 border-amber-500/40 text-amber-950 dark:text-amber-100'
+        style={{
+          borderRadius: '12px',
+          border: !isOnline
+            ? '1px solid rgba(245, 158, 11, 0.4)'
             : pendingCount > 0
-            ? 'bg-blue-500/10 border-blue-500/30 text-blue-900 dark:text-blue-200'
-            : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-900 dark:text-emerald-200'
-        }`}
-        style={{ backdropFilter: 'blur(8px)' }}
+            ? '1px solid rgba(59, 130, 246, 0.3)'
+            : '1px solid rgba(16, 185, 129, 0.25)',
+          padding: '14px 18px',
+          marginBottom: '20px',
+          backgroundColor: !isOnline
+            ? 'rgba(245, 158, 11, 0.1)'
+            : pendingCount > 0
+            ? 'rgba(59, 130, 246, 0.08)'
+            : 'rgba(16, 185, 129, 0.08)',
+          color: 'var(--text-primary, #0f172a)',
+          backdropFilter: 'blur(8px)',
+        }}
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           {/* Left: Status Icon and Label */}
-          <div className="flex items-center gap-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
-              className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                !isOnline
-                  ? 'bg-amber-500/25 text-amber-700 dark:text-amber-300'
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                backgroundColor: !isOnline
+                  ? 'rgba(245, 158, 11, 0.25)'
                   : pendingCount > 0
-                  ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
-                  : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-              }`}
+                  ? 'rgba(59, 130, 246, 0.2)'
+                  : 'rgba(16, 185, 129, 0.2)',
+                color: !isOnline ? '#b45309' : pendingCount > 0 ? '#2563eb' : '#059669',
+              }}
             >
               {!isOnline ? (
                 <WifiOff className="w-5 h-5 animate-pulse" />
@@ -296,8 +309,8 @@ export function OfflineSyncBanner({ onSyncComplete }) {
             </div>
 
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>
                   {!isOnline
                     ? 'OFFLINE MODE (IndexedDB Active)'
                     : pendingCount > 0
@@ -305,18 +318,29 @@ export function OfflineSyncBanner({ onSyncComplete }) {
                     : 'ONLINE — Connected to CSWDO Server'}
                 </span>
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                    !isOnline
-                      ? 'bg-amber-200 text-amber-900 dark:bg-amber-900/80 dark:text-amber-200 font-bold'
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    backgroundColor: !isOnline
+                      ? '#fde68a'
                       : pendingCount > 0
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300'
-                      : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300'
-                  }`}
+                      ? '#dbeafe'
+                      : '#d1fae5',
+                    color: !isOnline
+                      ? '#78350f'
+                      : pendingCount > 0
+                      ? '#1e40af'
+                      : '#065f46',
+                  }}
                 >
                   {!isOnline ? 'Offline' : 'Connected'}
                 </span>
               </div>
-              <p className="text-xs opacity-90 mt-0.5">
+              <p style={{ fontSize: '0.75rem', opacity: 0.9, margin: '2px 0 0 0' }}>
                 {!isOnline
                   ? 'Walang internet connection. Ang mga bagong mapping, health, at enrollment records ay ligtas na naka-save sa iyong device (IndexedDB).'
                   : pendingCount > 0
@@ -329,15 +353,17 @@ export function OfflineSyncBanner({ onSyncComplete }) {
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center flex-wrap gap-2 self-end sm:self-auto shrink-0">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-xs font-medium">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderRadius: '8px', background: 'rgba(0,0,0,0.05)', fontSize: '0.75rem', fontWeight: 500 }}>
               <span>Pending Sync:</span>
               <span
-                className={`font-bold px-1.5 py-0.2 rounded text-xs ${
-                  pendingCount > 0
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
-                }`}
+                style={{
+                  fontWeight: 700,
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  backgroundColor: pendingCount > 0 ? '#f59e0b' : 'rgba(16, 185, 129, 0.2)',
+                  color: pendingCount > 0 ? '#ffffff' : '#059669',
+                }}
               >
                 {pendingCount}
               </span>
@@ -352,7 +378,7 @@ export function OfflineSyncBanner({ onSyncComplete }) {
               title={!isOnline ? 'Connect to Wi-Fi to sync records' : 'Sync pending records or double-check server synchronization'}
               className="flex items-center gap-1.5 text-xs font-medium"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
               {isSyncing
                 ? 'Syncing...'
                 : !isOnline
@@ -366,88 +392,117 @@ export function OfflineSyncBanner({ onSyncComplete }) {
             <button
               type="button"
               onClick={() => setIsSettingsOpen(true)}
-              className="p-1.5 text-xs rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 10px',
+                fontSize: '0.75rem',
+                borderRadius: '8px',
+                border: '1px solid rgba(0,0,0,0.1)',
+                background: 'transparent',
+                cursor: 'pointer',
+              }}
               title="Backend Server Configuration"
             >
-              <Server className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Server</span>
+              <Server size={14} />
+              <span>Server</span>
             </button>
           </div>
         </div>
 
-        {/* Remote Host Warning */}
-        {isRemoteLocalhost && (
-          <div className="mt-3 pt-3 border-t border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-amber-800 dark:text-amber-200">
-            <span>
-              📱 <strong>Notice:</strong> Running on mobile/remote host while API URL is <code>127.0.0.1:8000</code>. To push data directly into your laptop's Laravel database, set your laptop IP or tunnel URL.
-            </span>
-            <button
-              type="button"
-              onClick={() => setIsSettingsOpen(true)}
-              className="font-semibold underline shrink-0 hover:text-amber-950 dark:hover:text-amber-100"
-            >
-              Configure Server URL &rarr;
-            </button>
-          </div>
-        )}
+
       </div>
 
       {/* SERVER CONFIGURATION MODAL */}
       {isSettingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 flex items-center justify-center">
-                  <Server className="w-4 h-4" />
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={() => setIsSettingsOpen(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--bg-surface, #ffffff)',
+              borderRadius: '16px',
+              maxWidth: '520px',
+              width: '100%',
+              padding: '1.5rem',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              border: '1px solid var(--border-subtle, #e2e8f0)',
+              color: 'var(--text-primary, #0f172a)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid var(--border-subtle, #e2e8f0)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Server size={18} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1rem' }}>
                     Backend Server Settings
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Connect your phone browser to your laptop's Laravel database
+                  <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary, #64748b)' }}>
+                    Configure connection to Render Cloud Backend
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsSettingsOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary, #64748b)', padding: '4px' }}
               >
-                <X className="w-5 h-5" />
+                <X size={20} />
               </button>
             </div>
 
-            <div className="space-y-4 py-4 text-xs">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem 0', fontSize: '0.85rem' }}>
               <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px' }}>
                   API Base URL
                 </label>
-                <div className="flex gap-2">
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <input
                     type="text"
                     value={apiUrlInput}
                     onChange={(e) => setApiUrlInput(e.target.value)}
-                    placeholder="http://192.168.1.XX:8000 or https://xxx.ngrok-free.app"
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="https://eccd-backend-cpal.onrender.com"
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      fontSize: '0.85rem',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-subtle, #cbd5e1)',
+                      background: 'var(--bg-canvas, #ffffff)',
+                      color: 'inherit',
+                    }}
                   />
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={handleTestConnection}
                     disabled={isTestingUrl}
-                    className="shrink-0"
+                    style={{ shrink: 0 }}
                   >
                     {isTestingUrl ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <RefreshCw size={14} className="animate-spin" />
                     ) : (
                       'Test'
                     )}
                   </Button>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Default: <code>http://127.0.0.1:8000</code>. On phone via Wi-Fi, use your laptop's Wi-Fi IP (e.g. <code>http://192.168.1.15:8000</code>) or ngrok HTTPS tunnel.
+                <p style={{ margin: '6px 0 0 0', fontSize: '0.75rem', color: 'var(--text-secondary, #64748b)' }}>
+                  Connected to Render Cloud Backend: <code>https://eccd-backend-cpal.onrender.com</code>
                 </p>
               </div>
 
@@ -474,7 +529,7 @@ export function OfflineSyncBanner({ onSyncComplete }) {
                   Offline File Sync (Fail-safe Backup)
                 </h4>
                 <p className="text-[11px] text-slate-500 mb-2">
-                  No Wi-Fi or tunnel? Download all offline records as a JSON bundle from your phone, and import it on your laptop web page.
+                  No internet connection? Download all offline records as a JSON bundle to sync later.
                 </p>
                 <div className="flex gap-2">
                   <Button
@@ -535,7 +590,7 @@ export function OfflineSyncBanner({ onSyncComplete }) {
                 size="sm"
                 onClick={() => {
                   clearCustomApiUrl();
-                  setApiUrlInput('http://127.0.0.1:8000');
+                  setApiUrlInput('https://eccd-backend-cpal.onrender.com');
                   setTestResult(null);
                 }}
               >

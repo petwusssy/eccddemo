@@ -25,8 +25,6 @@ export const dashboardService = {
       const res = await fetch(getApiUrl('/api/dashboard/summary'), {
         headers: {
           Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
       });
       if (res.ok) {

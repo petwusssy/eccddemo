@@ -19,8 +19,6 @@ import { updateOfflineUserCredential } from './authService';
 const HEADERS = {
   Accept: 'application/json',
   'Content-Type': 'application/json',
-  'ngrok-skip-browser-warning': 'true',
-  'Bypass-Tunnel-Reminder': 'true',
 };
 
 export const userService = {

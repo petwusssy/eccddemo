@@ -35,7 +35,7 @@ export const auditService = {
       const qs = params.toString();
       const url = getApiUrl('/api/audit-logs' + (qs ? `?${qs}` : ''));
       const res = await fetch(url, {
-        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+        headers: { Accept: 'application/json' },
       });
       if (res.ok) {
         const json = await res.json();
@@ -96,7 +96,7 @@ export const auditService = {
     try {
       await fetch(getApiUrl('/api/audit-logs'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry),
       });
     } catch {

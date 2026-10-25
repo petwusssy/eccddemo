@@ -504,8 +504,6 @@ export async function apiLogin({ email, password }) {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-        'Bypass-Tunnel-Reminder': 'true',
       },
       body: JSON.stringify({ email: cleanEmail, password: String(password) }),
       signal: controller.signal,
@@ -627,8 +625,6 @@ export async function apiLogout() {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
         signal: controller.signal,
       })

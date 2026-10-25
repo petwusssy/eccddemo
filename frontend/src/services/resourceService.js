@@ -231,7 +231,7 @@ export const resourceService = {
       const qs = params.toString();
       const url = getApiUrl('/api/resources' + (qs ? `?${qs}` : ''));
       const res = await fetch(url, {
-        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+        headers: { Accept: 'application/json' },
       });
       if (res.ok) {
         const json = await res.json();
@@ -264,7 +264,7 @@ export const resourceService = {
     try {
       const url = getApiUrl(`/api/resources/${encodeURIComponent(id)}`);
       const res = await fetch(url, {
-        headers: { Accept: 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+        headers: { Accept: 'application/json' },
       });
       if (res.ok) {
         const json = await res.json();

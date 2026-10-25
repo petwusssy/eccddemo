@@ -819,22 +819,16 @@ class CentralDataStore {
         fetch(getApiUrl('/api/children'), {
           headers: {
             Accept: 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-            'Bypass-Tunnel-Reminder': 'true',
           },
         }),
         fetch(getApiUrl('/api/households'), {
           headers: {
             Accept: 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-            'Bypass-Tunnel-Reminder': 'true',
           },
         }),
         fetch(getApiUrl('/api/enrollments'), {
           headers: {
             Accept: 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-            'Bypass-Tunnel-Reminder': 'true',
           },
         }),
       ]);
@@ -867,8 +861,6 @@ class CentralDataStore {
         const statusRes = await fetch(getApiUrl('/api/system/status'), {
           headers: {
             Accept: 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-            'Bypass-Tunnel-Reminder': 'true',
           },
         });
         if (statusRes.ok) {

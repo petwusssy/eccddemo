@@ -181,7 +181,7 @@ export async function deleteOfflineSurvey(id) {
 
 /**
  * Syncs all pending offline surveys and frontline actions to backend API.
- * Automatically respects import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'.
+ * Automatically respects import.meta.env.VITE_API_URL || 'https://eccd-backend-cpal.onrender.com'.
  */
 /**
  * Syncs all pending offline surveys, frontline actions, and local unsynced records to backend API.
@@ -203,8 +203,6 @@ export async function syncPendingSurveysToBackend() {
     const statusRes = await fetch(getApiUrl('/api/system/status'), {
       headers: {
         Accept: 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-        'Bypass-Tunnel-Reminder': 'true',
       },
     });
     if (statusRes.ok) {
@@ -250,8 +248,6 @@ export async function syncPendingSurveysToBackend() {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify(batchPayload),
       });
@@ -314,8 +310,6 @@ export async function syncPendingSurveysToBackend() {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify(householdPayload),
       });
@@ -336,8 +330,6 @@ export async function syncPendingSurveysToBackend() {
             headers: {
               'Content-Type': 'application/json',
               Accept: 'application/json',
-              'ngrok-skip-browser-warning': 'true',
-              'Bypass-Tunnel-Reminder': 'true',
             },
             body: JSON.stringify({
               ...child,
@@ -372,8 +364,6 @@ export async function syncPendingSurveysToBackend() {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify(item.payload),
       });
@@ -397,8 +387,6 @@ export async function syncPendingSurveysToBackend() {
     const serverChildrenRes = await fetch(getApiUrl('/api/children'), {
       headers: {
         Accept: 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-        'Bypass-Tunnel-Reminder': 'true',
       },
     });
 
@@ -427,8 +415,6 @@ export async function syncPendingSurveysToBackend() {
               headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
-                'ngrok-skip-browser-warning': 'true',
-                'Bypass-Tunnel-Reminder': 'true',
               },
               body: JSON.stringify(hh),
             });
@@ -441,8 +427,6 @@ export async function syncPendingSurveysToBackend() {
             headers: {
               'Content-Type': 'application/json',
               Accept: 'application/json',
-              'ngrok-skip-browser-warning': 'true',
-              'Bypass-Tunnel-Reminder': 'true',
             },
             body: JSON.stringify({
               ...localChild,

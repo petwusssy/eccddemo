@@ -160,8 +160,6 @@ export const communityMappingService = {
       const res = await fetch(getApiUrl('/api/mapping/activities'), {
         headers: {
           Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
       });
       if (res.ok) {
@@ -285,8 +283,6 @@ export const communityMappingService = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify(newActivity),
       });
@@ -380,8 +376,6 @@ export const communityMappingService = {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify(newHousehold),
       });
@@ -460,8 +454,6 @@ export const communityMappingService = {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
         },
         body: JSON.stringify(newChild),
       });

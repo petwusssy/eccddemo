@@ -26,7 +26,6 @@ import {
   getApiBaseUrl,
   checkBackendHealth,
   isBackendConnected,
-  DEFAULT_PRODUCTION_TUNNEL_URL,
 } from '../../services/apiConfig';
 
 /**
@@ -160,7 +159,7 @@ export default function AdminSystemHealthView() {
           </div>
           <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: '#94a3b8', maxWidth: '780px' }}>
             Real-time diagnostics for City Information &amp; Communications Technology Office (CSFP MIS).
-            Monitors PHP Laravel API server, MariaDB/MySQL persistence, Ngrok secure tunnels, and JWT authentication.
+            Monitors PHP Laravel API server, MariaDB/MySQL persistence, Cloud backend deployment (Render), and JWT authentication.
           </p>
         </div>
 
@@ -282,7 +281,7 @@ export default function AdminSystemHealthView() {
             </div>
           </div>
           <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2, wordBreak: 'break-all' }}>
-            {activeApiUrl.includes('ngrok') ? 'Ngrok Tunnel' : 'Localhost Proxy'}
+            Render Cloud API
           </div>
           <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '6px' }}>
             {activeApiUrl}
@@ -359,17 +358,19 @@ export default function AdminSystemHealthView() {
                   <td style={{ padding: '12px 18px', fontWeight: 600 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Wifi size={15} style={{ color: '#0284c7' }} />
-                      Public Ngrok Secure Gateway
+                      Production Cloud Backend
                     </div>
                   </td>
                   <td style={{ padding: '12px 18px', fontFamily: 'monospace', fontSize: '12px' }}>
-                    {DEFAULT_PRODUCTION_TUNNEL_URL}
+                    {activeApiUrl || 'https://eccd-backend-cpal.onrender.com'}
                   </td>
                   <td style={{ padding: '12px 18px' }}>
-                    <Badge variant="primary" size="sm">Active Tunnel</Badge>
+                    <Badge variant={isAlive ? 'success' : 'outline'} size="sm">
+                      {isAlive ? 'Active' : 'Standby'}
+                    </Badge>
                   </td>
                   <td style={{ padding: '12px 18px', color: 'var(--text-secondary)' }}>
-                    Cross-Device Mobile Access
+                    Centralized CSWDO API
                   </td>
                 </tr>
 
