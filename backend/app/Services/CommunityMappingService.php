@@ -293,10 +293,14 @@ class CommunityMappingService
                     'contactNumber' => $hh->contact_number,
                     'address' => $hh->address,
                     'barangay' => $hh->barangay?->name ?? 'San Isidro',
+                    'purok' => $hh->purok,
                     'mappingActivityId' => $hh->mappingActivity?->code ?? 'ACT-MAP-2026-001',
                     'mappedDate' => $hh->mapped_date?->toDateString() ?? now()->toDateString(),
                     'mappedBy' => $hh->mapped_by ?? 'Field Worker',
                     'childrenCount' => $hh->children()->count() ?: 1,
+                    'is4Ps' => (bool) $hh->is_4ps,
+                    'isIP' => (bool) $hh->is_ip,
+                    'form1Data' => $hh->form1_data,
                     'status' => 'Completed',
                 ];
             })->toArray();
@@ -321,10 +325,14 @@ class CommunityMappingService
                     'contactNumber' => $hh->contact_number,
                     'address' => $hh->address,
                     'barangay' => $hh->barangay?->name ?? 'San Isidro',
+                    'purok' => $hh->purok,
                     'mappingActivityId' => $hh->mappingActivity?->code ?? 'ACT-MAP-2026-001',
                     'mappedDate' => $hh->mapped_date?->toDateString() ?? now()->toDateString(),
                     'mappedBy' => $hh->mapped_by ?? 'Field Worker',
                     'childrenCount' => $hh->children()->count() ?: 1,
+                    'is4Ps' => (bool) $hh->is_4ps,
+                    'isIP' => (bool) $hh->is_ip,
+                    'form1Data' => $hh->form1_data,
                     'status' => 'Completed',
                 ];
             }
@@ -371,6 +379,17 @@ class CommunityMappingService
             $rawMappedDate = $data['mappedDate'] ?? $data['mapped_date'] ?? now()->toDateString();
             $mappedDate = substr($rawMappedDate, 0, 10);
 
+            $form1Data = $data['form1Data'] ?? $data['form1_data'] ?? null;
+            if (is_string($form1Data)) {
+                $decoded = json_decode($form1Data, true);
+                if (is_array($decoded)) {
+                    $form1Data = $decoded;
+                }
+            }
+            if ($existing && empty($form1Data) && !empty($existing->form1_data)) {
+                $form1Data = $existing->form1_data;
+            }
+
             $model = \App\Models\Household::updateOrCreate(
                 ['household_no' => $id],
                 [
@@ -384,6 +403,7 @@ class CommunityMappingService
                     'is_ip' => !empty($data['isIP']) || !empty($data['is_ip']),
                     'mapped_date' => $mappedDate,
                     'mapped_by' => $data['mappedBy'] ?? $data['mapped_by'] ?? 'Field Worker',
+                    'form1_data' => $form1Data,
                 ]
             );
 
@@ -399,6 +419,9 @@ class CommunityMappingService
                 'mappedDate' => $model->mapped_date?->toDateString() ?? now()->toDateString(),
                 'mappedBy' => $model->mapped_by,
                 'childrenCount' => (int) ($data['childrenCount'] ?? 1),
+                'is4Ps' => (bool) $model->is_4ps,
+                'isIP' => (bool) $model->is_ip,
+                'form1Data' => $model->form1_data ?? $form1Data,
                 'status' => 'Completed',
             ];
 
@@ -413,10 +436,14 @@ class CommunityMappingService
                 'contactNumber' => $data['contactNumber'] ?? $data['contact_number'] ?? '',
                 'address' => $data['address'] ?? '',
                 'barangay' => $barangayName,
+                'purok' => $data['purok'] ?? 'Purok 1',
                 'mappingActivityId' => $data['mappingActivityId'] ?? 'ACT-MAP-2026-001',
                 'mappedDate' => now()->toDateString(),
                 'mappedBy' => $data['mappedBy'] ?? 'Field Worker',
                 'childrenCount' => (int) ($data['childrenCount'] ?? 1),
+                'is4Ps' => !empty($data['is4Ps']) || !empty($data['is_4ps']),
+                'isIP' => !empty($data['isIP']) || !empty($data['is_ip']),
+                'form1Data' => $data['form1Data'] ?? $data['form1_data'] ?? null,
                 'status' => 'Completed',
             ];
             self::$households[] = $fallback;
@@ -655,6 +682,7 @@ class CommunityMappingService
                 // 1. Process mapping surveys from IndexedDB
                 $surveys = $batchData['surveys'] ?? [];
                 foreach ($surveys as $survey) {
+                    $form1 = $survey['form1Data'] ?? $survey['form1_data'] ?? null;
                     $hhData = $survey['household'] ?? [
                         'id' => $survey['householdId'] ?? null,
                         'parentGuardian' => $survey['parentGuardian'] ?? null,
@@ -667,6 +695,9 @@ class CommunityMappingService
                         'is4Ps' => $survey['is4Ps'] ?? false,
                         'isIP' => $survey['isIP'] ?? false,
                     ];
+                    if ($form1 && !isset($hhData['form1Data'])) {
+                        $hhData['form1Data'] = $form1;
+                    }
 
                     if ($hhData && (!empty($hhData['id']) || !empty($hhData['parentGuardian']))) {
                         $savedHh = $this->createHousehold($hhData);
@@ -682,6 +713,26 @@ class CommunityMappingService
                         }
                     }
                     $syncedSurveys++;
+                }
+
+                // 1.b Process direct households array if provided
+                if (!empty($batchData['households']) && is_array($batchData['households'])) {
+                    foreach ($batchData['households'] as $hh) {
+                        if (!empty($hh['id']) || !empty($hh['parentGuardian']) || !empty($hh['parent_guardian'])) {
+                            $this->createHousehold($hh);
+                            $syncedHouseholds++;
+                        }
+                    }
+                }
+
+                // 1.c Process direct children array if provided
+                if (!empty($batchData['children']) && is_array($batchData['children'])) {
+                    foreach ($batchData['children'] as $c) {
+                        if (!empty($c['firstName']) || !empty($c['first_name'])) {
+                            $this->createChild($c);
+                            $syncedChildren++;
+                        }
+                    }
                 }
 
                 // 2. Frontline actions execution (offline enrollment, health, assessment)

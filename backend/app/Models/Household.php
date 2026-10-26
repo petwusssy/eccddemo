@@ -27,12 +27,14 @@ class Household extends Model
         'monthly_income_class',
         'mapped_date',
         'mapped_by',
+        'form1_data',
     ];
 
     protected $casts = [
         'is_4ps' => 'boolean',
         'is_ip' => 'boolean',
         'mapped_date' => 'date',
+        'form1_data' => 'array',
     ];
 
     protected function parentGuardian(): Attribute

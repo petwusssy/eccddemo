@@ -613,24 +613,6 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
     // Automatically derive Contact Number from Mother or Father
     const contactNo = (motherProfile.contactNumber || fatherProfile.contactNumber || householdForm.contactNumber || '').replace(/\D/g, '');
 
-    const householdPayload = {
-      id: householdForm.id,
-      household_no: householdForm.id,
-      parentGuardian: String(primaryGuardian).trim().toUpperCase(),
-      contactNumber: contactNo,
-      address: `${householdForm.address}, ${householdForm.purok}`,
-      barangay: householdForm.barangay,
-      barangayId: form3BarangayId,
-      purok: householdForm.purok,
-      mappingActivityId: householdForm.activityId,
-      childrenCount: childrenList.length,
-      mappedBy: householdForm.workerName || user?.name || 'CSWDO Field Officer',
-      workerId: householdForm.workerId || null,
-      mappedDate: new Date().toISOString().slice(0, 10),
-      is4Ps: familyProfile.is4Ps,
-      status: 'Completed',
-    };
-
     const completeForm1Payload = {
       householdId: householdForm.id,
       householdNo: householdForm.id,
@@ -658,6 +640,29 @@ export function CommunityMappingView({ onNavigate, initialTab }) {
       },
       nameOfCDT: householdForm.workerName || 'Child Development Worker',
       dateConducted: getPhilippinesDate(),
+    };
+
+    const householdPayload = {
+      id: householdForm.id,
+      household_no: householdForm.id,
+      parentGuardian: String(primaryGuardian).trim().toUpperCase(),
+      contactNumber: contactNo,
+      address: `${householdForm.address}, ${householdForm.purok}`,
+      barangay: householdForm.barangay,
+      barangayId: form3BarangayId,
+      purok: householdForm.purok,
+      mappingActivityId: householdForm.activityId,
+      childrenCount: childrenList.length,
+      mappedBy: householdForm.workerName || user?.name || 'CSWDO Field Officer',
+      workerId: householdForm.workerId || null,
+      mappedDate: new Date().toISOString().slice(0, 10),
+      is4Ps: familyProfile.is4Ps,
+      isIP: familyProfile.isIP,
+      status: 'Completed',
+      form1Data: completeForm1Payload,
+      fatherProfile,
+      motherProfile,
+      familyProfile,
     };
 
     // 1. Immediately write to IndexedDB (idb) with pending status so data is never lost offline

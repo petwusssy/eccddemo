@@ -75,6 +75,21 @@ export async function saveOfflineSurvey(surveyData) {
 
   await db.put(STORE_SURVEYS, record);
 
+  // Ensure Form 1 profile data is immediately accessible locally
+  const form1 = record.form1Data || record.formData;
+  if (form1 && record.householdId && typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(`eccd_form1_${record.householdId}`, JSON.stringify(form1));
+    } catch (_) {}
+    const existingHh = centralDataStore.getHouseholdById(record.householdId);
+    if (existingHh) {
+      existingHh.form1Data = form1;
+      if (form1.father) existingHh.fatherProfile = form1.father;
+      if (form1.mother) existingHh.motherProfile = form1.mother;
+      if (form1.family) existingHh.familyProfile = form1.family;
+    }
+  }
+
   // Notify active listeners
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('eccd:offline-survey-updated', { detail: { record } }));
@@ -257,6 +272,22 @@ export async function syncPendingSurveysToBackend() {
         for (const survey of pendingSurveys) {
           await markSurveySynced(survey.id, { ok: true, synced: true });
           syncedCount++;
+
+          // Ensure Form 1 data is preserved in centralDataStore and localStorage
+          const form1 = survey.form1Data || survey.formData;
+          const hhId = survey.householdId || survey.household?.id;
+          if (form1 && hhId) {
+            try {
+              localStorage.setItem(`eccd_form1_${hhId}`, JSON.stringify(form1));
+            } catch (_) {}
+            const hh = centralDataStore.getHouseholdById(hhId);
+            if (hh) {
+              hh.form1Data = form1;
+              if (form1.father) hh.fatherProfile = form1.father;
+              if (form1.mother) hh.motherProfile = form1.mother;
+              if (form1.family) hh.familyProfile = form1.family;
+            }
+          }
         }
         for (const item of pendingActions) {
           item.syncStatus = 'synced';
@@ -294,15 +325,24 @@ export async function syncPendingSurveysToBackend() {
   // 2. Resilient Itemized Fallback: Sync Community Mapping Surveys from IndexedDB (Form 1)
   for (const survey of pendingSurveys) {
     try {
-      const householdPayload = survey.household || {
-        id: survey.householdId,
-        parentGuardian: survey.parentGuardian,
-        contactNumber: survey.contactNumber,
-        address: survey.address,
-        barangay: survey.barangay,
-        mappingActivityId: survey.mappingActivityId || survey.activityId,
-        childrenCount: survey.children?.length || 1,
-        mappedBy: survey.mappedBy || 'Child Development Teacher (Offline PWA)',
+      const form1 = survey.form1Data || survey.formData || survey.household?.form1Data;
+      const householdPayload = {
+        ...(survey.household || {}),
+        id: survey.householdId || survey.household?.id,
+        parentGuardian: survey.parentGuardian || survey.household?.parentGuardian,
+        contactNumber: survey.contactNumber || survey.household?.contactNumber,
+        address: survey.address || survey.household?.address,
+        barangay: survey.barangay || survey.household?.barangay,
+        purok: survey.purok || survey.household?.purok || form1?.family?.purok,
+        is4Ps: survey.is4Ps !== undefined ? survey.is4Ps : (survey.household?.is4Ps ?? form1?.family?.is4Ps),
+        isIP: survey.isIP !== undefined ? survey.isIP : (survey.household?.isIP ?? form1?.family?.isIP),
+        mappingActivityId: survey.mappingActivityId || survey.activityId || survey.household?.mappingActivityId,
+        childrenCount: survey.children?.length || survey.household?.childrenCount || 1,
+        mappedBy: survey.mappedBy || survey.household?.mappedBy || 'Child Development Teacher (Offline PWA)',
+        form1Data: form1 || null,
+        fatherProfile: survey.fatherProfile || form1?.father || survey.household?.fatherProfile,
+        motherProfile: survey.motherProfile || form1?.mother || survey.household?.motherProfile,
+        familyProfile: survey.familyProfile || form1?.family || survey.household?.familyProfile,
       };
 
       const hhRes = await fetch(getApiUrl('/api/households'), {
@@ -319,8 +359,18 @@ export async function syncPendingSurveysToBackend() {
       }
 
       const hhJson = await hhRes.json();
-      const savedHh = hhJson.data || householdPayload;
+      const savedHh = {
+        ...householdPayload,
+        ...(hhJson.data || {}),
+        form1Data: form1 || hhJson.data?.form1Data || null,
+      };
       centralDataStore.mergeRecordsFromServer([], [savedHh]);
+
+      if (form1 && householdPayload.id) {
+        try {
+          localStorage.setItem(`eccd_form1_${householdPayload.id}`, JSON.stringify(form1));
+        } catch (_) {}
+      }
 
       // Post Children if present
       if (Array.isArray(survey.children) && survey.children.length > 0) {

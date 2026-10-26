@@ -106,6 +106,7 @@ return new class extends Migration
             $table->string('monthly_income_class')->nullable();
             $table->date('mapped_date');
             $table->string('mapped_by')->nullable();
+            $table->json('form1_data')->nullable();
             $table->timestamps();
         });
 

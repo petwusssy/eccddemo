@@ -304,6 +304,7 @@ export const officialFormsService = {
   },
 
   getForm1Data(householdId) {
+    if (!householdId) return null;
     const storeKey = `eccd_form1_${householdId}`;
     try {
       const raw = localStorage.getItem(storeKey);
@@ -311,7 +312,32 @@ export const officialFormsService = {
     } catch (e) {}
 
     const household = centralDataStore.getHouseholdById(householdId);
-    return household?.form1Data || null;
+    if (household?.form1Data) {
+      try {
+        localStorage.setItem(storeKey, JSON.stringify(household.form1Data));
+      } catch (e) {}
+      return household.form1Data;
+    }
+
+    if (household && (household.fatherProfile || household.motherProfile || household.familyProfile)) {
+      const constructed = {
+        father: household.fatherProfile || {},
+        mother: household.motherProfile || {},
+        family: {
+          ...(household.familyProfile || {}),
+          purok: household.purok || household.familyProfile?.purok || '',
+          is4Ps: household.is4Ps !== undefined ? household.is4Ps : household.familyProfile?.is4Ps,
+          isIP: household.isIP !== undefined ? household.isIP : household.familyProfile?.isIP,
+        },
+        children: household.childrenCount || 1,
+      };
+      try {
+        localStorage.setItem(storeKey, JSON.stringify(constructed));
+      } catch (e) {}
+      return constructed;
+    }
+
+    return null;
   },
 
   // =========================================================================

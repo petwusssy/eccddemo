@@ -358,16 +358,25 @@ export const communityMappingService = {
   async createHousehold(hhData) {
     const id = hhData.id || `HH-2026-${String(centralDataStore.getHouseholds().length + 101).padStart(4, '0')}`;
     const newHousehold = centralDataStore.createHousehold({
+      ...hhData,
       id,
+      household_no: id,
       parentGuardian: String(hhData.parentGuardian || 'Parent / Guardian').toUpperCase(),
       contactNumber: hhData.contactNumber || '',
       address: hhData.address || '',
       barangay: hhData.barangay || 'San Isidro',
+      purok: hhData.purok || 'Purok 1',
       mappingActivityId: hhData.mappingActivityId || 'ACT-MAP-2026-001',
-      mappedDate: getPhilippinesDate(),
+      mappedDate: hhData.mappedDate || getPhilippinesDate(),
       mappedBy: hhData.mappedBy || 'Field Worker',
       childrenCount: parseInt(hhData.childrenCount || 1, 10),
+      is4Ps: !!hhData.is4Ps,
+      isIP: !!hhData.isIP,
       status: 'Completed',
+      form1Data: hhData.form1Data || null,
+      fatherProfile: hhData.fatherProfile || hhData.form1Data?.father || null,
+      motherProfile: hhData.motherProfile || hhData.form1Data?.mother || null,
+      familyProfile: hhData.familyProfile || hhData.form1Data?.family || null,
     });
 
     try {
@@ -382,8 +391,13 @@ export const communityMappingService = {
       if (res.ok) {
         const json = await res.json();
         if (json.data) {
-          centralDataStore.mergeRecordsFromServer([], [json.data]);
-          return json.data;
+          const mergedHh = {
+            ...newHousehold,
+            ...json.data,
+            form1Data: json.data.form1Data || newHousehold.form1Data || null,
+          };
+          centralDataStore.mergeRecordsFromServer([], [mergedHh]);
+          return mergedHh;
         }
       }
     } catch (e) {

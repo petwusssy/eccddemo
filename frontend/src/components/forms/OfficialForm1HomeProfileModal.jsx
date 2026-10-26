@@ -126,11 +126,13 @@ export function OfficialForm1HomeProfileModal({
   // Load existing Form 1 data or prefill from Household / Children in store
   useEffect(() => {
     if (isOpen && householdId) {
-      const existing = officialFormsService.getForm1Data(householdId);
       const household = centralDataStore.getHouseholdById(householdId);
+      const existing = officialFormsService.getForm1Data(householdId) || household?.form1Data;
 
       if (existing) {
-        const existingMother = existing.mother || existing.motherProfile || {};
+        const existingFather = existing.father || existing.fatherProfile || household?.fatherProfile || {};
+        const existingMother = existing.mother || existing.motherProfile || household?.motherProfile || {};
+        const existingFamily = existing.family || existing.familyProfile || household?.familyProfile || {};
         const sanitizedMother = {
           ...existingMother,
           firstName: (existingMother.firstName === 'Rosa' || existingMother.firstName === 'ROSA') ? '' : (existingMother.firstName || ''),
@@ -140,39 +142,52 @@ export function OfficialForm1HomeProfileModal({
         setFormData((prev) => ({
           ...prev,
           ...existing,
-          father: { ...prev.father, ...(existing.father || existing.fatherProfile) },
-          mother: { ...prev.mother, ...sanitizedMother },
-          family: { ...prev.family, ...(existing.family || existing.familyProfile) },
+          father: {
+            ...prev.father,
+            ...existingFather,
+            district: existingFather.district || household?.barangay || prev.father.district,
+            purok: existingFather.purok || household?.purok || prev.father.purok,
+          },
+          mother: {
+            ...prev.mother,
+            ...sanitizedMother,
+            district: sanitizedMother.district || household?.barangay || prev.mother.district,
+            purok: sanitizedMother.purok || household?.purok || prev.mother.purok,
+          },
+          family: {
+            ...prev.family,
+            ...existingFamily,
+            purok: existingFamily.purok || household?.purok || prev.family.purok,
+            is4Ps: existingFamily.is4Ps !== undefined ? existingFamily.is4Ps : household?.is4Ps,
+            isIP: existingFamily.isIP !== undefined ? existingFamily.isIP : household?.isIP,
+          },
           householdId,
         }));
       } else if (household) {
-        // Auto pre-populate: CAPTURE ONCE → REUSE EVERYWHERE!
-        const parentName = household.parentGuardian || '';
-        const nameParts = parentName.split(' ');
-        const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
-        const firstName = nameParts.length > 0 ? nameParts[0] : '';
+        const fatherProfile = household.fatherProfile || {};
+        const motherProfile = household.motherProfile || {};
+        const familyProfile = household.familyProfile || {};
 
         setFormData((prev) => ({
           ...prev,
           householdId,
           father: {
             ...prev.father,
-            lastName,
-            firstName: firstName,
-            district: household.barangay || prev.father.district,
-            purok: household.purok || prev.father.purok,
+            ...fatherProfile,
+            district: household.barangay || fatherProfile.district || prev.father.district,
+            purok: household.purok || fatherProfile.purok || prev.father.purok,
           },
           mother: {
             ...prev.mother,
-            lastName: '',
-            firstName: '',
-            middleInitial: '',
-            district: household.barangay || prev.mother.district,
-            purok: household.purok || prev.mother.purok,
+            ...motherProfile,
+            district: household.barangay || motherProfile.district || prev.mother.district,
+            purok: household.purok || motherProfile.purok || prev.mother.purok,
           },
           family: {
             ...prev.family,
-            ownership: household.is4Ps ? 'Rented' : 'Owned',
+            ...familyProfile,
+            purok: household.purok || familyProfile.purok || prev.family.purok,
+            ownership: household.is4Ps ? 'Rented' : (familyProfile.ownership || 'Owned'),
           },
         }));
       }
@@ -205,6 +220,7 @@ export function OfficialForm1HomeProfileModal({
         id: `FORM1-${householdId}`,
         householdId,
         type: 'official_form_1_home_profile',
+        form1Data: formData,
         formData,
         syncStatus: isOnline ? 'synced' : 'pending',
       });

@@ -690,14 +690,33 @@ class CentralDataStore {
           return guardian && hGuardian && guardian === hGuardian && brgy === hBrgy;
         });
 
+        const existingHh = idx >= 0 ? this.data.households[idx] : null;
+        const existingForm1 = existingHh?.form1Data || null;
+        const incomingForm1 = sh.form1Data || sh.form1_data || null;
+        const resolvedForm1 = incomingForm1 || existingForm1 || null;
+
         const normalizedHh = {
           ...sh,
           id,
           household_no: id,
           parentGuardian: String(sh.parentGuardian || sh.parent_guardian || 'Parent / Guardian').toUpperCase(),
           barangay: sh.barangay || 'San Isidro',
+          purok: sh.purok || existingHh?.purok || 'Purok 1',
           status: sh.status || 'Completed',
+          is4Ps: typeof sh.is4Ps !== 'undefined' ? !!sh.is4Ps : (typeof sh.is_4ps !== 'undefined' ? !!sh.is_4ps : !!existingHh?.is4Ps),
+          isIP: typeof sh.isIP !== 'undefined' ? !!sh.isIP : (typeof sh.is_ip !== 'undefined' ? !!sh.is_ip : !!existingHh?.isIP),
+          form1Data: resolvedForm1,
+          fatherProfile: resolvedForm1?.father || sh.fatherProfile || existingHh?.fatherProfile || null,
+          motherProfile: resolvedForm1?.mother || sh.motherProfile || existingHh?.motherProfile || null,
+          familyProfile: resolvedForm1?.family || sh.familyProfile || existingHh?.familyProfile || null,
         };
+
+        if (resolvedForm1 && typeof window !== 'undefined' && window.localStorage) {
+          try {
+            window.localStorage.setItem(`eccd_form1_${id}`, JSON.stringify(resolvedForm1));
+          } catch (_) {}
+        }
+
         if (idx >= 0) {
           this.data.households[idx] = { ...this.data.households[idx], ...normalizedHh };
           changed = true;
